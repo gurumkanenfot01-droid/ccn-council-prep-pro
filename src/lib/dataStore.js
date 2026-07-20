@@ -341,12 +341,28 @@ export async function saveJSON(key, value, shared) {
 }
 
 // ---- bulk read: question bank + study notes (used once at boot) ----
+// PostgREST caps each response at the project's "Max Rows" setting (1000 by
+// default), so a single .select() silently truncates a 1797-row table. Page
+// through with .range() instead of depending on that dashboard setting.
+async function fetchAllRows(table, columns, orderBy) {
+  const pageSize = 1000;
+  let from = 0;
+  let all = [];
+  while (true) {
+    let query = supabase.from(table).select(columns).range(from, from + pageSize - 1);
+    if (orderBy) query = query.order(orderBy);
+    if (table === "questions") query = query.eq("is_active", true);
+    const { data, error } = await query;
+    if (error || !data) break;
+    all = all.concat(data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
 export async function fetchQuestionBank() {
-  const { data, error } = await supabase
-    .from("questions")
-    .select("id, topic, source, q, opts, ans_idx, exp, category, category_icon")
-    .eq("is_active", true);
-  if (error || !data) return [];
+  const data = await fetchAllRows("questions", "id, topic, source, q, opts, ans_idx, exp, category, category_icon");
   return data.map(r => ({
     id: r.id,
     topic: r.topic,
@@ -361,7 +377,6 @@ export async function fetchQuestionBank() {
 }
 
 export async function fetchStudyNotes() {
-  const { data, error } = await supabase.from("study_notes").select("banner, bullets").order("sort_order");
-  if (error || !data) return [];
+  const data = await fetchAllRows("study_notes", "banner, bullets", "sort_order");
   return data.map(r => ({ banner: r.banner, bullets: r.bullets }));
 }
