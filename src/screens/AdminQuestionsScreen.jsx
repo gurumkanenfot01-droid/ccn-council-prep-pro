@@ -17,12 +17,23 @@ export default function AdminQuestionsScreen() {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("questions")
-      .select("id, topic, source, q, opts, ans_idx, exp, category, category_icon, is_active")
-      .eq("is_active", true)
-      .order("id");
-    if (!error && data) setRows(data);
+    // Paginate past PostgREST's default 1000-row cap per request.
+    const pageSize = 1000;
+    let from = 0;
+    let all = [];
+    while (true) {
+      const { data, error } = await supabase
+        .from("questions")
+        .select("id, topic, source, q, opts, ans_idx, exp, category, category_icon, is_active")
+        .eq("is_active", true)
+        .order("id")
+        .range(from, from + pageSize - 1);
+      if (error || !data) break;
+      all = all.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    setRows(all);
     setLoading(false);
   }
 
