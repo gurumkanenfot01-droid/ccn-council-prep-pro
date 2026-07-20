@@ -1,4 +1,4 @@
-const CACHE_NAME = "ccn-prep-shell-v1";
+const CACHE_NAME = "ccn-prep-shell-v2";
 const APP_SHELL = ["/", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -21,6 +21,11 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  // Never cache Supabase requests (auth/session state and live data) —
+  // always go to the network so users never see stale data or a stale
+  // logged-in/out state.
+  if (event.request.url.includes(".supabase.co")) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

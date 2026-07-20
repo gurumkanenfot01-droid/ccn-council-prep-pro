@@ -1,0 +1,445 @@
+[
+  {
+    "banner": "TOPIC 1: BASIC LIFE SUPPORT (BLS)",
+    "bullets": [
+      "BLS = CPR using no equipment beyond a barrier device \\u00b1 AED. Guidelines updated every 5 years by ILCOR/AHA/ERC.",
+      "3 cardinal signs of cardiac arrest: unresponsiveness, no major pulse, apnoea (including agonal breathing).",
+      "D-R-C-A-B: Danger \\u2192 Response \\u2192 Compressions \\u2192 Airway \\u2192 Breathing.",
+      "Adult compressions: rate 100\\u2013120/min, depth 5\\u20136cm, ratio 30:2 (1 rescuer); intubated patient: continuous compressions + 10 breaths/min.",
+      "Chain of Survival: early recognition, early CPR, early defibrillation, early ALS, post-resuscitation care.",
+      "Infant choking: back blows + chest thrusts only (never abdominal). Drowning: 5 rescue breaths first, then 30:2.",
+      "Post-ROSC care supports 4 systems: airway/breathing, circulation, brain (targeted temperature management), glucose control."
+    ]
+  },
+  {
+    "banner": "TOPIC 2: ANATOMY & PHYSIOLOGY OF THE SKIN",
+    "bullets": [
+      "Largest organ: surface area ~2m\\u00b2, weight 4.5\\u20135kg (12\\u201315% of body weight).",
+      "Two main layers: Epidermis (outer, avascular, keratinised) and Dermis (inner, 1\\u20135mm, vessels/nerves/glands/follicles).",
+      "Thinnest skin = upper eyelid (<0.1mm). Thickest = palms/soles (up to 1.5mm).",
+      "Thin skin has 4 epidermal layers; thick skin (palms/soles) has 5 (adds stratum lucidum).",
+      "Keratinocytes = 95% of epidermis, turnover every 28\\u201342 days.",
+      "Melanocyte activity declines 10\\u201320% per decade after age 30. Dermis loses about 20% thickness with intrinsic ageing."
+    ]
+  },
+  {
+    "banner": "TOPIC 3: OVERVIEW OF BURNS & CCU MANAGEMENT",
+    "bullets": [
+      "A burn = coagulative necrosis of tissue, mostly from thermal effect.",
+      "Jackson's zones: Centre = coagulation (dead). Middle = stasis (SALVAGEABLE \\u2014 main treatment target). Outside = hyperaemia (heals alone).",
+      "Rule of Nines: head/neck 9%, each arm 9%, front trunk 18%, back trunk 18%, each leg 18%, perineum 1%.",
+      "Parkland formula: 4ml \\u00d7 weight(kg) \\u00d7 %TBSA = total fluid for first 24h; half in first 8h, rest over next 16h.",
+      "Burns >20% TBSA cause systemic burn shock (SIRS).",
+      "Leading cause of death after 48 hours = sepsis. Curreri nutrition formula = 25kcal\\u00d7kg + 40kcal\\u00d7%TBSA."
+    ]
+  },
+  {
+    "banner": "TOPIC 4: SPECIAL BURNS & THEIR COMPLICATIONS",
+    "bullets": [
+      "Inhalational injury causes 90% of burn deaths despite affecting only about a third of patients.",
+      "CO binds haemoglobin 240\\u00d7 more strongly than oxygen \\u2014 treated with humidified 100% oxygen.",
+      "Electrical burns: deceptive wounds; cardiac monitoring mandatory for 24\\u201348 hours; low voltage (<1000V) risk = cardiac arrest.",
+      "Myoglobinuria (dark urine) after electrical burns = muscle breakdown \\u2014 treated with double fluids + mannitol + sodium bicarbonate.",
+      "Chemical burns: copious water irrigation, NEVER neutralising agents.",
+      "Frostbite: rapid rewarming in warm water 38\\u201342\\u00b0C; never rub frozen tissue or re-expose to cold."
+    ]
+  },
+  {
+    "banner": "TOPIC 5: ORTHOPAEDIC PATIENT \\u2014 ICU MANAGEMENT",
+    "bullets": [
+      "7 pairs of orthopaedic conditions: congenital/developmental, infection/inflammation, arthritis/rheumatic, metabolic/endocrine, tumours/lesions, neurological/muscle weakness, injury/mechanical.",
+      "ICU admission thresholds: SpO\\u2082<90%, HR<55 or >110bpm, obtunded consciousness, need for organ support.",
+      "Fat embolism triad: confusion + dyspnoea + petechiae, classically after femur fracture.",
+      "The 3 Ms of ICU management: Manpower, Machine, Money.",
+      "Turn patients every 2 hours; start nutrition within 24\\u201348 hours; daily weight is the most accurate fluid balance measure.",
+      "ICU costs roughly 4\\u00d7 more than general ward care."
+    ]
+  },
+  {
+    "banner": "TOPIC 6: GASTROINTESTINAL (GI) BLEEDING",
+    "bullets": [
+      "Ligament of Treitz (L1\\u2013L2) divides Upper GI bleed (above) from Lower GI bleed (below).",
+      "Melaena = 90% upper GI source. Haematochezia = >90% colonic/lower source.",
+      "Management sequence: DRIP \\u2192 BLOOD \\u2192 DRUGS (PPI+octreotide) \\u2192 LOOK (endoscopy).",
+      "Oesophageal varices: EVL preferred; do NOT over-transfuse (raises portal pressure).",
+      "Best predictor of rebleeding = magnitude of initial bleed. #1 cause of lower GI bleed = diverticular disease.",
+      "Massive UGIB = >1000ml or >3g/dL Hb drop in 2\\u20134 hours."
+    ]
+  },
+  {
+    "banner": "TOPIC 7: HEPATIC FAILURE",
+    "bullets": [
+      "FHF = encephalopathy within <2 weeks in a PREVIOUSLY NORMAL liver. #1 cause = paracetamol overdose (50%).",
+      "Subacute/subfulminant = 2\\u201312 weeks, previously normal liver, rare.",
+      "Chronic (PSE) = occurs in an ALREADY diseased liver (cirrhosis + portal hypertension) \\u2014 most common type on wards.",
+      "Memory aid: FHF = FAST + FLAT; PSE = SLOW + SWOLLEN.",
+      "Lactulose traps ammonia (NH3) as NH4+ in the acidic colon for excretion.",
+      "FHF transplant criteria include age <10 or >40, PT >50 seconds, bilirubin >300micromol/L."
+    ]
+  },
+  {
+    "banner": "TOPIC 8: ACUTE SEVERE ASTHMA (ASA)",
+    "bullets": [
+      "A 'silent chest' means almost no air is moving \\u2014 extreme danger sign.",
+      "Key pathophysiology: gas trapping with dynamic hyperinflation and intrinsic PEEP (PEEPi).",
+      "O2 target = 93\\u201395%. Steroids within 1 hour. MgSO4 = 2g IV over 20 minutes after 1 hour of failed improvement.",
+      "Salbutamol can cause hypokalaemia \\u2014 monitor and replace potassium.",
+      "High-risk patients: previous ICU admission/intubation, SABA overuse >1 canister/month, poor ICS adherence.",
+      "Severity: Severe = RR>25, HR>110, PEF 33\\u201350%. Life-threatening = silent chest, PEF<33%, SpO2<92%."
+    ]
+  },
+  {
+    "banner": "TOPIC 9: ICU MANAGEMENT OF LIFE-THREATENING ASTHMA",
+    "bullets": [
+      "Absolute indications to intubate NOW: cardiopulmonary arrest, decreasing consciousness, severe refractory hypoxaemia.",
+      "Somnolence in a severe asthmatic = rising CO2, impending arrest \\u2014 intubate without delay.",
+      "Ventilator settings: LOW everything \\u2014 tidal volume 5\\u20137ml/kg, rate 8\\u201310/min, minimal PEEP (<5cmH2O), I:E ratio >1:2.",
+      "Peak inspiratory pressure must stay under 40cmH2O to avoid lung rupture.",
+      "FiO2 starts at 1.0 (100%); humidification is used to reduce thick secretions."
+    ]
+  },
+  {
+    "banner": "TOPIC 10: COMPLICATIONS OF FRACTURES & TETANUS",
+    "bullets": [
+      "Compartment syndrome = 5 Ps: Pain, Pallor, Paraesthesia, Pulselessness, Pain on passive stretch.",
+      "Tetanus toxin blocks glycine + GABA \\u2014 'no brakes' \\u2014 continuous muscle contraction.",
+      "First symptom = trismus (lockjaw); second = risus sardonicus.",
+      "4 forms: Generalised (most common), Localised, Cephalic (high mortality), Neonatal (very high mortality).",
+      "Diazepam first-choice for spasms (10\\u201330mg every 6\\u20138h). Tubocurarine for severe cases only. Quiet, dark room.",
+      "Incubation period average 6\\u201310 days (up to 20\\u201330 days). IPPV duration 12\\u201330 days when needed."
+    ]
+  },
+  {
+    "banner": "TOPIC 11: TOXIC GOITRE",
+    "bullets": [
+      "Structures posterior to the thyroid: parathyroid glands, carotid sheath \\u2014 accidental removal causes hypocalcaemia.",
+      "Only ~2% of T3/T4 is 'free' (active); rest is protein-bound.",
+      "Grave's disease = 75% of hyperthyroidism; autoimmune, driven by TSI/LATS antibody.",
+      "Toxic multinodular goitre (Plummer's) = 25%, functions independently of TSH.",
+      "Thyroid physiology: trap iodine \\u2192 oxidise/combine with tyrosine \\u2192 form iodotyrosine \\u2192 couple to T3/T4.",
+      "Central control: hypothalamus\\u2192TRH\\u2192pituitary\\u2192TSH\\u2192thyroid. Peripheral: negative feedback from circulating hormone."
+    ]
+  },
+  {
+    "banner": "TOPIC 12: NON-TOXIC GOITRE",
+    "bullets": [
+      "Non-toxic goitre = enlarged thyroid with NO features of toxicity \\u2014 patient is euthyroid.",
+      "Most important cause of endemic goitre = iodine deficiency (<100mcg/day); prevented by iodinating salt.",
+      "Pendred syndrome = genetic enzyme defect causing goitre + congenital deafness.",
+      "3 natural history stages: Parenchymatous (reversible) \\u2192 Colloid (partially reversible) \\u2192 Nodular (not reversible, needs surgery).",
+      "15% of solitary thyroid nodules are malignant; another 30\\u201340% are follicular adenomas \\u2014 always investigate. FNAC = definitive diagnosis.",
+      "Goitrogenic foods/drugs (soya, cassava, thiocyanates) block iodine uptake, mimicking deficiency."
+    ]
+  },
+  {
+    "banner": "TOPIC 13: PRE-ECLAMPSIA & ECLAMPSIA",
+    "bullets": [
+      "Eclampsia = pre-eclampsia (hypertension + proteinuria) PLUS convulsions.",
+      "Drug of choice for eclamptic convulsions = MgSO4: loading dose 4\\u20136g IV slowly over 5\\u201310 minutes, maintenance 1\\u20132g/hour.",
+      "Monitor MgSO4 toxicity with 'TRU': Tendon reflex, Respiratory rate (>12/min), Urine output (>25ml/hr). Antidote = calcium gluconate.",
+      "Contraindicated drugs: diuretics, ACE inhibitors, ergometrine (use oxytocin instead).",
+      "Warning signs before convulsion: severe headache, blurred vision/visual disturbance.",
+      "Maternal complications: cardiac failure, acute renal failure, DIC, stroke, HELLP syndrome, blindness, pulmonary oedema."
+    ]
+  },
+  {
+    "banner": "TOPIC 14: THORACOTOMY & ICU MANAGEMENT",
+    "bullets": [
+      "Median sternotomy = open heart surgery. Posterolateral incision = most common, for lung/oesophageal surgery.",
+      "Anterolateral incision accesses the pericardium, anterior mediastinal tumours, and mitral valve.",
+      "Thoraco-abdominal incision spans chest + abdomen \\u2014 left side for oesophagogastric/spleen, right side for liver.",
+      "Atelectasis is the MOST COMMON complication, from ineffective expectoration causing lung collapse.",
+      "Bronchopleural fistula is common after pneumonectomy for TB and can be life-threatening.",
+      "Atrial fibrillation is the most common cardiac irregularity after thoracotomy, especially >50 years; treated with digoxin."
+    ]
+  },
+  {
+    "banner": "TOPIC 15: CHEST INJURIES & ICU MANAGEMENT",
+    "bullets": [
+      "80% of chest injuries are managed WITHOUT surgery; blunt/closed injuries are most dangerous as they're less obvious.",
+      "6 immediately life-threatening injuries (primary survey, 'AT-OH-FP'): airway obstruction, tension pneumothorax, open pneumothorax, massive haemothorax, flail chest, pericardial tamponade.",
+      "Tension pneumothorax: needle decompression at 2nd ICS midclavicular line; trachea deviates AWAY from affected side.",
+      "Beck's Triad for pericardial tamponade: raised JVP + low BP/tachycardia + muffled heart sounds.",
+      "Flail chest: >3 adjacent ribs broken in 2+ places, paradoxical movement (flail segment moves INWARD on inspiration).",
+      "6 potentially life-threatening injuries (secondary survey): aortic disruption, tracheobronchial injury, diaphragmatic injury, pulmonary contusion, oesophageal injury, blunt myocardial injury.",
+      "In trauma, use JAW THRUST (not head-tilt/chin-lift) to protect the cervical spine."
+    ]
+  },
+  {
+    "banner": "TOPIC 16: POSTPARTUM EMERGENCIES",
+    "bullets": [
+      "Up to 40% of maternal deaths occur POSTPARTUM. Primary PPH = \\u2265500ml (vaginal) or \\u22651000ml (C/S) within 24 hours.",
+      "Secondary PPH occurs from day 1 to 6 weeks postpartum.",
+      "4 Ts of PPH causes: Tone (most common), Trauma, Tissue, Thrombin.",
+      "AFE: mortality up to 90%; triad = hypotension + hypoxia + DIC; diagnosis confirmed only at autopsy.",
+      "DIC's most common cause = sepsis. Peripheral smear shows schistocytes; platelets/fibrinogen drop, PT/INR/D-dimer rise.",
+      "First-line vasopressor in septic shock = norepinephrine. PPCM diagnosed via echocardiogram showing reduced LVEF."
+    ]
+  },
+  {
+    "banner": "TOPIC 17: THYROID CARCINOMA",
+    "bullets": [
+      "Papillary carcinoma = 85%, spreads via lymphatics, psammoma bodies (60%), best prognosis.",
+      "Follicular carcinoma = 10%, spreads via bloodstream, often bone/lung metastases.",
+      "Medullary carcinoma = 7%, arises from C-cells, marker = calcitonin, amyloid on microscopy, 25% familial.",
+      "Post-op thyroxine after papillary thyroidectomy suppresses TSH, preventing stimulation of remaining cancer cells.",
+      "Anaplastic carcinoma: rare, elderly women, almost always fatal (<6 months), but radiosensitive.",
+      "Radiation exposure increases thyroid cancer risk for at least 30 years afterward."
+    ]
+  },
+  {
+    "banner": "TOPICS 18\\u201319: RADIOLOGY, CONTRAST MEDIA & X-RAY INTERPRETATION",
+    "bullets": [
+      "Positive contrast agents (iodine, barium) are dense/white; negative agents (air, CO2) are dark/lucent.",
+      "Steroid prophylaxis for previous contrast reaction: prednisolone 50mg every 6h for 24h before + 12h after, plus IV hydrocortisone 100mg before injection.",
+      "Before reading any chest X-ray, check IPPR: Inspiration, Position, Penetration, Rotation.",
+      "Air bronchogram = consolidation/pneumonia. Widened mediastinum after trauma = aortic disruption. Pleural effusion needs 150\\u2013300ml to be visible.",
+      "Test dose for contrast = 1ml, wait 5 minutes, in all patients.",
+      "Major/severe contrast reactions include laryngeal oedema, pulmonary oedema, respiratory arrest, cardiac arrhythmia, coma, death."
+    ]
+  },
+  {
+    "banner": "TOPIC 20: DELIRIUM IN CCU",
+    "bullets": [
+      "Delirium = acute, fluctuating disturbance of attention/cognition; affects up to 80% of ICU patients on mechanical ventilation.",
+      "3 types: Hyperactive (agitated, easily noticed), Hypoactive (quiet, withdrawn \\u2014 MOST COMMONLY MISSED), Mixed.",
+      "Physical restraints WORSEN agitation and delirium and should be avoided.",
+      "Key risk factors: bladder catheter use, multiple medications (3+), malnutrition, iatrogenic events.",
+      "Nursing care ('QCFNRE'): Quiet environment, Consistent caregivers, Fluid management, Nutrition, Reorientation, Explain procedures."
+    ]
+  },
+  {
+    "banner": "TOPIC 21: ATTEMPTED SUICIDE \\u2014 CCU MANAGEMENT",
+    "bullets": [
+      "One suicide occurs globally every 40 seconds; at least 25 attempts occur for every 1 completed suicide.",
+      "Paracetamol overdose antidote = acetylcysteine. Benzodiazepine overdose antidote = flumazenil.",
+      "Gastric lavage effective within 1 hour (up to 2\\u20134 hours) \\u2014 NEVER in corrosive/acid poisoning or infants.",
+      "Management goals: preserve life, treat injury, assess psychiatric risk, prevent future attempts \\u2014 always with dignity and respect.",
+      "50% of suicide victims visited a GP in the month before their attempt \\u2014 a missed opportunity for intervention.",
+      "Highest risk marital status: single, widowed, divorced. Age range 15\\u201344 years, rare before puberty."
+    ]
+  },
+  {
+    "banner": "TOPIC 22: STATUS EPILEPTICUS \\u2014 CCU MANAGEMENT",
+    "bullets": [
+      "Status epilepticus = seizure >5 minutes, OR repeated seizures within 5 minutes without full recovery. Mortality 5\\u201325%.",
+      "Epilepsy = 2 or more seizures at least 24 hours apart without a known cause.",
+      "First-line = Lorazepam IV (alternative: diazepam IV/rectal/buccal/nasal/IM).",
+      "Second-line = Phenytoin IV loading dose (alternatives: levetiracetam if phenytoin fails/unavailable).",
+      "In eclamptic seizures specifically, magnesium sulphate is first-line \\u2014 NOT benzodiazepines."
+    ]
+  },
+  {
+    "banner": "TOPIC 23: CONDITIONS AMENABLE IN ICU \\u2014 PHYSIOTHERAPY",
+    "bullets": [
+      "After 10 days of bed rest, even a healthy elderly person can lose 1.5kg lean mass and 15% muscle strength.",
+      "Muscle protein synthesis starts declining within 6 hours of inactivity.",
+      "Contraindications ('MPPPH-UI'): acute MI, PE, pulmonary oedema, pneumothorax, pulmonary haemorrhage, unexplained haemoptysis, raised ICP.",
+      "Ventilator weaning readiness: vital capacity \\u226510ml/kg, negative inspiratory force \\u2265-20cmH2O, RSBI (RR/Vt) <120.",
+      "90% of long-term ICU survivors have weakness; 25% of MV patients have significant weakness."
+    ]
+  },
+  {
+    "banner": "TOPIC 24: AIRWAY CLEARANCE TECHNIQUES (ACT)",
+    "bullets": [
+      "ACT loosens mucus and moves it from small to large airways using increased expiratory flow rates.",
+      "ACBT has 3 phases (BCF): Breath Control \\u2192 Thoracic Expansion Exercises \\u2192 Forced Expiration Technique.",
+      "Autogenic Drainage (AD) has 3 phases (USE): Unstick \\u2192 Collect \\u2192 Evacuate. No equipment needed; developed in Belgium, 1960s.",
+      "Percussion uses cupped hands (4.6\\u20138.5Hz) during BOTH inspiration and expiration; vibration is used during EXPIRATION ONLY.",
+      "Bronchodilators are given BEFORE ACT; antibiotics are given AFTER ACT.",
+      "HFCC (High-Frequency Chest Wall Oscillation) uses an air-filled vest, squeezing 5\\u201320 times/second."
+    ]
+  },
+  {
+    "banner": "TOPIC 25: ICU-ACQUIRED WEAKNESS (ICU-AW)",
+    "bullets": [
+      "ICU-AW = impairments of peripheral nerve, muscle, or neuromuscular junction developing during an ICU stay; incidence 25\\u2013100%.",
+      "Women are ~4\\u00d7 more likely than men to develop ICU-AW; onset can occur after just 4\\u20137 days of mechanical ventilation.",
+      "Facial and ocular muscles are almost always SPARED; proximal limb and respiratory muscles most affected.",
+      "Key pathology = primary axonal degeneration WITHOUT demyelination (unlike GBS, which HAS demyelination).",
+      "MRC scale: 5=normal, 0=complete paralysis. Management = 'EASE': Early mobilisation, Avoid sedation, Sugar control, post-ICU rEhabilitation.",
+      "Risk factors: prolonged immobility, sepsis, corticosteroids, neuromuscular blockers, hyperglycaemia, multiorgan failure."
+    ]
+  },
+  {
+    "banner": "TOPIC 26: CHEST PHYSIOTHERAPY & POSTURAL DRAINAGE",
+    "bullets": [
+      "Postural drainage (PD) uses gravity and positioning to drain secretions from bronchial airways into central airways.",
+      "12 postural drainage positions, based on bronchopulmonary anatomy \\u2014 one per lung segment.",
+      "Right lung has 10 segments (3 upper + 2 middle + 5 lower); left lung has 8 segments (4 upper + 4 lower).",
+      "PD first described in 1898 by S.H. Quincke; accepted by the medical community in 1901; introduced for cystic fibrosis in the 1950s.",
+      "Chest physiotherapy (CPT) includes ACT, exercise, thoracic mobility exercises, positioning, breathing exercises, inhalation therapy."
+    ]
+  },
+  {
+    "banner": "TOPIC 27: ETHICS OF RESEARCH",
+    "bullets": [
+      "Ethical issues trace back to 3 founding documents: Belmont Report (Autonomy, Beneficence, Justice), Nuremberg Code (voluntary consent + welfare), Helsinki Declaration (1964; subject wellbeing > interest of science/society).",
+      "Polit and Hungler (1991) named 3 principles: Beneficence (freedom from harm/exploitation), Respect for Human Dignity (self-determination + full disclosure), Justice (fair treatment + privacy).",
+      "Vulnerable subjects (children, aged, physically/mentally challenged, prisoners) need extra safeguards.",
+      "Non-falsification of data and avoidance of plagiarism (crediting sources whether quoted or paraphrased) are core research ethics.",
+      "Subject rights: self-determination, full disclosure, fair treatment, privacy, voluntary informed consent, withdrawal without penalty, confidentiality, protection from harm."
+    ]
+  },
+  {
+    "banner": "TOPIC 28: RESEARCH METHODS I",
+    "bullets": [
+      "The Results chapter should be arranged to directly answer the study's stated objectives, using the best visual (table/chart/graph) for each.",
+      "Results = objective facts only (no opinions). Discussion = synthesis, analysis, and generalisation of what the facts mean.",
+      "When two different data-collection instruments were used, the Discussion should follow the same two-section structure as the Results chapter.",
+      "Reference = a source actually cited/quoted in the text, placed near the Conclusion chapter. It documents where a direct quotation or borrowed idea came from.",
+      "Reasons for using references: acknowledge authors' contribution, help readers verify the source, help readers find further reading, satisfy academic writing requirements."
+    ]
+  },
+  {
+    "banner": "TOPIC 29: RESEARCH METHODS II",
+    "bullets": [
+      "Two main referencing methods: Harvard/APA System (alphabetical order) and the Numbering System (Turabian/Chicago; order of appearance).",
+      "Latin referencing terms: Idem (same work, same page), Ibid (same work, different page), Op cit (already cited, something between), Loc cit (place cited, author unnamed just before).",
+      "Bibliography arrangement order: Journals \\u2192 Books \\u2192 Magazines/Newspapers \\u2192 Other publications, each group alphabetical by surname.",
+      "Bibliography differs from Reference: appears once at the very end, author's surname written first, includes ALL works consulted (cited or not).",
+      "Appendix holds bulky supporting material (questionnaires, consent forms, maps) that would clutter the main chapters; sections labelled A, B, C, etc."
+    ]
+  },
+  {
+    "banner": "TOPIC 30: PRINCIPLES OF JUSTICE AND FAIRNESS",
+    "bullets": [
+      "Justice = a statement of rightness (giving people what they deserve). Fairness = impartiality and equal treatment.",
+      "In nursing ethics, Justice means treating all patients equally regardless of age, gender, race, religion, socioeconomic status, or sexual orientation.",
+      "When triaging, nurses should prioritise based on CLINICAL NEED, not personal characteristics like wealth or status.",
+      "Distributive Justice (associated with philosopher John Rawls) focuses on fair allocation of resources and benefits within society.",
+      "Fairness actively works to close the gaps created by unequal starting points \\u2014 equal treatment alone doesn't always produce a truly equal outcome."
+    ]
+  },
+  {
+    "banner": "TOPIC 31\\u201332: ARTERIAL BLOOD GAS (ABG) ANALYSIS \\u2014 PARTS I & II",
+    "bullets": [
+      "Normal ranges: pH 7.35\\u20137.45; PaCO2 35\\u201345mmHg; HCO3 22\\u201328mmol/L; PaO2 >80mmHg; SO2 >96%; Base Excess \\u22122 to +2.",
+      "Acidosis (\\u2193pH): PaCO2 rise = Respiratory cause; HCO3 fall = Metabolic cause. Alkalosis (\\u2191pH): PaCO2 fall = Respiratory; HCO3 rise = Metabolic.",
+      "Anion gap = (Na+K) \\u2212 (Cl+HCO3), normal 8\\u201318mmol/L; distinguishes high-gap (extra acid present) vs normal-gap (bicarbonate loss) metabolic acidosis.",
+      "Compensation formulas: Metabolic acidosis (\\u00d71.25 fall in PaCO2), Metabolic alkalosis (\\u00d70.7 rise in PaCO2), Respiratory acidosis (\\u00d70.1 rise in HCO3), Respiratory alkalosis (\\u00d70.2 fall in HCO3).",
+      "Modified Allen's Test: positive (flushes within 5\\u201315s) = safe to puncture; negative = use another site.",
+      "5-step interpretation: Oxygenation \\u2192 pH direction \\u2192 Primary disorder \\u2192 BE/Anion Gap \\u2192 Compensation. A normal pH does NOT rule out a mixed disorder."
+    ]
+  },
+  {
+    "banner": "TOPIC 33: EVALUATION PHASE OF THE NURSING PROCESS",
+    "bullets": [
+      "Evaluation = the process of determining how far implemented nursing actions achieved the desired outcome; it is essentially a procedure of re-assessment.",
+      "4 skills used: Observation, Interviewing, Record keeping, Interpretation.",
+      "2 types: Formative (ongoing, judged as the intervention is implemented) vs Summative (final, whole-plan review against objectives).",
+      "3 possible verdicts for goal achievement: Met, Partially Met, Not Met.",
+      "A goal may LOOK met on paper while the underlying problem remains unsolved \\u2014 a key re-assessment principle.",
+      "4 advantages of the nursing process: individualised care, job satisfaction, evidence-based decisions (avoiding routine-based ones), forms a basis of scientific discipline."
+    ]
+  },
+  {
+    "banner": "TOPIC 34: CONFLICT AND CONFLICT RESOLUTION",
+    "bullets": [
+      "Conflict = disagreement or opposition arising from differences in needs, values, interests, or goals \\u2014 normal in every workplace.",
+      "5 types: Intrapersonal (within one person), Interpersonal (between two people), Intragroup (within one team), Intergroup (between teams), Role conflict (unclear/overlapping job expectations).",
+      "5 Thomas-Kilmann conflict resolution styles: Competing (win-lose, high assertiveness), Accommodating (giving in), Avoiding (sidestepping), Compromising (middle ground), Collaborating (win-win, gold standard).",
+      "5 stages of conflict: Latent \\u2192 Perceived \\u2192 Felt \\u2192 Manifest \\u2192 Aftermath.",
+      "A nurse manager should act as a neutral mediator, encourage early open communication, and use collaboration when there's time, competing/directive style only in true emergencies."
+    ]
+  },
+  {
+    "banner": "TOPIC 35: ASEPSIS IN CRITICAL CARE UNIT",
+    "bullets": [
+      "Asepsis = state of being germ-free. Aseptic technique = the method used to achieve/maintain it. Antisepsis = specifically chemical disinfection.",
+      "Key stat: ICU accounts for <10% of hospital beds but >20% of all healthcare-associated infections (HAIs).",
+      "3 types: Medical asepsis ('clean technique,' non-invasive procedures), Surgical asepsis ('sterile technique,' eliminates ALL microorganisms/spores, invasive procedures), Environmental asepsis (surroundings).",
+      "Hand hygiene = single most important intervention; alcohol rub preferred except when hands are visibly soiled; aim for >90% compliance.",
+      "WHO's 5 Moments of Hand Hygiene: before touching a patient, before a clean/aseptic procedure, after body fluid exposure risk, after touching a patient, after touching patient surroundings.",
+      "Common device-linked HAIs: VAP (ventilator), CLABSI (central line), CAUTI (urinary catheter)."
+    ]
+  },
+  {
+    "banner": "TOPIC 36: RENAL TRANSPLANT \\u2014 CRITICAL CARE UNIT MANAGEMENT",
+    "bullets": [
+      "Outcome ranking: Living-related > Living non-related > Cadaveric (DBD/DCD). Best timing = pre-emptive (before dialysis) or minimal dialysis time.",
+      "4 types of rejection by speed: Hyperacute (minutes-hours) \\u2192 Accelerated acute (1\\u20134 days) \\u2192 Acute (days-weeks) \\u2192 Chronic (months-years).",
+      "Triple immunosuppression regimen: Cyclosporine/Tacrolimus + Azathioprine/Mycophenolate + Prednisolone.",
+      "Post-op monitoring is intensive: \\u00bd hourly vitals, hourly urine output, hourly cyclosporine level, daily weight.",
+      "10-year survival: Living-related = 74.84%; Cadaveric = 55.07%; Dialysis alone = only 8.49% \\u2014 transplant dramatically outperforms dialysis long-term.",
+      "Absolute contraindications: active malignancy, active uncontrolled infection, unstable psychiatric condition, limited life expectancy, untreatable advanced cardiovascular/pulmonary disease."
+    ]
+  },
+  {
+    "banner": "TOPIC 37: NEPHRECTOMY \\u2014 INDICATIONS AND CCU MANAGEMENT",
+    "bullets": [
+      "First successful nephrectomy: Gustav Simon, 1869, Heidelberg \\u2014 proved one healthy kidney is sufficient for urine excretion.",
+      "Key indications: renal cell carcinoma, non-functioning kidney, congenitally small/painful kidney, living donor kidney transplantation.",
+      "Nephroureterectomy = kidney + entire ureter + bladder cuff (for urothelial cancer along the tract).",
+      "Two surgical approaches: Open vs Laparoscopic (including newer single-port/belly-button technique). Cancer removal requires the kidney to come out whole in a protective bag.",
+      "Post-op CCU monitoring mirrors renal transplant: \\u00bd hourly vitals (24hrs), hourly urine output, daily weight, close electrolyte/fluid monitoring.",
+      "Complication rate for partial nephrectomy: 15\\u201325%; main complications: bleeding, infection, urinary leak. Hospital stay 2\\u20137 days."
+    ]
+  },
+  {
+    "banner": "BONUS: THE PRINCIPLES OF BARRIER NURSING",
+    "bullets": [
+      "Barrier Nursing (source isolation) protects OTHERS from the patient. Reverse Barrier Nursing (protective isolation) protects the PATIENT from others.",
+      "3 types: Simple, Strict/Rigid (highly dangerous pathogens like Ebola), Reverse (protects immunocompromised patients).",
+      "Standard precautions apply to ALL patients; transmission-based precautions are added when infection is suspected/confirmed.",
+      "5 transmission-based precaution types: Contact, Droplet, Airborne (negative pressure), Enhanced Barrier, Protective Environment (positive pressure).",
+      "Donning order: Hand hygiene \\u2192 Gown \\u2192 Mask \\u2192 Goggles \\u2192 Gloves. Doffing order: Gloves \\u2192 Goggles \\u2192 Gown \\u2192 Mask \\u2192 Hand hygiene.",
+      "Key formula: Hand hygiene + Proper PPE + Isolation = Effective Barrier Nursing."
+    ]
+  },
+  {
+    "banner": "BONUS: ANTIMICROBIAL THERAPY",
+    "bullets": [
+      "Bactericidal drugs kill bacteria (attack cell wall, e.g. penicillins). Bacteriostatic drugs stop bacterial growth (attack ribosome/protein synthesis, e.g. tetracyclines, macrolides).",
+      "The 'golden age' of antibiotic discovery was 1940\\u20131965; only 2 genuinely new classes have emerged since 1970.",
+      "Two uses: Therapeutic (treat existing infection) vs Prophylactic (prevent infection before surgery).",
+      "Wound infection risk rises with contamination level: Clean (1\\u20135%) \\u2192 Clean-contaminated (10%) \\u2192 Contaminated (20\\u201330%) \\u2192 Dirty (40\\u201350%).",
+      "Best prophylaxis route = Systemic (IV), given just before surgery; antibiotics given >2 hours before surgery are essentially wasted timing.",
+      "Antibiotic stewardship = right drug, right dose, right duration, guided by local resistance data."
+    ]
+  },
+  {
+    "banner": "BONUS: BLOOD VOLUME & CENTRAL VENOUS PRESSURE (CVP)",
+    "bullets": [
+      "Normal CVP = 2\\u20138mmHg; measured at end of expiration, at the phlebostatic axis (4th ICS, mid-axillary line).",
+      "Low CVP = hypovolaemia/\\u2193 venous return. High CVP = overhydration/\\u2191 venous return/right heart failure.",
+      "Seldinger technique (catheter-over-guidewire) is the preferred insertion method; over-insertion of the wire risks arrhythmias.",
+      "Internal jugular vein = the most commonly cannulated site for central line insertion.",
+      "After insertion, confirm free flow both ways plus a chest X-ray (checking tip position in the superior vena cava, excluding pneumothorax).",
+      "Sepsis can present with low, normal, OR high CVP \\u2014 unlike hypovolaemia, which is specifically associated with low CVP."
+    ]
+  },
+  {
+    "banner": "BONUS: NUTRITION IN THE SURGICAL PATIENT",
+    "bullets": [
+      "Marasmus = inadequate but balanced diet, 'walking skeleton' appearance, normal albumin. Kwashiorkor = inadequate AND unbalanced diet, oedema masks wasting, low albumin, linked to sepsis/trauma.",
+      "Keto-adaptation (fat\\u2192ketones, sparing muscle) happens in simple starvation but NOT in sepsis/trauma, where protein is instead broken down.",
+      ">10% weight loss in 3 months and >20% total body weight loss are key clinical malnutrition thresholds.",
+      "Bedside tests: Finger-thumb test (assesses fat stores), Tendon-bone test (assesses protein stores).",
+      "Enteral nutrition is preferred over parenteral whenever the gut is functioning. TPN complications include catheter sepsis (3\\u201314%).",
+      "Caloric values: Carbohydrate 4kcal/g, Protein 4kcal/g, Fat 9kcal/g."
+    ]
+  },
+  {
+    "banner": "BONUS: HYPERTENSION AND SURGERY",
+    "bullets": [
+      "2017 ACC/AHA definitions: Normal <120/<80; Elevated 120\\u2013129/<80; Stage I 130\\u2013139/80\\u201389; Stage II \\u2265140/\\u226590.",
+      "Surgery cancellation threshold: SBP >180 AND DBP >110 (or SBP \\u2265200 alone \\u2014 doubles mortality risk).",
+      "Primary/Essential HTN (~85\\u201395%, no clear cause) vs Secondary HTN (5\\u201315%, identifiable cause e.g. renal artery stenosis, adrenal disease).",
+      "Malignant HTN = medical emergency: SBP>180, DBP>120, plus organ damage.",
+      "Continue \\u03b2-blockers on the day of surgery; don't START new \\u03b2-blockers right before surgery; diuretics are usually withheld.",
+      "HTN is the #2 cause of end-stage renal disease (after diabetes); up to 50% of kidney function can be lost before creatinine even rises."
+    ]
+  },
+  {
+    "banner": "BONUS: FLUID THERAPY \\u2014 FLUIDS IN DIFFERENT CLINICAL CONDITIONS",
+    "bullets": [
+      "Parkland Formula (burns): 24hr requirement = 4 \\u00d7 %BSA \\u00d7 Weight(kg); half in first 8 hours, half in next 16 hours.",
+      "4-2-1 Rule (maintenance fluid): 4mL/kg/hr (first 10kg) + 2mL/kg/hr (next 10kg) + 1mL/kg/hr (remaining kg).",
+      "Blood loss replacement ratio: Colloid 1:1; Crystalloid 1:3 (crystalloid requires 3x the volume lost).",
+      "4 types of shock ('pump-pipe-water'): Hypovolaemic (most common), Cardiogenic (pump), Distributive (pipe), Obstructive (blockage).",
+      "Neurogenic shock is distinguished by bradycardia (not tachycardia) \\u2014 but always rule out associated hypovolaemic injury first.",
+      "Fasting guidelines before surgery: clear fluids 2 hours, milk 4 hours. Fluid EXCESS (not deficit) is the most common cause of perioperative fluid-related morbidity/mortality."
+    ]
+  }
+]
