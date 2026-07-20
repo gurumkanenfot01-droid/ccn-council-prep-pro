@@ -1,4 +1,4 @@
-const CACHE_NAME = "ccn-prep-shell-v2";
+const CACHE_NAME = "ccn-prep-shell-v3";
 const APP_SHELL = ["/", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -27,19 +27,21 @@ self.addEventListener("fetch", (event) => {
   // logged-in/out state.
   if (event.request.url.includes(".supabase.co")) return;
 
+  // Network-first: always try to fetch the freshest version so a new deploy
+  // is visible immediately, falling back to the cached copy only when the
+  // network request fails (offline). Cache-first previously meant a device
+  // that had ever loaded the app would keep serving that exact old version
+  // indefinitely, silently updating the cache in the background but never
+  // actually showing the update.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
