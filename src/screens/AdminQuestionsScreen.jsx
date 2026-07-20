@@ -1,9 +1,70 @@
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { ClipboardList, Plus, Pencil, Trash2, Search, Upload } from "lucide-react";
 import { Card, Button, Field, Modal, SectionHeader, EmptyState, Chip, useApp } from "../ui/kit.jsx";
 import { supabase } from "../lib/supabase.js";
 
 const emptyForm = { id: null, topic: "", source: "", q: "", opts: ["", "", "", ""], ansIdx: 0, exp: "", category: "", categoryIcon: "📚" };
+
+const BULK_HEADERS = ["question", "optionA", "optionB", "optionC", "optionD", "correct", "explanation", "category", "topic", "source"];
+
+// Minimal RFC4180 CSV parser: handles quoted fields, embedded commas/newlines, "" escapes.
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      row.push(field); field = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); field = "";
+      if (row.some(v => v !== "")) rows.push(row);
+      row = [];
+    } else {
+      field += c;
+    }
+  }
+  if (field !== "" || row.length) { row.push(field); if (row.some(v => v !== "")) rows.push(row); }
+  return rows;
+}
+
+function parseBulkQuestions(text) {
+  const rows = parseCsv(text.trim());
+  if (rows.length < 2) throw new Error("No data rows found — include a header row plus at least one question.");
+  const header = rows[0].map(h => h.trim());
+  const missing = BULK_HEADERS.filter(h => !["topic", "source"].includes(h) && !header.includes(h));
+  if (missing.length) throw new Error(`Missing required column(s): ${missing.join(", ")}`);
+  const idx = Object.fromEntries(header.map((h, i) => [h, i]));
+  return rows.slice(1).map((r, i) => {
+    const get = key => (idx[key] != null ? (r[idx[key]] || "").trim() : "");
+    const q = get("question");
+    const opts = [get("optionA"), get("optionB"), get("optionC"), get("optionD")];
+    const correctRaw = get("correct").toUpperCase();
+    const correctMap = { A: 0, B: 1, C: 2, D: 3, "1": 0, "2": 1, "3": 2, "4": 3 };
+    const ansIdx = correctMap[correctRaw];
+    const category = get("category");
+    if (!q) throw new Error(`Row ${i + 2}: missing question text.`);
+    if (opts.some(o => !o)) throw new Error(`Row ${i + 2}: all 4 options are required.`);
+    if (ansIdx === undefined) throw new Error(`Row ${i + 2}: "correct" must be A, B, C, or D (got "${get("correct")}").`);
+    if (!category) throw new Error(`Row ${i + 2}: missing category.`);
+    return {
+      q, opts, ansIdx, category,
+      exp: get("explanation"),
+      topic: get("topic") || category,
+      source: get("source"),
+      categoryIcon: "📚",
+    };
+  });
+}
 
 export default function AdminQuestionsScreen() {
   const { t } = useApp();
@@ -14,6 +75,11 @@ export default function AdminQuestionsScreen() {
   const [editing, setEditing] = useState(null); // form object or null
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkError, setBulkError] = useState("");
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkResult, setBulkResult] = useState("");
 
   async function load() {
     setLoading(true);
@@ -95,10 +161,47 @@ export default function AdminQuestionsScreen() {
     load();
   }
 
+  async function submitBulk() {
+    setBulkError("");
+    setBulkResult("");
+    let parsed;
+    try {
+      parsed = parseBulkQuestions(bulkText);
+    } catch (e) {
+      setBulkError(e.message);
+      return;
+    }
+    setBulkSaving(true);
+    let nextId = rows.reduce((m, r) => Math.max(m, r.id), 1797) + 1;
+    const inserts = parsed.map(p => ({
+      id: nextId++,
+      topic: p.topic,
+      source: p.source,
+      q: p.q,
+      opts: p.opts,
+      ans_idx: p.ansIdx,
+      exp: p.exp,
+      category: p.category,
+      category_icon: p.categoryIcon,
+      is_active: true,
+    }));
+    const { error } = await supabase.from("questions").insert(inserts);
+    setBulkSaving(false);
+    if (error) { setBulkError(error.message); return; }
+    setBulkResult(`Added ${inserts.length} question${inserts.length === 1 ? "" : "s"}.`);
+    setBulkText("");
+    load();
+  }
+
   return (
     <div className="fade-in">
       <SectionHeader icon={ClipboardList} title="Manage Questions"
-        action={<Button size="sm" icon={Plus} onClick={openAdd}>Add Question</Button>} />
+        action={
+          <div style={{ display: "flex", gap: 8 }}>
+            <Button size="sm" variant="ghost" icon={Upload} onClick={() => { setBulkOpen(true); setBulkError(""); setBulkResult(""); }}>Bulk Import</Button>
+            <Button size="sm" icon={Plus} onClick={openAdd}>Add Question</Button>
+          </div>
+        } />
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, border: `1px solid ${t.cardBorder}`, borderRadius: 10, padding: "8px 12px", background: t.bgAlt, flex: "1 1 220px" }}>
@@ -173,6 +276,39 @@ export default function AdminQuestionsScreen() {
               <Button variant="ghost" full onClick={() => setEditing(null)}>Cancel</Button>
               <Button variant="primary" full disabled={saving} onClick={save}>{saving ? "Saving..." : "Save"}</Button>
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {bulkOpen && (
+        <Modal onClose={() => setBulkOpen(false)} width={560}>
+          <div className="f-serif" style={{ fontSize: 17, fontWeight: 700, color: t.text, marginBottom: 10 }}>Bulk Import Questions</div>
+          <div style={{ fontSize: 12.5, color: t.textMuted, marginBottom: 14, lineHeight: 1.5 }}>
+            Paste CSV with a header row. Required columns: <b>question, optionA, optionB, optionC, optionD, correct, category</b>.
+            "correct" is the letter (A/B/C/D) of the right option. Optional columns: <b>explanation, topic, source</b>.
+            If pasting from Excel/Google Sheets, keep the exported quoting as-is.
+          </div>
+          <div style={{ background: t.bgAlt, border: `1px solid ${t.cardBorder}`, borderRadius: 10, padding: 10, fontSize: 11, fontFamily: "monospace", color: t.textFaint, marginBottom: 14, overflowX: "auto", whiteSpace: "pre" }}>
+{`question,optionA,optionB,optionC,optionD,correct,explanation,category
+"What is normal adult HR?","40-60","60-100","100-140","140-180",B,"60-100 bpm is normal for a resting adult.","Cardiovascular"`}
+          </div>
+          <textarea
+            value={bulkText}
+            onChange={e => setBulkText(e.target.value)}
+            placeholder="Paste CSV here..."
+            style={{
+              width: "100%", minHeight: 180, borderRadius: 10, border: `1px solid ${t.cardBorder}`,
+              background: t.bgAlt, color: t.text, fontSize: 12.5, fontFamily: "monospace", padding: 10,
+              boxSizing: "border-box", resize: "vertical",
+            }}
+          />
+          {bulkError && <div style={{ fontSize: 13, color: t.red, fontWeight: 600, marginTop: 10 }}>{bulkError}</div>}
+          {bulkResult && <div style={{ fontSize: 13, color: t.emerald, fontWeight: 600, marginTop: 10 }}>{bulkResult}</div>}
+          <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+            <Button variant="ghost" full onClick={() => setBulkOpen(false)}>Close</Button>
+            <Button variant="primary" full disabled={bulkSaving || !bulkText.trim()} onClick={submitBulk}>
+              {bulkSaving ? "Importing..." : "Import"}
+            </Button>
           </div>
         </Modal>
       )}
