@@ -56,6 +56,46 @@ function buildQuizSet(count, categoryFilter, seed, idPool) {
   });
 }
 
+// Builds a weighted-random pool of question IDs spanning every category (course),
+// used for the Paper 1 / Paper 2 mock exam mode so a 250-question paper still
+// draws proportionally from every part of the curriculum rather than clustering
+// in the largest categories.
+function buildPaperIdPool(seed, targetCount) {
+  const cats = CATEGORY_LIST;
+  if (!cats.length) return [];
+  const minPerCat = 3;
+  let remaining = targetCount;
+  const alloc = {};
+  cats.forEach(c => { const m = Math.min(minPerCat, c.count); alloc[c.name] = m; remaining -= m; });
+
+  if (remaining > 0) {
+    const weights = cats.map(c => Math.max(0, c.count - alloc[c.name]));
+    const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
+    let distributed = 0;
+    cats.forEach((c, i) => {
+      const room = c.count - alloc[c.name];
+      const add = Math.min(Math.floor(remaining * weights[i] / totalWeight), room);
+      alloc[c.name] += add;
+      distributed += add;
+    });
+    let leftover = remaining - distributed;
+    let guard = 0;
+    while (leftover > 0 && guard < 100000) {
+      guard++;
+      const c = cats[guard % cats.length];
+      if (alloc[c.name] < c.count) { alloc[c.name]++; leftover--; }
+    }
+  }
+
+  let pool = [];
+  cats.forEach((c, i) => {
+    const catQs = QUESTION_BANK.filter(q => q.category === c.name);
+    const picked = shuffle(catQs, seed + i * 97 + 13).slice(0, alloc[c.name]);
+    pool = pool.concat(picked.map(q => q.id));
+  });
+  return pool;
+}
+
 function formatTime(sec) {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60).toString().padStart(2, "0");
@@ -329,6 +369,59 @@ function SetupScreen({ go, startQuiz, presetCategory }) {
         onClick={() => startQuiz({ count: Math.min(count, effectivePool), category: weakOnly ? "Weak Topics" : category, idPool: weakOnly ? weakIds : null })}>
         {effectivePool === 0 ? "No questions available" : `Begin Exam \u2014 ${Math.min(count, effectivePool)} Questions`}
       </Button>
+    </div>
+  );
+}
+
+function PapersScreen({ startQuiz }) {
+  const { t } = useApp();
+  const PAPER_LEN = 250;
+  const totalAvailable = QUESTION_BANK.length;
+
+  function begin(label) {
+    const seed = Math.floor(Math.random() * 1e9);
+    const idPool = buildPaperIdPool(seed, Math.min(PAPER_LEN, totalAvailable));
+    startQuiz({ count: idPool.length, category: label, idPool });
+  }
+
+  const papers = [
+    { id: "Paper 1", desc: "A fresh 250-question draw balanced across every course in the curriculum — just like sitting the real Paper 1." },
+    { id: "Paper 2", desc: "A second, independently drawn 250-question set covering the same full curriculum spread — use it as a second full-length mock." },
+  ];
+
+  return (
+    <div className="fade-in">
+      <SectionHeader icon={Award} title="Mock Exam Papers" />
+      <Card style={{ padding: "14px 18px", marginBottom: 20, background: t.navySoft, border: `1px solid ${t.navy}22` }}>
+        <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.5 }}>
+          Each paper draws <strong>{PAPER_LEN} questions</strong> proportionally from every category in the question bank ({totalAvailable} questions total across {CATEGORY_LIST.length} categories), so no single topic dominates — questions really can come from anywhere in the curriculum, same as the real exam. Every attempt pulls a new random set, so you can retake either paper as many times as you like.
+        </div>
+      </Card>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+        {papers.map(p => (
+          <Card key={p.id} style={{ padding: 22 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <IconBadge icon={Award} />
+              <div className="f-serif" style={{ fontSize: 17, fontWeight: 700, color: t.text }}>{p.id}</div>
+            </div>
+            <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.5, marginBottom: 14 }}>{p.desc}</div>
+            <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
+              <div>
+                <div className="f-mono" style={{ fontSize: 18, fontWeight: 800, color: t.navy }}>{Math.min(PAPER_LEN, totalAvailable)}</div>
+                <div style={{ fontSize: 11, color: t.textFaint }}>Questions</div>
+              </div>
+              <div>
+                <div className="f-mono" style={{ fontSize: 18, fontWeight: 800, color: t.navy }}>~{estimateMinutes(PAPER_LEN)}</div>
+                <div style={{ fontSize: 11, color: t.textFaint }}>Minutes</div>
+              </div>
+            </div>
+            <Button full variant="accent" icon={PlayCircle} onClick={() => begin(p.id)}>
+              Begin {p.id}
+            </Button>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1190,6 +1283,7 @@ const NAV_MAIN = [
   { id: "categories", label: "Categories", icon: Grid3x3 },
   { id: "notes", label: "Study Notes", icon: BookOpen },
   { id: "performance", label: "Performance", icon: BarChart3 },
+  { id: "papers", label: "Mock Papers", icon: Award },
 ];
 const NAV_MORE = [
   { id: "bookmarks", label: "Bookmarks", icon: Bookmark },
@@ -1437,6 +1531,7 @@ export default function App() {
                 {view === "home" && <HomeScreen go={go} />}
                 {view === "setup" && <SetupScreen go={go} startQuiz={startQuiz} presetCategory={viewParams.category} />}
                 {view === "categories" && <CategoriesScreen go={go} startQuiz={startQuiz} />}
+                {view === "papers" && <PapersScreen go={go} startQuiz={startQuiz} />}
                 {view === "notes" && <NotesScreen />}
                 {view === "performance" && <PerformanceScreen />}
                 {view === "profile" && <ProfileScreen />}
