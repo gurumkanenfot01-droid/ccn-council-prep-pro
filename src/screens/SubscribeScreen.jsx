@@ -34,8 +34,7 @@ function PlanCard({ id, onSubscribe, busy }) {
 }
 
 export default function SubscribeScreen() {
-  const { t, session, subscription: ctxSubscription } = useApp();
-  const [subscription, setSubscription] = useState(ctxSubscription);
+  const { t, session, subscription, setSubscription } = useApp();
   const [busyPlan, setBusyPlan] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");

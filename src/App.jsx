@@ -1506,7 +1506,7 @@ export default function App() {
   }
 
   const isAdmin = profile.role === "admin";
-  const ctxValue = { t, theme: themeMode, profile, setProfile, subscription, isSubscribed, bookmarks, toggleBookmark, wrongBank, history, inProgress, streak, isMobile, session, userId: session.user.id, isAdmin, signOut };
+  const ctxValue = { t, theme: themeMode, profile, setProfile, subscription, setSubscription, isSubscribed, bookmarks, toggleBookmark, wrongBank, history, inProgress, streak, isMobile, session, userId: session.user.id, isAdmin, signOut };
 
   return (
     <AppCtx.Provider value={ctxValue}>
