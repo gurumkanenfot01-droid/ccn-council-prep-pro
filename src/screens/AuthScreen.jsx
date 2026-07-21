@@ -10,6 +10,7 @@ export default function AuthScreen({ t }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState("");
 
   async function submit(e) {
     e.preventDefault();
@@ -19,11 +20,22 @@ export default function AuthScreen({ t }) {
     try {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (/email not confirmed/i.test(error.message || "")) {
+            setUnconfirmedEmail(email);
+            throw new Error("Please confirm your email before logging in — check your inbox for the link.");
+          }
+          throw error;
+        }
       } else if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setNotice("Account created — you're signed in.");
+        if (!data.session) {
+          setUnconfirmedEmail(email);
+          setNotice("Account created — check your email for a confirmation link before logging in.");
+        } else {
+          setNotice("Account created — you're signed in.");
+        }
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin,
@@ -33,6 +45,21 @@ export default function AuthScreen({ t }) {
       }
     } catch (err) {
       setError(err.message || "Something went wrong.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    setError("");
+    setNotice("");
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resend({ type: "signup", email: unconfirmedEmail });
+      if (error) throw error;
+      setNotice("Confirmation email resent — check your inbox (and spam folder).");
+    } catch (err) {
+      setError(err.message || "Couldn't resend the email.");
     } finally {
       setBusy(false);
     }
@@ -55,7 +82,7 @@ export default function AuthScreen({ t }) {
               { id: "login", label: "Log In" },
               { id: "signup", label: "Sign Up" },
             ].map(m => (
-              <button key={m.id} type="button" onClick={() => { setMode(m.id); setError(""); setNotice(""); }}
+              <button key={m.id} type="button" onClick={() => { setMode(m.id); setError(""); setNotice(""); setUnconfirmedEmail(""); }}
                 style={{
                   flex: 1, padding: "9px 0", borderRadius: 9, border: "none", cursor: "pointer",
                   fontSize: 13.5, fontWeight: 700,
@@ -80,6 +107,15 @@ export default function AuthScreen({ t }) {
               {busy ? "Please wait…" : mode === "login" ? "Log In" : mode === "signup" ? "Create Account" : "Send Reset Link"}
             </Button>
           </form>
+
+          {unconfirmedEmail && (
+            <div style={{ textAlign: "center", marginTop: 14 }}>
+              <button type="button" onClick={resendConfirmation} disabled={busy}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12.5, color: t.navy, fontWeight: 700 }}>
+                Resend confirmation email
+              </button>
+            </div>
+          )}
 
           {mode === "login" && (
             <div style={{ textAlign: "center", marginTop: 14 }}>
