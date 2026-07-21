@@ -4,8 +4,8 @@ import { QUESTION_BANK, CATEGORY_LIST } from "../App.jsx";
 
 const APP_VERSION = "1.0.0";
 const DEVELOPER_NAME = "Nenfot Gurumka";
-const DEVELOPER_TITLE = "Founder & Nurse Intensivist";
-const DEVELOPER_BIO = "Registered Nurse, NGAS, from Kanke, Plateau State — Jos.";
+const DEVELOPER_TITLE = "Founder & Registered Nurse (Critical Care Nursing trainee)";
+const DEVELOPER_BIO = "NGAS, from Kanke, Plateau State — Jos.";
 const CONTACT_EMAIL = "gurumkanenfot01@gmail.com";
 
 function Row({ label, value }) {
