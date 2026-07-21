@@ -34,7 +34,7 @@ function PlanCard({ id, onSubscribe, busy }) {
 }
 
 export default function SubscribeScreen() {
-  const { t, session, subscription, setSubscription } = useApp();
+  const { t, session, subscription, setSubscription, isExistingMember } = useApp();
   const [busyPlan, setBusyPlan] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -70,6 +70,17 @@ export default function SubscribeScreen() {
           </div>
           <div style={{ fontSize: 12.5, color: t.textMuted }}>
             Full access until <strong>{new Date(subscription.expiresAt).toLocaleDateString()}</strong>. Subscribing again before this date extends your access rather than replacing it.
+          </div>
+        </Card>
+      ) : isExistingMember ? (
+        <Card style={{ padding: "14px 18px", marginBottom: 20, background: t.navySoft, border: `1px solid ${t.navy}22` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <CheckCircle2 size={15} color={t.emerald || t.navy} />
+            <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>You have free access as an early member</div>
+          </div>
+          <div style={{ fontSize: 12.5, color: t.textMuted, lineHeight: 1.5 }}>
+            Everything currently in the app — the full question bank, Mock Papers, OSCE Prep, and Viva — is free for you.
+            Subscribing is only needed to unlock new questions and content added after today.
           </div>
         </Card>
       ) : (

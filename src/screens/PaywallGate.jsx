@@ -2,8 +2,8 @@ import { Lock, Crown } from "lucide-react";
 import { Card, Button, useApp } from "../ui/kit.jsx";
 
 export default function PaywallGate({ title, description, go, children }) {
-  const { t, isSubscribed } = useApp();
-  if (isSubscribed) return children;
+  const { t, hasGrandfatheredAccess } = useApp();
+  if (hasGrandfatheredAccess) return children;
   return (
     <div className="fade-in">
       <Card style={{ padding: 32, textAlign: "center", maxWidth: 420, margin: "40px auto 0" }}>
