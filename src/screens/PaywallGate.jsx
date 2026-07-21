@@ -1,9 +1,14 @@
 import { Lock, Crown } from "lucide-react";
 import { Card, Button, useApp } from "../ui/kit.jsx";
 
-export default function PaywallGate({ title, description, go, children }) {
-  const { t, hasGrandfatheredAccess } = useApp();
-  if (hasGrandfatheredAccess) return children;
+// By default, unlocks for subscribers OR grandfathered existing members (content
+// that existed before the paywall cutoff). Pass requireSubscription to restrict to
+// paying subscribers only, e.g. for genuinely new content grandfathered members
+// haven't paid for.
+export default function PaywallGate({ title, description, go, requireSubscription, children }) {
+  const { t, isSubscribed, hasGrandfatheredAccess } = useApp();
+  const unlocked = requireSubscription ? isSubscribed : hasGrandfatheredAccess;
+  if (unlocked) return children;
   return (
     <div className="fade-in">
       <Card style={{ padding: 32, textAlign: "center", maxWidth: 420, margin: "40px auto 0" }}>
