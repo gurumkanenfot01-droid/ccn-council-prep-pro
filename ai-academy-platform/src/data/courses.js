@@ -308,6 +308,107 @@ export const courses = [
         ],
       },
       {
+        id: 'l1h',
+        title: 'Handshake AI Explained: What It Is and Who It\'s Actually For',
+        minutes: 12,
+        overview:
+          'Handshake AI is built directly into Handshake, the college career and recruiting platform most US students already have an account on. It\'s run as a "Fellowship": flexible, project-based work matching people to frontier AI labs. The single most important thing to know before anything else: eligibility is restricted, and that one fact decides whether the rest of this cluster applies to you at all.',
+        steps: [
+          'Check eligibility first: it\'s open to US-based bachelor\'s, master\'s, and doctoral students, candidates, and graduates with valid work or training authorization (e.g. F-1/OPT, J-1, H-1B) — this is narrower than Mercor, which is open to any vetted professional regardless of student status.',
+          'Understand the structure: it\'s a fellowship, not a job — flexible, project-based, no fixed schedule and no guaranteed hours. You work when projects are available and you have capacity.',
+          'Know where it lives: if you already have a Handshake account, you access it via "AI Work" in the left-hand navigation, not a separate site.',
+          'Understand the model: AI trainers apply human judgment and subject expertise to improve large language models for frontier AI labs that partner with Handshake — similar end goal to Mercor, different entry path and audience.',
+        ],
+        takeaways: [
+          'If you\'re not a US-based student, candidate, or recent graduate with valid work authorization, Handshake AI likely isn\'t open to you — Mercor\'s general-professional model is the better fit instead.',
+          'If you do qualify, you may already have the account you need — check for an existing Handshake login before creating anything new.',
+        ],
+        resources: ['Handshake AI Program Page (confirm current eligibility yourself)'],
+      },
+      {
+        id: 'l1i',
+        title: 'Handshake AI Task Types & Pay',
+        minutes: 11,
+        overview:
+          'Like Mercor, pay on Handshake AI scales with how specialized the work is. Figures below are commonly reported ranges — rates are published upfront per project before you accept, and don\'t change mid-project, so always check the specific project\'s terms over any general number here.',
+        steps: [
+          'Generalist roles (general task completion, broad evaluation work): commonly reported around $20-$35/hr.',
+          'Specialist roles requiring verified domain expertise: commonly reported around $35-$65/hr.',
+          'Overall reported range across the program: roughly $17-$125/hr, with the highest rates going to credentialed specialists on high-demand projects.',
+          'Note the pay model: most projects pay either a straight hourly rate or a per-task rate, stated in that project\'s Project Terms — read them before accepting, since the two structures reward speed differently.',
+        ],
+        takeaways: [
+          'Because rates are shown before you accept a project, there\'s no need to guess — decline anything where the published rate isn\'t worth your time, without penalty.',
+          'A published rate doesn\'t change mid-project, so it\'s worth reading the Project Terms once up front rather than assuming it matches a general range like the one above.',
+        ],
+      },
+      {
+        id: 'l1j',
+        title: 'The Handshake AI Application Walkthrough, Step by Step',
+        minutes: 12,
+        overview: 'The application flow, end to end — simpler in some ways than Mercor since it reuses your existing Handshake identity, but with its own verification and matching steps.',
+        steps: [
+          'Step 1 — Log in to your existing Handshake account (or create one) and open "AI Work" in the left-hand navigation.',
+          'Step 2 — Complete your profile with the additional detail Handshake AI needs to match you to projects, beyond your standard Handshake career profile.',
+          'Step 3 — Complete identity verification with a government-issued ID (ID card, driver\'s license, or passport) — this is a required step, not optional.',
+          'Step 4 — Wait for matching. Projects launch on a rolling basis based on AI lab partner demand, so there\'s no fixed timeline for an invitation.',
+          'Step 5 — When your profile matches an available project, you\'ll receive an email invitation asking whether you want to express interest.',
+          'Step 6 — Express interest, then complete that specific project\'s assessment (covered in the next lesson) before you\'re confirmed onto it.',
+        ],
+        takeaways: [
+          'Identity verification is mandatory and happens early — have a government ID ready before you start, not after you\'re matched.',
+          'An invitation to express interest isn\'t automatic acceptance onto a project — the assessment stage still has to be passed.',
+        ],
+      },
+      {
+        id: 'l1k',
+        title: 'Handshake AI Assessments: What to Expect',
+        minutes: 11,
+        overview: 'Assessments here are project-specific rather than one shared platform-wide gate like Mercor\'s single AI interview.',
+        steps: [
+          'Expect a practice task or sample submission, reviewed by the Handshake AI team or that project\'s reviewers, plus a written or skills-based evaluation relevant to the specific project\'s domain.',
+          'Prepare using the project\'s own onboarding materials as your primary study source — assessments are designed to mirror the real work on that project, so the materials you\'re given are the most direct prep available.',
+          'Expect a processing period after submission before you get a result — this is normal, not a sign anything went wrong.',
+          'Note that some interviews in this process may be AI-conducted rather than human — similar in spirit to Mercor\'s format, so don\'t be thrown if there\'s no person on the other end.',
+        ],
+        takeaways: [
+          'Because each project has its own assessment, generic "AI training" prep matters less here than actually reading that specific project\'s onboarding material closely.',
+          'A processing delay after submitting is expected — don\'t assume no immediate response means a rejection.',
+        ],
+      },
+      {
+        id: 'l1l',
+        title: 'If You Don\'t Pass: Handshake AI\'s Retake Policy',
+        minutes: 9,
+        overview: 'This is where Handshake AI differs from Mercor in a way worth knowing before you sit an assessment: the consequence of failing is scoped to that one project, not your whole standing on the platform.',
+        steps: [
+          'Understand that failing an assessment means you didn\'t meet that specific project\'s minimum score or quality threshold — nothing more.',
+          'Know that retakes for that same project are generally not available once you\'ve failed it.',
+          'Know what it doesn\'t do: failing one project\'s assessment does not disqualify you from the Handshake AI Fellowship overall — your profile stays active and eligible for other matching projects.',
+          'Contrast this with Mercor deliberately: Mercor\'s single AI interview gates every matching role at once with shared retakes; Handshake AI\'s per-project assessments mean one miss costs you that project only.',
+        ],
+        takeaways: [
+          'Because retakes on a specific project are unlikely, treat each assessment as a one-shot attempt and prepare accordingly using that project\'s own materials.',
+          'A failed assessment here is lower-stakes than a failed Mercor interview — it costs you one project, not your whole platform standing.',
+        ],
+      },
+      {
+        id: 'l1m',
+        title: 'Getting Paid on Handshake AI',
+        minutes: 9,
+        overview: 'How and when money actually arrives once you\'re working a project.',
+        steps: [
+          'Know the payout schedule: work is tracked Monday through Sunday, paid out by the following Wednesday, with funds typically available for withdrawal by Friday.',
+          'Know the rail: payouts are processed weekly via Deel or Stripe, depending on the project.',
+          'Confirm your specific project\'s pay structure (hourly vs. per-task) in its Project Terms before you start, since that\'s what determines how your payout is calculated.',
+          'Keep your own log of hours or submissions alongside the platform\'s tracking, the same habit worth carrying over from Mercor.',
+        ],
+        takeaways: [
+          'The weekly Monday-Sunday-to-Wednesday-payout cadence is consistent and predictable — budget around it once you know it.',
+          'Payment rail (Deel vs. Stripe) can vary by project, so check which applies to yours rather than assuming.',
+        ],
+      },
+      {
         id: 'l2',
         title: 'Building a Profile That Gets Matched',
         minutes: 12,
