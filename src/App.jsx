@@ -1313,6 +1313,14 @@ const NAV_MORE = [
 const FREE_CATEGORIES = ["Mixed Revision"];
 const FREE_QUIZ_LABELS = ["Daily Challenge", "Weak Topics", "Bookmarks", "Wrong Answers", "Retake"];
 
+// Grandfather cutoff: accounts created at or before this moment are "existing
+// members" and keep free access to everything that existed in the bank as of this
+// migration (questions.is_legacy = true) plus OSCE/Viva/Mock Papers, without
+// subscribing. They still need to subscribe for content added after this date.
+// Anyone signing up after this gets the same small free preview as always and
+// must subscribe for the rest, same as this paywall already enforced.
+const EXISTING_MEMBER_CUTOFF = new Date("2026-07-21T23:59:59Z");
+
 const NAV_ADMIN = [
   { id: "admin-questions", label: "Manage Questions", icon: ClipboardList },
   { id: "admin-results", label: "All Users Results", icon: BarChart3 },
@@ -1335,7 +1343,7 @@ export default function App() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const defaultProfile = { name: "", email: "", hospital: "", school: "", level: "", photo: null, role: "user", disabled: false };
+  const defaultProfile = { name: "", email: "", hospital: "", school: "", level: "", photo: null, role: "user", disabled: false, createdAt: null };
   const [profile, setProfile] = useState(defaultProfile);
   const [subscription, setSubscription] = useState(null);
   const [bookmarks, setBookmarks] = useState([]);
@@ -1415,10 +1423,22 @@ export default function App() {
   }
 
   const isSubscribed = !!(subscription && new Date(subscription.expiresAt) > new Date());
+  const isExistingMember = !!(profile.createdAt && new Date(profile.createdAt) <= EXISTING_MEMBER_CUTOFF);
+  const hasGrandfatheredAccess = isSubscribed || isExistingMember;
 
   function startQuiz({ count, category, idPool, seedOverride, dailyKey }) {
-    const isFree = isSubscribed || FREE_QUIZ_LABELS.includes(category) || FREE_CATEGORIES.includes(category);
-    if (!isFree) { go("subscribe"); return; }
+    const isFreePreview = FREE_QUIZ_LABELS.includes(category) || FREE_CATEGORIES.includes(category);
+    if (!hasGrandfatheredAccess && !isFreePreview) { go("subscribe"); return; }
+
+    // Existing (grandfathered) members who haven't subscribed only get content that
+    // existed as of the cutoff — anything added afterward (is_legacy=false) still
+    // requires a subscription, even for them.
+    if (isExistingMember && !isSubscribed && !isFreePreview) {
+      idPool = idPool
+        ? idPool.filter(id => { const q = QUESTION_BANK.find(qq => qq.id === id); return q && q.isLegacy; })
+        : QUESTION_BANK.filter(q => (category === "All" || q.category === category) && q.isLegacy).map(q => q.id);
+    }
+
     const seed = seedOverride || Math.floor(Math.random() * 1e9);
     const set = buildQuizSet(count, category === "All" ? "All" : category, seed, idPool);
     setQuiz(set); setAnswers({}); setFlagged({}); setIdx(0); setElapsed(0);
@@ -1506,7 +1526,7 @@ export default function App() {
   }
 
   const isAdmin = profile.role === "admin";
-  const ctxValue = { t, theme: themeMode, profile, setProfile, subscription, setSubscription, isSubscribed, bookmarks, toggleBookmark, wrongBank, history, inProgress, streak, isMobile, session, userId: session.user.id, isAdmin, signOut };
+  const ctxValue = { t, theme: themeMode, profile, setProfile, subscription, setSubscription, isSubscribed, isExistingMember, hasGrandfatheredAccess, bookmarks, toggleBookmark, wrongBank, history, inProgress, streak, isMobile, session, userId: session.user.id, isAdmin, signOut };
 
   return (
     <AppCtx.Provider value={ctxValue}>

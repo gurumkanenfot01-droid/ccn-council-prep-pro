@@ -21,7 +21,7 @@ async function loadProfile(fallback) {
   const userId = requireUserId();
   const { data, error } = await supabase
     .from("profiles")
-    .select("name, email, hospital, school, level, photo_url, role, disabled")
+    .select("name, email, hospital, school, level, photo_url, role, disabled, created_at")
     .eq("id", userId)
     .single();
   if (error || !data) return fallback;
@@ -34,6 +34,7 @@ async function loadProfile(fallback) {
     photo: data.photo_url || null,
     role: data.role || "user",
     disabled: !!data.disabled,
+    createdAt: data.created_at || null,
   };
 }
 
@@ -362,7 +363,7 @@ async function fetchAllRows(table, columns, orderBy) {
 }
 
 export async function fetchQuestionBank() {
-  const data = await fetchAllRows("questions", "id, topic, source, q, opts, ans_idx, exp, category, category_icon");
+  const data = await fetchAllRows("questions", "id, topic, source, q, opts, ans_idx, exp, category, category_icon, is_legacy");
   return data.map(r => ({
     id: r.id,
     topic: r.topic,
@@ -373,6 +374,7 @@ export async function fetchQuestionBank() {
     exp: r.exp,
     category: r.category,
     categoryIcon: r.category_icon,
+    isLegacy: !!r.is_legacy,
   }));
 }
 
