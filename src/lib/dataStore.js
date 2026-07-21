@@ -380,3 +380,18 @@ export async function fetchStudyNotes() {
   const data = await fetchAllRows("study_notes", "banner, bullets", "sort_order");
   return data.map(r => ({ banner: r.banner, bullets: r.bullets }));
 }
+
+// ---- subscription (latest active row, or null) ----
+export async function fetchSubscription() {
+  const userId = requireUserId();
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("plan, status, expires_at, starts_at")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .order("expires_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return { plan: data.plan, status: data.status, expiresAt: data.expires_at, startsAt: data.starts_at };
+}

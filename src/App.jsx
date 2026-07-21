@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { AppCtx, useApp, Card, IconBadge, StatCard, Button, Chip, Modal, SectionHeader, EmptyState, Field } from "./ui/kit.jsx";
-import { loadJSON, saveJSON, fetchQuestionBank, fetchStudyNotes, setCurrentUserId } from "./lib/dataStore.js";
+import { loadJSON, saveJSON, fetchQuestionBank, fetchStudyNotes, fetchSubscription, setCurrentUserId } from "./lib/dataStore.js";
 import { supabase } from "./lib/supabase.js";
 import AuthScreen from "./screens/AuthScreen.jsx";
 import AdminQuestionsScreen from "./screens/AdminQuestionsScreen.jsx";
@@ -10,6 +10,8 @@ import OSCEScreen from "./screens/OSCEScreen.jsx";
 import VivaScreen from "./screens/VivaScreen.jsx";
 import AboutScreen from "./screens/AboutScreen.jsx";
 import TopicsScreen from "./screens/TopicsScreen.jsx";
+import SubscribeScreen from "./screens/SubscribeScreen.jsx";
+import PaywallGate from "./screens/PaywallGate.jsx";
 import {
   Home, ClipboardList, Layers, BookOpen, Bookmark, BarChart3, Trophy, User,
   Search, Sun, Moon, Clock, Flag, ChevronLeft, ChevronRight, CheckCircle2, XCircle,
@@ -1291,6 +1293,7 @@ const NAV_MAIN = [
   { id: "papers", label: "Mock Papers", icon: Award },
 ];
 const NAV_MORE = [
+  { id: "subscribe", label: "Subscribe", icon: Crown },
   { id: "bookmarks", label: "Bookmarks", icon: Bookmark },
   { id: "wrongreview", label: "Wrong Answers", icon: XCircle },
   { id: "flashcards", label: "Flashcards", icon: Layers },
@@ -1304,6 +1307,12 @@ const NAV_MORE = [
   { id: "profile", label: "Profile", icon: User },
   { id: "about", label: "About / Developer", icon: Info },
 ];
+// Free-preview allowlist: categories/labels a non-subscriber can still quiz on.
+// "Weak Topics"/"Bookmarks"/"Wrong Answers"/"Retake" pull from a user's own prior
+// history, so they stay free regardless of what category that content came from.
+const FREE_CATEGORIES = ["Mixed Revision"];
+const FREE_QUIZ_LABELS = ["Daily Challenge", "Weak Topics", "Bookmarks", "Wrong Answers", "Retake"];
+
 const NAV_ADMIN = [
   { id: "admin-questions", label: "Manage Questions", icon: ClipboardList },
   { id: "admin-results", label: "All Users Results", icon: BarChart3 },
@@ -1328,6 +1337,7 @@ export default function App() {
 
   const defaultProfile = { name: "", email: "", hospital: "", school: "", level: "", photo: null, role: "user", disabled: false };
   const [profile, setProfile] = useState(defaultProfile);
+  const [subscription, setSubscription] = useState(null);
   const [bookmarks, setBookmarks] = useState([]);
   const [wrongBank, setWrongBank] = useState({});
   const [history, setHistory] = useState([]);
@@ -1355,10 +1365,11 @@ export default function App() {
     setCurrentUserId(session.user.id);
     setBooted(false);
     (async () => {
-      const [bank, notes, p, b, w, h, ip, th] = await Promise.all([
+      const [bank, notes, p, sub, b, w, h, ip, th] = await Promise.all([
         fetchQuestionBank(),
         fetchStudyNotes(),
         loadJSON("profile", defaultProfile, false),
+        fetchSubscription(),
         loadJSON("bookmarks", [], false),
         loadJSON("wrong-bank", {}, false),
         loadJSON("exam-history", [], false),
@@ -1368,7 +1379,7 @@ export default function App() {
       QUESTION_BANK = bank;
       STUDY_NOTES = notes;
       CATEGORY_LIST = computeCategoryList(bank);
-      setProfile(p); setBookmarks(b); setWrongBank(w); setHistory(h); setInProgress(ip); setThemeMode(th);
+      setProfile(p); setSubscription(sub); setBookmarks(b); setWrongBank(w); setHistory(h); setInProgress(ip); setThemeMode(th);
       setBooted(true);
     })();
   }, [session]);
@@ -1376,7 +1387,7 @@ export default function App() {
   function signOut() {
     supabase.auth.signOut();
     setCurrentUserId(null);
-    setProfile(defaultProfile); setBookmarks([]); setWrongBank({}); setHistory([]); setInProgress(null);
+    setProfile(defaultProfile); setSubscription(null); setBookmarks([]); setWrongBank({}); setHistory([]); setInProgress(null);
     setView("home");
   }
 
@@ -1403,7 +1414,11 @@ export default function App() {
     setBookmarks(bm => { const nb = bm.includes(qid) ? bm.filter(x => x !== qid) : [...bm, qid]; saveJSON("bookmarks", nb, false); return nb; });
   }
 
+  const isSubscribed = !!(subscription && new Date(subscription.expiresAt) > new Date());
+
   function startQuiz({ count, category, idPool, seedOverride, dailyKey }) {
+    const isFree = isSubscribed || FREE_QUIZ_LABELS.includes(category) || FREE_CATEGORIES.includes(category);
+    if (!isFree) { go("subscribe"); return; }
     const seed = seedOverride || Math.floor(Math.random() * 1e9);
     const set = buildQuizSet(count, category === "All" ? "All" : category, seed, idPool);
     setQuiz(set); setAnswers({}); setFlagged({}); setIdx(0); setElapsed(0);
@@ -1491,7 +1506,7 @@ export default function App() {
   }
 
   const isAdmin = profile.role === "admin";
-  const ctxValue = { t, theme: themeMode, profile, setProfile, bookmarks, toggleBookmark, wrongBank, history, inProgress, streak, isMobile, session, userId: session.user.id, isAdmin, signOut };
+  const ctxValue = { t, theme: themeMode, profile, setProfile, subscription, isSubscribed, bookmarks, toggleBookmark, wrongBank, history, inProgress, streak, isMobile, session, userId: session.user.id, isAdmin, signOut };
 
   return (
     <AppCtx.Provider value={ctxValue}>
@@ -1540,7 +1555,11 @@ export default function App() {
                 {view === "home" && <HomeScreen go={go} />}
                 {view === "setup" && <SetupScreen go={go} startQuiz={startQuiz} presetCategory={viewParams.category} />}
                 {view === "categories" && <CategoriesScreen go={go} startQuiz={startQuiz} />}
-                {view === "papers" && <PapersScreen go={go} startQuiz={startQuiz} />}
+                {view === "papers" && (
+                  <PaywallGate title="Mock Papers" description="Full-length Paper 1 / Paper 2 mock exams are part of the subscription." go={go}>
+                    <PapersScreen go={go} startQuiz={startQuiz} />
+                  </PaywallGate>
+                )}
                 {view === "notes" && <NotesScreen />}
                 {view === "performance" && <PerformanceScreen />}
                 {view === "profile" && <ProfileScreen />}
@@ -1551,9 +1570,18 @@ export default function App() {
                 {view === "random" && <RandomQuestionScreen />}
                 {view === "wrongreview" && <WrongReviewScreen startQuiz={startQuiz} />}
                 {view === "search" && <SearchScreen />}
-                {view === "osce" && <OSCEScreen startQuiz={startQuiz} />}
-                {view === "viva" && <VivaScreen />}
+                {view === "osce" && (
+                  <PaywallGate title="OSCE Prep" description="Step-by-step OSCE procedure guides with marks and diagrams are part of the subscription." go={go}>
+                    <OSCEScreen startQuiz={startQuiz} />
+                  </PaywallGate>
+                )}
+                {view === "viva" && (
+                  <PaywallGate title="Viva / Instruments" description="Labeled instrument diagrams and viva prep are part of the subscription." go={go}>
+                    <VivaScreen />
+                  </PaywallGate>
+                )}
                 {view === "about" && <AboutScreen />}
+                {view === "subscribe" && <SubscribeScreen />}
                 {view === "topics" && <TopicsScreen />}
                 {view === "admin-questions" && isAdmin && <AdminQuestionsScreen />}
                 {view === "admin-results" && isAdmin && <AdminResultsScreen />}
