@@ -29,12 +29,24 @@ export default function LessonDetail() {
       </p>
 
       {lesson.overview && (
-        <p className="text-slate-200 text-base leading-relaxed mb-6">{lesson.overview}</p>
+        <p className="text-slate-400 text-base italic leading-relaxed mb-6 border-l-2 border-brand-500/40 pl-4">
+          {lesson.overview}
+        </p>
+      )}
+
+      {lesson.lecture && lesson.lecture.length > 0 && (
+        <div className="mb-8 space-y-4">
+          {lesson.lecture.map((paragraph, i) => (
+            <p key={i} className="text-slate-200 text-base leading-relaxed">
+              {paragraph}
+            </p>
+          ))}
+        </div>
       )}
 
       {lesson.steps && lesson.steps.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-white font-bold text-sm uppercase tracking-wide mb-3">Steps</h2>
+          <h2 className="text-white font-bold text-sm uppercase tracking-wide mb-3">Try This</h2>
           <ol className="space-y-2">
             {lesson.steps.map((step, i) => (
               <li key={i} className="flex gap-3 bg-panel border border-white/10 rounded-lg p-3">
