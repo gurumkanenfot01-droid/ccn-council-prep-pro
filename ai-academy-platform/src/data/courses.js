@@ -600,10 +600,26 @@ export const courses = [
         overview: 'Decide what pages you actually need before generating anything.',
         steps: [
           'List your core pages: Home, About, Services/Offer, Contact.',
-          'Write one sentence describing the goal of each page.',
+          'Write one sentence describing the goal of each page — what should a visitor do when they land here?',
           'Sketch a simple sitemap showing how pages link together.',
         ],
         takeaways: ['A clear sitemap saves hours of AI-generated rework later.'],
+      },
+      {
+        id: 'l1b',
+        title: 'Choosing the Right AI Website Tool',
+        minutes: 10,
+        overview: 'The three broad categories of AI website tools solve different problems — picking the wrong one wastes the most time in this module.',
+        steps: [
+          'All-in-one AI site builders (prompt-to-website tools built on top of drag-and-drop editors): fastest for a marketing site or portfolio, least flexible for custom functionality.',
+          'Traditional builders with AI features bolted on (AI-assisted layout/copy inside an existing page builder): good middle ground if you want more manual control over design.',
+          'AI coding assistants plus a real framework and host: most flexible and most work — the right choice only if the site needs custom functionality a template can\'t do (the App Creation & Deployment module covers this path in depth).',
+          'Match the choice to the actual goal from lesson 1 — a 5-page marketing site rarely needs the third option.',
+        ],
+        takeaways: [
+          'More powerful isn\'t automatically better — the all-in-one builder is usually the right call for a simple marketing site.',
+          'Reach for the coding-assistant path only once a template genuinely can\'t do what you need.',
+        ],
       },
       {
         id: 'l2',
@@ -621,18 +637,67 @@ export const courses = [
         ],
       },
       {
+        id: 'l2b',
+        title: 'Writing Prompts That Produce On-Brand Copy',
+        minutes: 12,
+        overview: 'The difference between generic AI website copy and copy that actually sounds like your brand comes down to what you put in the prompt.',
+        steps: [
+          'Describe your brand voice in the prompt with 2-3 adjectives and one example sentence in that voice, not just "professional" or "friendly."',
+          'Name your specific target customer, not a generic audience — "freelance photographers booking their first weddings" beats "photography clients."',
+          'State the one action you want this specific page to drive, and ask the copy to build toward it.',
+          'When a section still sounds generic after one regeneration, rewrite the prompt to include a concrete detail the AI couldn\'t have guessed (a real number, a real client type, a real constraint).',
+        ],
+        takeaways: [
+          'Generic output almost always means a generic prompt — specificity in, specificity out.',
+          'One well-specified regeneration beats five vague ones.',
+        ],
+      },
+      {
+        id: 'l3b',
+        title: 'SEO Basics for AI-Generated Sites',
+        minutes: 13,
+        overview: 'AI-generated copy can quietly hurt search rankings if you skip these checks — search engines penalize thin or duplicate-sounding content.',
+        steps: [
+          'Give every page a unique, descriptive title tag and meta description — many AI builders leave these generic by default.',
+          'Use one H1 per page and a logical H2/H3 hierarchy underneath it, matching how the page is actually organized.',
+          'Write real, specific alt text for every image — not just for SEO, but for accessibility.',
+          'Confirm the builder generated a sitemap.xml and submit it to Google Search Console once the domain is live.',
+          'Re-read the AI-generated body copy once for genuine specificity — pages that read as generic to a human tend to rank poorly too.',
+        ],
+        takeaways: [
+          'Title tags, meta descriptions, and alt text are the highest-leverage, lowest-effort SEO fixes on a new site.',
+          'Search engines and readers penalize the same thing: copy that could describe any business, not this one.',
+        ],
+      },
+      {
         id: 'l3',
         title: 'Custom Domain Setup',
         minutes: 10,
         overview: 'Connect a real domain name so your site looks professional.',
         steps: [
           'Purchase a domain from a registrar (or use one you already own).',
-          'Copy the DNS records your website builder provides.',
-          'Add those records in your registrar\'s DNS settings.',
+          'Copy the DNS records your website builder provides — usually an A record (points a bare domain to an IP) and/or a CNAME record (points a subdomain to another domain).',
+          'Add those records in your registrar\'s DNS settings, plus any TXT record requested for domain ownership verification.',
           'Wait for propagation and confirm HTTPS is active before sharing the link.',
         ],
         takeaways: ['DNS changes can take up to 24-48 hours — plan launches accordingly.'],
         resources: ['DNS Record Cheat Sheet'],
+      },
+      {
+        id: 'l4',
+        title: 'Adding Forms, Analytics & Legal Pages',
+        minutes: 12,
+        overview: 'The unglamorous last mile that turns a pretty page into a real, trackable, compliant business site.',
+        steps: [
+          'Add a contact or lead-capture form and send yourself a real test submission before launch.',
+          'Install an analytics tool (e.g. Google Analytics) and verify the domain in Google Search Console so you can see real traffic once you launch.',
+          'Add a basic Privacy Policy and Terms page — most builders offer a generator, but read it once rather than publishing blind.',
+          'Add a cookie consent notice if analytics or ads scripts are running and your visitors may be in a region that requires it.',
+        ],
+        takeaways: [
+          'A form nobody has test-submitted is a form you don\'t actually know works — always send yourself a real test.',
+          'Analytics installed after launch means you lose that early data forever — set it up before you share the link, not after.',
+        ],
       },
     ],
   },
@@ -648,11 +713,28 @@ export const courses = [
         minutes: 7,
         overview: 'Pick tools that match your skill level and the app you want to build.',
         steps: [
-          'Decide if you need a website, mobile app, or internal tool.',
-          'Pick an AI coding assistant and a hosting platform that fit your budget.',
-          'Write a one-paragraph spec describing the app\'s core feature.',
+          'Decide if you need a website, mobile app, or internal tool — each points toward different tools.',
+          'For simple internal tools or MVPs with no custom logic: a no-code app builder is often enough on its own.',
+          'For anything needing real custom behavior: an AI coding assistant plus a standard web framework and a host gives you the most flexibility.',
+          'Write a one-paragraph spec describing the app\'s core feature before picking anything, so the tool choice follows the need instead of the other way around.',
         ],
         takeaways: ['Ship the smallest version of your idea first — you can expand later.'],
+      },
+      {
+        id: 'l1b',
+        title: 'Writing a Spec Your AI Assistant Can Actually Build From',
+        minutes: 12,
+        overview: 'The single biggest lever on how well an AI coding assistant performs is how clearly you specify what you want before you start.',
+        steps: [
+          'Write the core feature as a user story: "As a [user], I want to [action], so that [outcome]" — this forces you to name the actual goal, not just a vague feature.',
+          'List 2-3 concrete acceptance criteria: what has to be true for this feature to count as done.',
+          'Name at least one edge case up front (empty input, no results, a failed request) — assistants handle the happy path by default and skip edge cases unless asked.',
+          'Keep the first spec to one feature only — a spec that tries to describe the whole app at once produces vague code for all of it.',
+        ],
+        takeaways: [
+          'A specific user story with acceptance criteria produces dramatically better first-draft code than a vague feature description.',
+          'Edge cases you don\'t mention are edge cases the AI won\'t handle — ask explicitly.',
+        ],
       },
       {
         id: 'l2',
@@ -660,13 +742,45 @@ export const courses = [
         minutes: 22,
         overview: 'Turn your spec into a working feature with an AI pair-programmer.',
         steps: [
-          'Describe the core feature to your AI assistant in plain language.',
+          'Describe the core feature to your AI assistant in plain language, using the spec from the previous lesson.',
           'Review generated code before running it — never paste unread code into production.',
           'Test the feature manually with 3-5 realistic inputs.',
           'Iterate on prompts to fix bugs rather than hand-editing everything yourself.',
         ],
         takeaways: [
           'AI accelerates the first draft; you\'re still responsible for reviewing and testing it.',
+        ],
+      },
+      {
+        id: 'l2b',
+        title: 'Adding Accounts & a Database',
+        minutes: 18,
+        overview: 'The moment your app needs to remember anything specific to a user between visits, you need real accounts and persistent storage — not just local browser state.',
+        steps: [
+          'Recognize the signal: if the app needs to remember something after the browser tab closes, or needs to know who\'s using it, it needs a real backend.',
+          'For most small apps, a backend-as-a-service (a hosted database plus built-in authentication) is the fastest path — it avoids standing up and securing your own server from scratch.',
+          'Set up basic email/password or social sign-in, and confirm a logged-out user genuinely cannot see another user\'s data before building anything else on top.',
+          'Design your data with the smallest schema that fits the feature — add fields as new features need them, rather than guessing everything up front.',
+        ],
+        takeaways: [
+          'Confirm access control (one user can\'t see another\'s data) before you build anything else — it\'s much harder to bolt on after the fact.',
+          'A backend-as-a-service is almost always the right starting point over rolling your own server and database.',
+        ],
+      },
+      {
+        id: 'l2c',
+        title: 'Testing Before You Ship',
+        minutes: 11,
+        overview: 'A manual pass before every deploy catches the failures that "it worked when I built it" misses.',
+        steps: [
+          'Walk through the entire feature yourself as a brand-new user would, not just the specific path you were coding.',
+          'Test on a phone-sized screen, not just your desktop browser — most real users will be on mobile.',
+          'Try to break it on purpose: empty fields, huge inputs, double-clicking a submit button, going back and forward.',
+          'Fix what you find before deploying, not after — a bug caught pre-launch costs you minutes; the same bug found by a real user costs you trust.',
+        ],
+        takeaways: [
+          'Testing as a new user, not as the builder, is what actually catches confusing UX and missed edge cases.',
+          'Mobile testing isn\'t optional — check it before every deploy, not occasionally.',
         ],
       },
       {
@@ -682,6 +796,22 @@ export const courses = [
         ],
         takeaways: ['Always verify the live deployment yourself before announcing it.'],
         resources: ['Deployment Checklist'],
+      },
+      {
+        id: 'l3b',
+        title: 'Monitoring, Errors & Iterating After Launch',
+        minutes: 12,
+        overview: 'Shipping is the start, not the finish — this is how you catch problems and keep improving without a full rewrite every time.',
+        steps: [
+          'Set up basic error tracking or logging so a crash on a real user\'s device doesn\'t go completely invisible to you.',
+          'Add one simple way for users to send feedback (even just an email link) and actually read what comes in.',
+          'When something breaks, fix the specific bug with the smallest possible change, rather than rewriting the surrounding code "while you\'re in there."',
+          'Keep a running list of small, low-risk improvements and ship them one at a time instead of batching a large rewrite.',
+        ],
+        takeaways: [
+          'Small, frequent fixes are lower-risk than infrequent large rewrites — you find out about a bad change immediately, not weeks later.',
+          'An error you can\'t see is an error you can\'t fix — basic logging pays for itself the first time something breaks in production.',
+        ],
       },
     ],
   },
@@ -705,6 +835,38 @@ export const courses = [
         takeaways: ['Vague prompts produce vague answers — specificity is the whole game.'],
       },
       {
+        id: 'l1b',
+        title: 'Few-Shot Examples: Showing Instead of Telling',
+        minutes: 11,
+        overview: 'Giving the model 2-3 examples of exactly what you want is often more reliable than any amount of written instruction.',
+        steps: [
+          'Write 2-3 example input/output pairs in the exact format and tone you want, before your real request.',
+          'Keep the examples genuinely representative of the range of inputs you\'ll actually give it — not just the easiest case.',
+          'Put the real request last, after the examples, so it reads as "continue the pattern."',
+          'If output quality is inconsistent, add one more example targeting the specific failure pattern you\'re seeing, rather than rewriting the instructions.',
+        ],
+        takeaways: [
+          'A well-chosen example is often worth several sentences of description — this is the highest-leverage prompting technique for consistency.',
+          'When output drifts, diagnose which failure pattern is happening and add an example that targets it specifically.',
+        ],
+      },
+      {
+        id: 'l1c',
+        title: 'Chain-of-Thought: When to Ask for Step-by-Step Reasoning',
+        minutes: 10,
+        overview: 'Asking a model to reason through a problem before answering measurably improves accuracy on complex tasks — but it\'s wasted effort on simple ones.',
+        steps: [
+          'For multi-step or judgment-heavy tasks (math, multi-factor decisions, debugging), explicitly ask the model to reason step by step before giving a final answer.',
+          'For simple factual or formatting tasks, skip this — it adds unnecessary length and latency without improving the result.',
+          'Where you need a clean final answer, ask for the reasoning first and the answer clearly marked last, so you can parse out just the answer if needed.',
+          'Read the reasoning, not just the final answer, when something goes wrong — it usually shows you exactly where the logic broke.',
+        ],
+        takeaways: [
+          'Step-by-step reasoning helps most on genuinely multi-step problems and does little for simple lookups or formatting tasks.',
+          'When an answer is wrong, the visible reasoning is usually the fastest way to find out why.',
+        ],
+      },
+      {
         id: 'l2',
         title: 'Context Windows & Memory',
         minutes: 11,
@@ -715,6 +877,22 @@ export const courses = [
           'Summarize long documents before referencing them in follow-up prompts.',
         ],
         takeaways: ['Cleaner, shorter context usually beats dumping an entire document in.'],
+      },
+      {
+        id: 'l2b',
+        title: 'System Prompts vs. User Prompts',
+        minutes: 10,
+        overview: 'Knowing which instructions belong at the system level versus in each individual message is what makes a multi-turn AI feature behave consistently.',
+        steps: [
+          'Use a system prompt for anything that should hold true for the entire conversation: persona, tone, formatting rules, hard constraints.',
+          'Use the user prompt for the specific request in front of you right now — the thing that changes turn to turn.',
+          'Keep the system prompt focused on rules and identity, not on the task itself, so it doesn\'t compete with the actual request for the model\'s attention.',
+          'When building a feature (not just chatting), put anything you never want the end user to override in the system prompt, since user messages can otherwise talk the model out of instructions buried in a regular prompt.',
+        ],
+        takeaways: [
+          'Persistent rules belong in the system prompt; the specific ask belongs in the user prompt — mixing them causes inconsistent behavior across turns.',
+          'For anything user-facing, put hard constraints at the system level so a clever user message is less likely to override them.',
+        ],
       },
       {
         id: 'l3',
@@ -728,6 +906,23 @@ export const courses = [
           'Validate the output programmatically and retry on failure.',
         ],
         takeaways: ['Show, don\'t just tell — one example format is worth paragraphs of instruction.'],
+      },
+      {
+        id: 'l3b',
+        title: 'Evaluating & Iterating on Your Prompts',
+        minutes: 13,
+        overview: 'Treat prompt changes like code changes — test them against a consistent set of examples instead of eyeballing one output and calling it done.',
+        steps: [
+          'Build a small test set of 8-10 realistic inputs, including a couple of tricky edge cases, before you consider a prompt "finished."',
+          'Run every prompt version against the full test set, not just the one example you happened to try first.',
+          'Look for a consistent failure pattern across bad outputs, rather than treating each bad output as a one-off.',
+          'Change one thing at a time between prompt versions so you know what actually caused an improvement or regression.',
+          'Keep your best-performing prompt versions saved somewhere, not just in your chat history, so you don\'t lose progress.',
+        ],
+        takeaways: [
+          'A prompt that worked once on one example hasn\'t been tested — a small, consistent test set is what actually tells you it\'s reliable.',
+          'Changing one variable at a time is the only way to know which change actually improved the output.',
+        ],
       },
     ],
   },
@@ -750,6 +945,22 @@ export const courses = [
         takeaways: ['Pick a niche you can sustain content for — consistency beats a "perfect" topic.'],
       },
       {
+        id: 'l1b',
+        title: 'Building a Content Pillar System',
+        minutes: 11,
+        overview: 'A small, repeatable set of content types means you\'re never staring at a blank page trying to invent a new idea from scratch.',
+        steps: [
+          'Define 3-4 content pillars for your niche — recurring formats like "myth vs. fact," "quick tip," "before/after," or "reacting to a common question."',
+          'Write 5 specific post ideas under each pillar so you have a real backlog, not just categories.',
+          'Batch-plan a week or two of posts across pillars at once, rather than deciding fresh each day.',
+          'Revisit which pillar actually performs best every few weeks, and shift more of your output toward it.',
+        ],
+        takeaways: [
+          'A content pillar system turns "what do I post today" into "which pillar is next," which is a much easier decision to make consistently.',
+          'Let real performance data guide how much time you spend on each pillar, not just personal preference.',
+        ],
+      },
+      {
         id: 'l2',
         title: 'AI-Generated UGC Scripts',
         minutes: 13,
@@ -763,7 +974,39 @@ export const courses = [
         takeaways: ['The hook decides whether anyone watches past 3 seconds — spend the most time there.'],
       },
       {
+        id: 'l2b',
+        title: 'Producing Content with AI Avatars & Voice Tools',
+        minutes: 15,
+        overview: 'The practical workflow for turning a finished script into a finished video without showing your own face or recording your own voice.',
+        steps: [
+          'Pick one AI avatar or cloned/synthetic voice and stick with it across posts — consistency is what makes a "faceless" channel still feel like a recognizable creator.',
+          'Feed the script in exactly as written, including your marked pauses and emphasis, rather than pasting a wall of unformatted text.',
+          'Generate a first draft clip, then watch the whole thing before publishing — check for mispronunciations, awkward pacing, and any gesture or expression that doesn\'t match the line.',
+          'Add simple b-roll or on-screen text over any section that\'s just a static talking avatar for too long, to keep it visually interesting.',
+        ],
+        takeaways: [
+          'A consistent avatar/voice choice matters more than finding the "best" one — switching tools often reads as a different creator to your audience.',
+          'Always watch the full generated clip before publishing — a single mispronounced word can undercut an otherwise strong video.',
+        ],
+      },
+      {
         id: 'l3',
+        title: 'Posting Cadence & the Algorithm',
+        minutes: 11,
+        overview: 'Consistency beats sporadic virality — most faceless channels succeed on volume and testing, not on any single hit.',
+        steps: [
+          'Commit to a posting frequency you can actually sustain for months, not the maximum frequency you can manage for one good week.',
+          'Batch-produce multiple videos in one sitting using your content pillar backlog, then schedule them out.',
+          'Treat every post\'s hook as a small experiment — vary the opening line across similar videos and note which style holds attention longer.',
+          'Don\'t abandon a format after one underperforming post — look for a pattern across several posts before deciding it doesn\'t work.',
+        ],
+        takeaways: [
+          'A sustainable cadence you can keep for months beats a burst you can\'t maintain.',
+          'One post is a data point, not a verdict — judge formats over several attempts.',
+        ],
+      },
+      {
+        id: 'l3b',
         title: 'Running Your First Ad Set',
         minutes: 15,
         overview: 'Turn a working organic post into a small, controlled paid test.',
@@ -776,6 +1019,22 @@ export const courses = [
         ],
         takeaways: ['Never judge an ad after less than 48-72 hours of data.'],
         resources: ['Ad Budget Planner'],
+      },
+      {
+        id: 'l4',
+        title: 'Reading Your Analytics & Doubling Down',
+        minutes: 12,
+        overview: 'The metrics that actually predict growth are different from the ones that feel the most satisfying to watch.',
+        steps: [
+          'Prioritize watch time / hook retention (how far into the video people actually watch) over raw likes — retention is what the algorithm rewards most directly.',
+          'Track saves and shares separately from likes — they\'re a stronger signal that content was genuinely useful, not just briefly amusing.',
+          'Identify your top 2-3 performing posts each month and explicitly ask what they have in common — hook style, topic, length, format.',
+          'Deliberately produce more content that matches that pattern, rather than treating every new post as a fresh creative roll of the dice.',
+        ],
+        takeaways: [
+          'Watch time and saves predict future growth better than likes do — anchor your analysis there.',
+          'Growth usually comes from doing more of what already works, not from constantly reinventing the format.',
+        ],
       },
     ],
   },
@@ -1090,6 +1349,22 @@ export const courses = [
     color: 'from-yellow-500 to-orange-600',
     lessons: [
       {
+        id: 'l0',
+        title: 'Choosing Your Platform',
+        minutes: 11,
+        overview: 'Where you sell shapes almost every decision after this — pick based on how much control vs. built-in traffic you want.',
+        steps: [
+          'A hosted storefront (e.g. Shopify-style) gives you full control over branding and customer data, but you own all the traffic generation.',
+          'An established marketplace (e.g. Amazon, Etsy) gives you built-in search traffic and buyer trust, at the cost of marketplace fees and less brand control.',
+          'A social-commerce platform (e.g. TikTok Shop) meets buyers where they\'re already browsing, but ties your store closely to that platform\'s algorithm and rules.',
+          'Match the choice to your actual product: handmade/niche goods often do well on marketplaces built for them; a brand you want full control over usually wants a hosted storefront.',
+        ],
+        takeaways: [
+          'There\'s no universally "best" platform — the right one depends on whether you\'re optimizing for built-in traffic or full brand control.',
+          'You can run more than one channel at once once you have a working product — start with one to keep learning manageable.',
+        ],
+      },
+      {
         id: 'l1',
         title: 'AI-Powered Product Research',
         minutes: 12,
@@ -1115,6 +1390,22 @@ export const courses = [
         takeaways: ['Specific, benefit-driven copy outperforms generic AI phrasing every time.'],
       },
       {
+        id: 'l2b',
+        title: 'Product Photography & Image Generation with AI',
+        minutes: 14,
+        overview: 'AI image tools can turn one rough product photo into a full, professional-looking listing gallery.',
+        steps: [
+          'Start from a real photo of the actual product — AI background/lighting cleanup works far better on a real image than a fully generated one, and never generate a fake product that doesn\'t match what ships.',
+          'Use AI background removal or replacement to create a clean, consistent listing-style image.',
+          'Generate lifestyle or in-context mockups (the product in use, or on a model) if you don\'t have budget for a real photoshoot yet.',
+          'Keep at least one completely unedited, true-to-life photo in the gallery so buyers know exactly what they\'re getting.',
+        ],
+        takeaways: [
+          'Never let a generated image show features, colors, or details the real product doesn\'t have — that\'s the fastest way to spike returns and bad reviews.',
+          'A clean background and consistent style across your gallery reads as professional even with a simple starting photo.',
+        ],
+      },
+      {
         id: 'l3',
         title: 'Automating Customer Support',
         minutes: 14,
@@ -1125,6 +1416,39 @@ export const courses = [
           'Set clear escalation rules for refunds and complaints.',
         ],
         takeaways: ['Automate status updates first — they\'re the highest volume, lowest-risk win.'],
+      },
+      {
+        id: 'l3b',
+        title: 'Email & Abandoned Cart Automation',
+        minutes: 13,
+        overview: 'A handful of automated email flows recover sales you\'d otherwise lose to a customer simply forgetting to check out.',
+        steps: [
+          'Set up a welcome flow for new subscribers — 2-3 emails introducing your brand and best-selling products.',
+          'Set up an abandoned cart flow that emails anyone who added items but didn\'t check out, typically starting a few hours later.',
+          'Set up a post-purchase flow: order confirmation, shipping update, and a follow-up asking for a review once the item should have arrived.',
+          'Write the first message in each flow yourself, then use AI to draft the variations — these emails represent your brand voice at a vulnerable moment (a customer close to leaving), so review AI drafts closely before automating them.',
+        ],
+        takeaways: [
+          'Abandoned cart emails are consistently one of the highest-ROI automations in e-commerce because the customer already showed real intent to buy.',
+          'Automated doesn\'t mean unedited — review your automated email copy the same way you\'d review a listing.',
+        ],
+      },
+      {
+        id: 'l4',
+        title: 'Running Profitable Ads',
+        minutes: 16,
+        overview: 'The basics of paid ads for a store: what to test, what to measure, and when to scale.',
+        steps: [
+          'Start with a small, fixed daily budget on one platform rather than spreading a small budget across several at once.',
+          'Test 3-4 different creatives (images/videos) against the same audience before testing different audiences — creative is usually the bigger lever early on.',
+          'Track ROAS (return on ad spend, or revenue divided by ad spend) as your core metric, not just clicks or impressions.',
+          'Give any test at least a few days and a meaningful amount of spend before judging it — a single day of data is usually too noisy to act on.',
+          'Scale winning ads gradually (small budget increases) rather than multiplying spend overnight, which tends to reset the platform\'s delivery optimization.',
+        ],
+        takeaways: [
+          'Creative is usually the highest-leverage thing to test first — a better image or video often beats a better-targeted audience.',
+          'ROAS, not clicks, is the number that tells you whether an ad is actually making you money.',
+        ],
       },
     ],
   },
@@ -1147,6 +1471,22 @@ export const courses = [
         takeaways: ['Scripts written to be read look different from scripts written to be heard.'],
       },
       {
+        id: 'l1b',
+        title: 'Choosing the Right AI Video Tool for the Job',
+        minutes: 11,
+        overview: 'Different AI video tools solve different problems — picking the right category first saves you from fighting the wrong tool.',
+        steps: [
+          'Talking-head AI avatar tools: best when you want a consistent presenter delivering a script to camera without filming yourself.',
+          'Text-to-video generators: best for short b-roll-style clips or abstract visuals where you don\'t need a consistent character.',
+          'Voice cloning / text-to-speech tools: best when you already have footage or images and just need natural-sounding narration over them.',
+          'Pick based on what the video actually needs to show, not on which tool looks the most impressive in a demo.',
+        ],
+        takeaways: [
+          'Matching the tool category to the actual need saves the most time in this whole module.',
+          'You\'ll often combine two categories in one video (e.g. an avatar for the intro, generated b-roll for the middle) rather than relying on just one.',
+        ],
+      },
+      {
         id: 'l2',
         title: 'Generating Avatars & Voiceover',
         minutes: 16,
@@ -1159,6 +1499,38 @@ export const courses = [
         takeaways: ['Always review generated speech for mispronounced names, numbers, and jargon.'],
       },
       {
+        id: 'l2b',
+        title: 'B-Roll, Stock Footage & Visual Pacing',
+        minutes: 13,
+        overview: 'A static talking avatar for the whole video loses viewers — cutting in supporting footage keeps eyes on the screen.',
+        steps: [
+          'Break your script into segments and identify which ones would benefit from a visual cutaway instead of just the avatar talking.',
+          'Search AI-assisted or standard stock footage libraries using specific, concrete search terms tied to your script, not generic ones.',
+          'Cut on action or on a sentence boundary, not mid-thought, so transitions feel natural rather than jarring.',
+          'Keep any single continuous shot (avatar or b-roll) to a few seconds at most for short-form content — pacing is what keeps retention up.',
+        ],
+        takeaways: [
+          'Frequent, purposeful cuts are what separate short-form content that holds attention from content that gets scrolled past.',
+          'B-roll should illustrate the specific line it\'s covering, not just be generic filler footage.',
+        ],
+      },
+      {
+        id: 'l2c',
+        title: 'Captions & Accessibility',
+        minutes: 10,
+        overview: 'Captions aren\'t optional polish for social video — most viewers watch with sound off, and captions are what keeps them watching anyway.',
+        steps: [
+          'Generate auto-captions with an AI captioning tool, then proofread them — auto-transcription reliably misses names, jargon, and numbers.',
+          'Style captions for readability: high contrast against the background, large enough to read on a phone screen, one short phrase on screen at a time.',
+          'Sync caption timing to match natural speech pauses rather than accepting the tool\'s default break points if they land awkwardly.',
+          'Treat captions as required for every post, not an occasional extra — silent autoplay is the default viewing mode on most platforms.',
+        ],
+        takeaways: [
+          'Captions measurably increase watch time because most people scroll with sound off by default.',
+          'Auto-generated captions still need a human proofread pass — don\'t publish them unchecked.',
+        ],
+      },
+      {
         id: 'l3',
         title: 'Editing & Publishing',
         minutes: 13,
@@ -1166,10 +1538,26 @@ export const courses = [
         steps: [
           'Trim dead air and tighten pacing in an editor.',
           'Add captions for accessibility and silent autoplay viewing.',
-          'Export in the correct aspect ratio for each platform.',
+          'Export in the correct aspect ratio for each platform (vertical 9:16 for most short-form, horizontal 16:9 for long-form/YouTube).',
           'Schedule publishing at your audience\'s peak activity times.',
         ],
         takeaways: ['Captions alone can meaningfully increase watch time on social platforms.'],
+      },
+      {
+        id: 'l4',
+        title: 'Repurposing One Video Into Many',
+        minutes: 12,
+        overview: 'The most efficient creators produce once and cut many times, instead of scripting a brand-new video for every single post.',
+        steps: [
+          'Film or generate one longer-form piece (a full explanation, a longer talking-head segment) as your source material.',
+          'Identify 3-5 standalone moments inside it that work as their own short clip with a clear hook and payoff.',
+          'Re-caption and re-crop each clip for the specific platform and aspect ratio you\'re posting it to, rather than reusing one export everywhere.',
+          'Stagger posting the clips over days or weeks instead of dumping them all at once, to keep a consistent posting cadence going.',
+        ],
+        takeaways: [
+          'One well-made long-form piece can realistically become a week or more of short-form posts.',
+          'Each repurposed clip still needs its own hook — don\'t just chop a long video into arbitrary segments.',
+        ],
       },
     ],
   },
@@ -1204,6 +1592,22 @@ export const courses = [
         takeaways: ['Relevance to your audience matters more than commission size.'],
       },
       {
+        id: 'l2b',
+        title: 'Disclosure & Compliance Basics',
+        minutes: 10,
+        overview: 'Affiliate content has real legal disclosure requirements — getting this wrong risks your accounts and your credibility, not just a warning.',
+        steps: [
+          'Disclose affiliate relationships clearly and conspicuously, in the post itself, not buried in a bio link or hidden hashtag.',
+          'Use the platform\'s built-in paid-partnership or affiliate disclosure tools where available, in addition to your own written disclosure.',
+          'Never claim a result or benefit you haven\'t actually verified — enthusiasm is fine, false claims are not.',
+          'Keep a simple record of which offers you\'re promoting and how you\'re disclosing each one, in case a platform or program ever asks.',
+        ],
+        takeaways: [
+          'Clear, upfront disclosure protects both your audience\'s trust and your standing with affiliate programs and platforms.',
+          'This is one of the few areas in this course where "figure it out as you go" is genuinely risky — get the disclosure habit right from your very first post.',
+        ],
+      },
+      {
         id: 'l3',
         title: 'Content-to-Commission Funnel',
         minutes: 14,
@@ -1216,6 +1620,38 @@ export const courses = [
         takeaways: ['Track everything — you can\'t improve a funnel you\'re not measuring.'],
         resources: ['Link-in-Bio Setup Guide'],
       },
+      {
+        id: 'l4',
+        title: 'Diversifying Across Multiple Offers & Platforms',
+        minutes: 11,
+        overview: 'Relying on one affiliate program or one platform means one policy change can wipe out your entire income overnight.',
+        steps: [
+          'Promote at least 2-3 different offers within your niche, rather than putting all your content behind a single program.',
+          'Publish your content on more than one platform where your audience actually shows up, not just the one that\'s currently easiest.',
+          'Watch for any single offer or platform becoming more than half your income, and treat that as a signal to diversify further.',
+          'Keep a backup plan in mind for your highest-earning offer specifically — what would you promote instead if that program ended tomorrow?',
+        ],
+        takeaways: [
+          'A program or platform you don\'t control can change terms or disappear without warning — spreading across a few reduces that risk substantially.',
+          'Diversifying doesn\'t mean posting everywhere at once — pick 2-3 offers and platforms deliberately, not all of them thinly.',
+        ],
+      },
+      {
+        id: 'l5',
+        title: 'Scaling: From One Twin to a Content System',
+        minutes: 13,
+        overview: 'Once the funnel works, the growth lever is volume and repeatability, not reinventing your approach for every post.',
+        steps: [
+          'Turn your best-converting post into a template: same structure, same call-to-action style, new product or angle.',
+          'Batch-produce a week or two of content at once using that template, the same way you would for the Faceless Marketing module.',
+          'Track conversion rate per content pillar, not just overall, so you know which pillar is actually driving commission.',
+          'Reinvest time saved by templating into testing one genuinely new angle or offer per month, so the system doesn\'t stagnate.',
+        ],
+        takeaways: [
+          'A repeatable template for your best-converting content format is what turns one lucky post into a real income stream.',
+          'Track performance by pillar, not just in aggregate — it tells you exactly where to spend more effort.',
+        ],
+      },
     ],
   },
   {
@@ -1224,6 +1660,22 @@ export const courses = [
     blurb: 'Rebrandable templates and assets to save you hours of setup.',
     color: 'from-teal-500 to-cyan-700',
     lessons: [
+      {
+        id: 'l0',
+        title: 'What\'s Actually in the Vault',
+        minutes: 7,
+        overview: 'A quick inventory so you know what to expect before you dive in — this vault is a head start, not a finished business.',
+        steps: [
+          'Proposal and contract templates from the Automation Agency and Faceless Marketing modules, ready to duplicate and rebrand.',
+          'Prompt packs referenced throughout the course (CV format, ad budget planner, DNS cheat sheet, and similar named resources on individual lessons).',
+          'Checklists and trackers (application tracker, deployment checklist, VPS setup checklist) pulled from their source lessons for quick reference.',
+          'Set expectations up front: these are starting points to customize, not plug-and-play businesses — the remaining lessons in this module cover exactly how to use them responsibly.',
+        ],
+        takeaways: [
+          'The vault saves you setup time, not the actual work of tailoring something to a real client or audience.',
+          'Every resource in here traces back to a specific lesson elsewhere in the course — revisit that lesson for the full context behind a given template.',
+        ],
+      },
       {
         id: 'l1',
         title: 'Using the Template Library',
@@ -1247,6 +1699,38 @@ export const courses = [
           'Package it as a lead magnet or a paid mini-product.',
         ],
         takeaways: ['A rebranded template is a fast way to launch your first product offer.'],
+      },
+      {
+        id: 'l2b',
+        title: 'Understanding License & Usage Rights Before You Resell',
+        minutes: 10,
+        overview: '"Done-for-you" and "resell rights" mean different things depending on the specific license attached to an asset — check before you claim full ownership of anything.',
+        steps: [
+          'Read the actual usage terms attached to a resource, not just the marketing description of it — "rebrandable" and "resellable" aren\'t always the same permission.',
+          'Understand the general shape of common license tiers: personal-use-only (you can use it, not resell it), resell rights (you can sell the asset itself), and full private-label rights (you can rebrand and claim authorship).',
+          'When in doubt about what a specific asset\'s license allows, treat it as personal-use-only until you\'ve confirmed otherwise in writing.',
+          'Never represent a rebranded template as 100% original work to a client if it was built from a shared template — rebranding the packaging is fine, misrepresenting the origin to a paying client is not.',
+        ],
+        takeaways: [
+          'License terms vary asset by asset — don\'t assume everything in a "resource vault" carries the same rights.',
+          'When the license is unclear, the safe default is to treat it as personal-use-only until you\'ve confirmed otherwise.',
+        ],
+      },
+      {
+        id: 'l3',
+        title: 'Packaging a Template Into a Lead Magnet or Paid Offer',
+        minutes: 12,
+        overview: 'The fastest way to turn one good template into your first product, once you\'ve confirmed you\'re clear to reuse it.',
+        steps: [
+          'For a lead magnet: simplify the template to one clear, immediately useful piece (not your whole toolkit), and gate it behind an email opt-in.',
+          'For a paid mini-product: bundle 2-3 related templates together (e.g. proposal + pricing sheet + checklist) so the price reflects a system, not a single document.',
+          'Write one short page describing who it\'s for and the specific outcome it helps them reach, rather than just listing what\'s included.',
+          'Test it on a small audience first (a community post, a few DMs) before building a full sales page around it.',
+        ],
+        takeaways: [
+          'A lead magnet should solve one specific problem well; a paid product earns its price by bundling several related pieces into a system.',
+          'Validate interest with a small test before investing time in a full launch — it\'s the same "confirm demand first" logic from the niche-picking lesson earlier in the course.',
+        ],
       },
     ],
   },
