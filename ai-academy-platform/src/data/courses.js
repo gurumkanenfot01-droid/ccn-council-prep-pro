@@ -115,6 +115,11 @@ export const courses = [
         title: 'How AI Training Work Actually Works',
         minutes: 9,
         overview: 'Understand what "training data" and "rating" platforms pay people to do.',
+        lecture: [
+          'The phrase "training AI" conjures an image of teaching a robot directly, which is almost never what the actual work looks like. In practice, most paid AI training work falls into three buckets: pretraining-adjacent data work (labeling and preparing raw data at scale, usually the most accessible and lowest-paid tier), fine-tuning support (writing or curating examples that shape a model\'s behavior on specific tasks), and evaluation work (judging, ranking, or correcting a model\'s existing outputs, which is where the bulk of paid contributor work in this space actually lives today).',
+          'Concretely, a typical task might be ranking two AI-generated answers to the same question and explaining which is better, writing a strong reference answer that a model can be trained toward, or flagging factual errors and unsafe content in a batch of model outputs. None of this requires you to understand how the underlying model architecture works — it requires the same skills a good editor, teacher, or subject-matter reviewer already has: careful judgment applied consistently against a standard.',
+          'Pay structures split into two broad models worth knowing apart. Pay-per-task work pays a fixed rate for each completed unit, which rewards speed without sacrificing accuracy. Hourly contract work pays for logged time regardless of exact output count, which rewards sustainable, careful pacing. Neither is inherently better — they suit different working styles and different platforms use different models — but knowing which one you\'re signing up for changes what "working efficiently" actually means day to day.',
+        ],
         steps: [
           'Learn the difference between pretraining, fine-tuning, and evaluation work.',
           'See examples of typical rater tasks: ranking responses, writing reference answers, flagging errors.',
@@ -130,6 +135,11 @@ export const courses = [
         title: 'AI Myths vs. Reality',
         minutes: 7,
         overview: 'Separate hype from what this work actually pays and requires.',
+        lecture: [
+          'This corner of the internet has attracted its share of overheated claims, and it\'s worth naming a few directly so you can walk in with realistic expectations. "You need a computer science degree" is false — the majority of paid task categories, especially evaluation and writing work, need careful judgment and clear communication far more than technical credentials. "It\'s fully automated passive income" is also false, and dangerously so — every legitimate platform in this space pays for real human attention on a real task; nobody is getting paid to do nothing.',
+          'A more useful way to set expectations is to compare realistic weekly hours against realistic weekly earnings, rather than anchoring on the occasional headline number about someone\'s best month. Most people doing this consistently are working real hours for real, respectable freelance-level pay — solid, but not the "quit your job by next Tuesday" story that gets shared around. Treating it as a legitimate part-time or full-time freelance income stream, built the same way any freelance skill is built, sets you up to actually succeed at it rather than to be disappointed by it.',
+          'The single best predictor of long-term success in this space isn\'t finding some undiscovered platform with abnormally high pay — it\'s consistent, careful work on a platform you\'re already qualified for. Chasing every new platform that promises better rates usually costs more in re-vetting time than it gains in pay, while steadily building a strong track record on one or two platforms compounds into better project access and higher-tier categories over time.',
+        ],
         steps: [
           'Review 5 common myths (e.g. "you need a CS degree", "it\'s fully automated income").',
           'Compare realistic weekly hours vs. weekly earnings from public rate cards.',
@@ -145,6 +155,11 @@ export const courses = [
         title: 'Essential Tools & Skills',
         minutes: 12,
         overview: 'The baseline setup and skills every rater platform expects.',
+        lecture: [
+          'Before any platform-specific skill matters, the basics of your setup matter, and they\'re worth getting right before you apply anywhere. A distraction-free workspace and a stable, ordinary residential internet connection sound almost too obvious to mention, but a surprising number of applications get flagged or slowed down over connection issues — many platforms specifically watch for VPN or proxy use as part of identity and location verification, so connecting normally, without one, is the safe default unless a platform explicitly tells you otherwise.',
+          'The core evaluation skill worth practicing deliberately, before you ever sit a real assessment, is writing clear, well-structured feedback quickly — most tasks expect a useful written judgment in well under five minutes, which is a real skill that improves with repetition, not something you either have or don\'t. Alongside that, train your eye specifically for factual errors, tone problems, and unsafe or inappropriate content in AI-generated text — these are the three failure modes that show up constantly across rubrics on nearly every platform in this space, so getting fast and reliable at spotting all three transfers directly across whichever platform you end up working on.',
+          'One habit that pays off longer than almost any other: build yourself a personal style guide for how you score and phrase feedback, and stick to it. Consistency is one of the things platforms quietly measure over time — an evaluator whose standards drift from task to task is less valuable than one whose judgment is predictable and stable, even if both are individually accurate on any single task.',
+        ],
         steps: [
           'Set up a distraction-free workspace and a reliable, non-VPN internet connection.',
           'Practice writing clear, well-structured feedback in under 5 minutes per task.',
@@ -161,6 +176,11 @@ export const courses = [
         title: 'Tips on Passing Your Next AI Screening Interview',
         minutes: 15,
         overview: 'Prepare for the qualification tests and interviews most platforms require.',
+        lecture: [
+          'Screening on these platforms rewards a very specific quality that\'s easy to underestimate: careful, unhurried reading. Because tasks and instructions are often more detailed than they first appear, rushing toward an answer before fully absorbing what\'s actually being asked is the most common way strong candidates underperform on screens they were genuinely capable of passing. Researching a specific platform\'s application flow before you start, so you know roughly what to expect, removes one layer of that time pressure before you\'re even in the assessment.',
+          'When practice assessments are offered, treat them as real rehearsal, not a formality to click through — go slowly, re-read every question, and use them to calibrate your pacing for the timed version. Prepare two or three concrete examples of relevant background in advance, whether that\'s writing, teaching, coding, or research experience, so you\'re not constructing them from scratch under time pressure during the actual screen.',
+          'A skill worth practicing deliberately, since it comes up constantly across this entire space: explaining your reasoning out loud, clearly and specifically, not just stating a conclusion. A growing number of these screens ask you to justify a rating or judgment, sometimes to an AI interviewer rather than a person, and the ability to narrate your own thinking clearly is exactly what\'s being tested — it\'s worth rehearsing on its own, separately from rehearsing your answers.',
+        ],
         steps: [
           'Research the specific platform\'s application flow before applying.',
           'Complete any practice assessments slowly and re-read every question.',
@@ -178,6 +198,11 @@ export const courses = [
         title: '3-Step Success Framework',
         minutes: 10,
         overview: 'A repeatable loop for staying qualified and increasing your task access over time.',
+        lecture: [
+          'This module closes with the simplest possible framework to keep in mind any time your task volume feels low or your progress feels stalled: practice, optimize, screen well, on repeat. It\'s not complicated, and that\'s the point — most people who struggle in this space aren\'t missing some hidden trick, they\'ve just let one of these three basics slip.',
+          'Practice means completing tasks even when none are formally assigned to you — many platforms offer practice or calibration tasks specifically so your skills don\'t go stale between assignments, and treating those as optional is a mistake. Optimize means keeping your CV and profile links genuinely current, not something you set once at signup and forget — a profile that reflects your skills from a year ago is quietly under-selling you today. Screen well means treating every single screening interview, no matter how many you\'ve done before, with the same seriousness as your first one, because familiarity breeds the exact carelessness that tanks scores.',
+          'The real value of this framework is as a diagnostic, not just a checklist: any time your access to work dries up, walk back through these three steps and ask honestly which one slipped. It\'s almost always one of them, and it\'s almost always fixable faster than it feels like it should be.',
+        ],
         steps: [
           'Step 1 — Practice: complete daily practice tasks even when none are assigned.',
           'Step 2 — Optimize: keep your CV and profile links current and relevant.',
@@ -203,6 +228,12 @@ export const courses = [
         minutes: 11,
         overview:
           'Mercor and Handshake AI are examples of vetted-contractor marketplaces that match people to paid AI training and evaluation work for AI labs and companies. This lesson covers the model they run on before you touch an application.',
+        lecture: [
+          'It helps to understand who\'s actually buying this work before you think about how to get hired for it. AI labs building large language models need a constant stream of human judgment: someone has to say which of two AI answers is better, whether a claim is factually correct, whether a piece of code actually does what it claims, or whether a response crosses a line it shouldn\'t. That judgment doesn\'t scale by hiring a small internal team — it scales by contracting thousands of people with real expertise, on demand, for exactly the volume of work that exists this month. That\'s the business problem platforms like Mercor and Handshake AI exist to solve, and understanding it explains almost everything else about how they operate.',
+          'Because of that, these platforms don\'t work like a normal job board where you apply to one posted role and either get it or don\'t. They vet you once, broadly, and then continuously match you against whatever paid projects currently exist that fit your profile. That\'s why "getting in" and "getting matched to well-paid, steady work" are two different milestones — passing the initial vetting gets your foot in the door, but ongoing income depends on project demand in your specific skill area, which fluctuates with what AI labs currently need.',
+          'The work itself clusters into a few recurring types across nearly every platform in this space: labeling and annotating data, evaluating and ranking AI-generated responses, writing reference answers or test cases, and reviewing outputs for factual or safety issues. You\'ll see nearly identical task shapes whether the specific platform is Mercor, Handshake AI, or one of the many similar marketplaces — which means the skills you build on one transfer directly to the others.',
+          'One thing worth setting expectations on early: none of this is passive income. It\'s real freelance contractor work, with real vetting, real quality bars, and real consequences for sloppy work. Approach it the way you\'d approach any skilled freelance career — build a strong profile, take the vetting seriously, and expect the first few weeks to be about proving reliability, not maximizing hours.',
+        ],
         steps: [
           'Understand the core model: the platform vets contributors, then matches them to paid projects posted by AI labs and companies.',
           'Learn the common project types: model-response evaluation, data labeling, subject-matter Q&A writing, coding benchmarks, and red-teaming/safety review.',
@@ -221,6 +252,12 @@ export const courses = [
         minutes: 13,
         overview:
           'A focused look at Mercor specifically, since it comes up constantly in this space. Mercor is a talent marketplace that vets professionals and matches them to project-based work for AI labs and companies — data annotation, RLHF (reinforcement learning from human feedback), and domain-expert evaluation of AI outputs. It runs contractor payments through Stripe Connect. This lesson covers the shape of how it works; treat Mercor\'s own site as the authority on anything specific, since details shift over time.',
+        lecture: [
+          'To actually create a Mercor account, you go straight to Mercor\'s own website and start the sign-up flow there — there is no other legitimate entry point, and that matters, because this space attracts copycat sites and unsolicited "recruiter" messages that try to route you somewhere else. Type the domain in yourself rather than following a link from a DM or a random ad, the same rule covered in more depth in the due-diligence lesson later in this module. Sign-up itself is a standard account creation flow: email, password or a social sign-in option, and then straight into building your profile, which is the part that actually determines what you get matched to.',
+          'Once you\'re in, Mercor is best understood as one vetting process that unlocks access to many possible projects, not an application to a single job. You complete your profile and go through the platform\'s screening once; after that, the system (and Mercor\'s team) matches you against paid projects as AI lab clients post demand for your particular skill area. This is a fundamentally different mental model from a normal job hunt — you\'re not competing for one listed position, you\'re building a standing profile that gets pulled into whatever work exists that fits it.',
+          'That "matches you as demand appears" model has a real consequence worth internalizing early: how much work you get isn\'t purely a function of how good you are, it\'s a function of you times current demand in your category. A brilliant candidate in a category with little current client demand will see less project flow than a solid candidate in a hot category. This is why picking your task category thoughtfully (the next lesson) and keeping your profile genuinely current matter — you\'re positioning yourself to catch demand as it appears, not applying to a fixed opening.',
+          'Engagements themselves are structured as contractor work once you\'re matched, either hourly with your time tracked and paid weekly, or deliverable-based with payment on completion of a defined task. Which structure applies is set per project, not platform-wide, so read the actual agreement Mercor presents for the specific engagement in front of you rather than assuming it matches a general pattern. And treat Mercor\'s own current FAQ and support documentation as the final word any time it conflicts with something general written here — this industry moves fast enough that specifics genuinely do go stale.',
+        ],
         steps: [
           'Understand the core model: you apply and go through one vetting process, then get matched to individual paid projects as they become available — you\'re not applying to one fixed job.',
           'Learn that project availability depends on current client demand in your specific skill area, so matching can be near-immediate or take time depending on your domain.',
@@ -239,6 +276,12 @@ export const courses = [
         minutes: 12,
         overview:
           'Mercor routes vetted candidates into different work categories based on their background. Knowing the categories — and roughly what each has been reported to pay — lets you position your application correctly instead of applying generically and hoping. Pay figures below are commonly reported ranges, not a guarantee; always confirm current numbers on Mercor\'s own site before making decisions based on them.',
+        lecture: [
+          'The jobs available on Mercor aren\'t a fixed list the way job-board postings are — they\'re a set of recurring categories that fill with different specific projects over time. Understanding the categories themselves is more useful than trying to track individual openings, because a category tells you what kind of profile and CV positioning to build, while individual projects inside it come and go.',
+          'At the accessible end, data annotation work — tagging, classifying, and labeling data so models can learn from it — requires the least specialized background and is the fastest category to get matched into, which makes it a reasonable on-ramp if you\'re new to this kind of work entirely. One step up, general response and RLHF evaluation work has you writing or rating prompts and AI responses on generalist topics: no deep credential required, but strong reading comprehension and writing clarity matter a lot, since your written justifications are graded alongside your ratings.',
+          'The higher-paying categories require you to actually bring something scarce. Software engineering and coding evaluation wants people who can read, run, and judge AI-generated code the way a senior engineer would review a pull request — real hands-on programming background, not familiarity. Domain-expert evaluation in fields like medicine, law, or finance pays the most precisely because it requires the most: real credentials or genuine professional practice, since the whole point of the category is catching errors a non-expert literally could not catch.',
+          'The practical decision this lesson is building toward: pick the one category that most honestly matches your strongest, most provable background, and build your profile and CV around it specifically, rather than describing yourself broadly and hoping to get matched into whatever\'s open. A profile that reads "software engineer, 4 years, Python and Go, code review experience" maps unambiguously to one category and gets matched faster than a profile that reads "interested in AI, tech-savvy, quick learner" — which maps to nothing in particular.',
+        ],
         steps: [
           'Data annotation (tagging, classifying, labeling data): the most accessible entry point, commonly reported around $12-$25/hr.',
           'RLHF work — writing or evaluating prompts and AI responses for generalist topics: commonly reported around $25-$53/hr.',
@@ -258,6 +301,12 @@ export const courses = [
         minutes: 13,
         overview:
           'A step-by-step walkthrough of Mercor\'s application process. Confirm each step against Mercor\'s current flow as you go — exact screens change, but this shape has been consistent.',
+        lecture: [
+          'Walking through this end to end before you start makes the whole process feel far less opaque, because every stage exists to answer one specific question for Mercor: can they trust you with a client\'s AI training project without supervising you closely. Account creation and profile completion answer "who are you and what can you actually do." The CV upload answers the same question in a format their reviewers and automated systems can parse quickly. The AI interview, which is genuinely the centerpiece of the whole process, answers "can you reason clearly and communicate that reasoning under a bit of pressure." And the first real project answers the only question that ultimately matters: will you deliver quality work reliably.',
+          'Sequence matters here more than it might seem. Complete your profile and upload your CV fully before you touch the interview, not after — the interview\'s questions are generated partly from your résumé and the role description, so a thin or generic profile going in produces a generic, harder-to-answer-well interview. Treat the profile and CV steps as interview preparation, not paperwork to get through quickly.',
+          'The interview itself is a single shared gate: pass it once, and every role on the platform that currently matches your profile becomes available to you, not just one. That\'s a very different structure from a normal job application, and it\'s why this course dedicates two full lessons to it later — spending real preparation time here has outsized leverage compared to almost anything else in the process, because one strong performance opens multiple doors at once, and one weak performance closes all of them simultaneously.',
+          'After passing, don\'t expect an instant project offer. Mercor matches approved candidates against project demand as it appears, so there can be a real gap between "approved" and "working." Use that gap productively: keep your profile current, and treat your first assigned project, whenever it comes, as the single most important few hours of work you\'ll do on the platform — early performance on a new project is what determines whether you\'re offered more of it, and reputation here compounds quickly in both directions.',
+        ],
         steps: [
           'Step 1 — Create your account and complete your profile fully: background, experience, education, and areas of expertise (see "Building a Profile That Gets Matched" for the detailed checklist).',
           'Step 2 — Upload your CV using the skills-first format from the CV lesson, tailored to the task category you picked.',
@@ -279,6 +328,12 @@ export const courses = [
         minutes: 15,
         overview:
           'Mercor screens candidates with an automated AI interviewer, not a human — understanding exactly how it works and what it scores is the highest-leverage thing you can do before applying, since one interview result gates every matching role at once.',
+        lecture: [
+          'The first time most people hear "AI interview," they picture a chatbot asking generic questions. That\'s not quite what this is. The system generates its questions from your actual résumé and the specific role description it\'s screening you for, then has you answer on camera for roughly twenty minutes while it transcribes and scores your responses in real time. There\'s no human on the other end during the interview itself — which changes what you should optimize for, since you\'re not building rapport with a person, you\'re producing a clear, structured transcript that scores well against a rubric.',
+          'What that rubric actually rewards is specificity. The system is evaluating critical thinking, logical reasoning, and communication clarity, and the clearest signal of all three turns out to be whether your answers contain real, checkable detail. Compare "I improved our process and it worked well" against "I reduced processing time 40% by switching from manual review to a rules-based filter, on a team of four, over about six weeks." The second version isn\'t just more impressive — it\'s more scoreable, because it gives the system concrete claims to evaluate rather than a vague assertion to take on faith. This is worth internalizing as a general habit, not a trick for one interview: quantify everything you can, every time you\'re describing your own work.',
+          'A subtler pattern worth knowing: answers framed around "I" tend to score better than answers framed around "we." That\'s not the system rewarding selfishness — it\'s the system trying to isolate what you specifically contributed, since that\'s what predicts how you\'d perform on an individual contractor task. When you\'re describing team work, get comfortable being precise about your own slice of it: which part did you own, which decision was yours, what would not have happened without you specifically.',
+          'Finally, know the stakes structure going in. This is a single shared gate — pass it once and every currently open role matching your profile becomes available; fail it and none of them do. You get roughly three attempts total, and that limit is shared across every application using that interview type, not reset per role. That combination (high leverage, limited retakes) is exactly why the next lesson is entirely about rehearsal: you want to walk in already knowing your best answers are strong, not discover mid-interview that you need to improvise.',
+        ],
         steps: [
           'Know the format: an AI interviewer asks role-specific questions generated from your résumé and the role description, you answer on camera, and your responses are transcribed and scored — no human is on the other end during the interview itself.',
           'Know the length: most sittings run around 20 minutes, though this varies by role.',
@@ -299,6 +354,12 @@ export const courses = [
         minutes: 12,
         overview:
           'Now that you know what the Mercor AI Interview actually measures, this lesson is about rehearsing for it specifically — layered on top of the general "Interview Playbook" lesson earlier in this module.',
+        lecture: [
+          'Knowing the scoring rules and being ready to perform against them under time pressure are two different skills, and the gap between them is exactly what rehearsal closes. Start by writing out, in full sentences, two or three real accomplishments from your background in the quantified-first-person shape the interview rewards: what specifically you did, the concrete number or outcome, the timeframe, and your individual role in it. Doing this in writing first, before you\'re on camera, means you\'re retrieving polished material under pressure instead of trying to construct it from scratch in the moment.',
+          'Then actually record yourself answering a few practice questions on camera, using your phone or laptop, and watch the playback. This step gets skipped constantly because it feels awkward, but it\'s the single highest-value thing you can do to prepare, because it\'s literally the same format as the real interview. You\'re checking pacing (are you rambling before you get to the specific detail that actually scores), clarity (would a stranger understand this on one listen), and whether you\'re defaulting to "we" when the honest answer is really "I."',
+          'Go a step further than rehearsing final answers: practice narrating your reasoning out loud on a sample evaluation-style task, not just stating a conclusion. If you were asked to judge which of two responses was better, practice actually saying why, step by step, the same way you\'d want to score someone else\'s justification. Reasoning quality is explicitly part of what\'s being scored, and it\'s the part most people forget to rehearse because it feels less like "the answer" and more like showing your work.',
+          'Because retakes are limited and shared across every application using this interview type, don\'t treat the real interview as your first rep — treat your recorded practice sessions as the real gate, and only sit the actual interview once a practice run genuinely felt strong. If you don\'t pass, don\'t assume it\'s final: check Mercor\'s current policy on reapplying, since a genuine technical issue can sometimes be grounds for an additional attempt, though this isn\'t guaranteed and shouldn\'t be counted on going in.',
+        ],
         steps: [
           'Write out 2-3 real accomplishments from your background in the "quantified, first-person" shape the interview rewards: what you did, the specific number or outcome, the timeframe, and your specific role in it.',
           'Record yourself answering a few practice questions on camera and play it back — you\'re checking for clarity and pacing, not just content, since this is exactly the format the real interview uses.',
@@ -313,11 +374,40 @@ export const courses = [
         ],
       },
       {
+        id: 'l1work',
+        title: 'Doing the Work: What Your Actual Tasks Look Like on Mercor',
+        minutes: 14,
+        overview:
+          'What actually happens after you\'re matched to a project — the dashboard, the task itself, submitting your work, and the feedback loop that decides whether you get more of it.',
+        lecture: [
+          'Once you\'re matched to a project, you land in a project-specific workspace rather than a generic "tasks" queue — Mercor structures work around the individual client project you\'ve been placed on, and that workspace is where instructions, guidelines, and the actual task interface all live. The first thing worth doing on any new project, before touching a single task, is reading the full onboarding material and grading rubric end to end. This sounds obvious and gets skipped constantly, and it\'s the single biggest predictor of whether your early submissions come back clean or get sent back for revision.',
+          'The task itself will typically follow the shape of whatever category you\'re matched into: for evaluation work, you\'re usually shown one or more AI-generated responses to a prompt and asked to rate, rank, or rewrite them against a specific rubric, then justify your judgment in writing. For annotation work, you\'re labeling or classifying raw data against a defined schema. For domain-expert work, you\'re checking outputs against professional or regulatory standards in your field and flagging or correcting errors. In every case, the written justification you attach to your judgment is graded alongside the judgment itself — a correct rating with a weak explanation typically scores worse than you\'d expect, because the explanation is what proves the judgment wasn\'t a guess.',
+          'Submission is usually straightforward within the task interface itself — you complete the task, write your justification, and submit, sometimes with a review step before it locks in. What matters more than the mechanics of clicking submit is your own discipline around it: reread your justification once before submitting the way you would reread an email before sending it, since on platforms that grade communication clarity, a rushed final sentence can quietly cost you.',
+          'The feedback loop is where your standing on a project actually gets built. Early submissions are typically reviewed more closely than later ones, precisely because the project is still deciding whether to trust you with a steady flow of work. Treat any feedback or corrections on your first several tasks as the most valuable information you\'ll get on the whole project — read it carefully, adjust immediately, and don\'t repeat the same correction twice. Consistency across dozens of tasks, not brilliance on any single one, is what turns an initial project match into ongoing, reliable income.',
+        ],
+        steps: [
+          'Read the full project onboarding material and grading rubric before submitting your first task, not after.',
+          'Identify the specific task shape for your category (rate/rank/rewrite, label/classify, or expert-review) and study one worked example if the project provides one.',
+          'Write your justification with the same care as your judgment itself — a correct answer with a weak explanation typically scores lower than expected.',
+          'Reread your submission once before finalizing it, the same way you\'d proofread an email.',
+          'Treat feedback on your first few tasks as the highest-value information on the whole project, and adjust immediately rather than repeating a correction.',
+        ],
+        takeaways: [
+          'The written justification behind your judgment is graded as closely as the judgment itself — never submit a bare rating or label without real reasoning attached.',
+          'Early tasks on a new project are reviewed more closely than later ones — that\'s the trust-building phase, and how you handle feedback here shapes how much work you\'re offered afterward.',
+        ],
+      },
+      {
         id: 'l1g',
         title: 'Getting Paid on Mercor: Contracts & Payouts',
         minutes: 11,
         overview:
           'How money actually moves once you\'re doing paid work on Mercor — contract types, time tracking, and payout timing.',
+        lecture: [
+          'Every project you\'re matched to on Mercor comes with one of two payment structures, and knowing which one applies before you start changes how you should actually work. Hourly contracts have your time tracked through dedicated time-tracking software, with pay calculated from logged hours and paid out weekly — the same rhythm as a typical contractor role. Deliverable-based contracts instead pay a fixed amount for a defined unit of completed, approved work, which means your income depends on throughput and approval rate rather than hours logged. Read which structure applies to your specific project before you start, since it genuinely changes the right strategy: hourly rewards careful, sustainable pacing, while deliverable-based rewards efficient, high-quality throughput.',
+          'Behind the scenes, payouts run through Stripe Connect, standard infrastructure used across many contractor marketplaces, not something specific or unusual to Mercor. If you\'re new to receiving payments this way, expect a hold on your very first payout, commonly around seven days, before funds actually release — this is a routine anti-fraud measure on new payee accounts across this kind of infrastructure, not a sign anything is wrong with your specific account. After that first payout, expect the hold to disappear and payments to follow the platform\'s regular weekly cadence, with a few ordinary business days for the bank transfer itself to land.',
+          'Build one simple habit from day one that pays for itself the first time you ever need it: keep your own independent log of hours worked or deliverables submitted, separate from whatever the platform tracks. It costs almost nothing to maintain and it\'s the difference between a five-minute conversation and a drawn-out dispute if a payout ever looks off. And if a specific contract or project ends unexpectedly, know that you\'re generally still owed payment for anything already approved and verified before the end date — the specific mechanics of that live in the project\'s own terms, so that\'s the document to check first if it ever comes up.',
+        ],
         steps: [
           'Know your contract type: hourly contracts have your time tracked through a time-tracking tool and are paid weekly; deliverable-based contracts pay on successful completion of a specific task instead.',
           'Understand that payouts run through Stripe Connect, the same infrastructure many marketplaces use for contractor payments.',
@@ -337,6 +427,11 @@ export const courses = [
         minutes: 12,
         overview:
           'Handshake AI is built directly into Handshake, the college career and recruiting platform most US students already have an account on. It\'s run as a "Fellowship": flexible, project-based work matching people to frontier AI labs. The single most important thing to know before anything else: eligibility is restricted, and that one fact decides whether the rest of this cluster applies to you at all.',
+        lecture: [
+          'Handshake AI is worth understanding as a genuinely different product from Mercor, not a clone of it, even though the end goal — humans improving AI models — looks similar from the outside. It\'s built as a feature inside Handshake, the career platform most US colleges already use for recruiting, which means the audience it\'s designed for is students, degree candidates, and recent graduates specifically, not the general professional population Mercor is open to. If you\'re not in that population, this is the one lesson in the cluster where the honest answer is: this program likely isn\'t for you, and Mercor\'s open model is the better fit.',
+          'If you are eligible, the practical upside is real: you probably already have the account you need. Rather than a separate sign-up, you access it through "AI Work" in the existing Handshake navigation, which means the identity and trust Handshake already has about you (school, verification history) carries over instead of starting from zero. It also means the program is explicitly designed around student and early-career life — flexible, project-based, no fixed schedule or guaranteed hours — which fits around class schedules and other commitments in a way a traditional part-time job doesn\'t.',
+          'The underlying work itself — applying human judgment and subject expertise to improve how AI models perform — mirrors what Mercor asks of contributors. What differs is the entry path, the audience it\'s built for, and, as the next several lessons cover, the assessment and retake structure. Treat this cluster as its own playbook rather than assuming everything from the Mercor lessons carries over directly.',
+        ],
         steps: [
           'Check eligibility first: it\'s open to US-based bachelor\'s, master\'s, and doctoral students, candidates, and graduates with valid work or training authorization (e.g. F-1/OPT, J-1, H-1B) — this is narrower than Mercor, which is open to any vetted professional regardless of student status.',
           'Understand the structure: it\'s a fellowship, not a job — flexible, project-based, no fixed schedule and no guaranteed hours. You work when projects are available and you have capacity.',
@@ -355,6 +450,11 @@ export const courses = [
         minutes: 11,
         overview:
           'Like Mercor, pay on Handshake AI scales with how specialized the work is. Figures below are commonly reported ranges — rates are published upfront per project before you accept, and don\'t change mid-project, so always check the specific project\'s terms over any general number here.',
+        lecture: [
+          'The pay structure here follows the same underlying logic as Mercor — generalist work pays less and requires less, specialist work pays more and requires verifiable expertise — but Handshake AI does something worth appreciating: it shows you the specific rate for a specific project before you have to commit to it. That\'s a meaningfully different experience from platforms where you find out what something pays only after investing time in an application, and it\'s worth using that transparency deliberately: read the published rate and scope before expressing interest, and treat "not worth my time at this rate" as a completely valid reason to pass, without it counting against you.',
+          'Generalist roles sit at the more accessible end and don\'t require a specific credential, while specialist roles requiring verified domain expertise pay meaningfully more — the same shape as Mercor\'s categories, just with different program-specific numbers attached. Within that, projects pay either a straight hourly rate or a per-task rate, and which one applies changes what "working efficiently" actually means: hourly rewards steady, sustainable pace, per-task rewards throughput without sacrificing the accuracy that keeps you eligible for more work.',
+          'One habit worth building specifically because of this transparency: don\'t just glance at the headline rate, read the full Project Terms for scope and expectations before accepting. A high hourly rate attached to unusually demanding requirements isn\'t automatically a better deal than a moderate rate with a clear, contained scope — and because the terms are visible upfront here, there\'s no excuse for finding that out after the fact.',
+        ],
         steps: [
           'Generalist roles (general task completion, broad evaluation work): commonly reported around $20-$35/hr.',
           'Specialist roles requiring verified domain expertise: commonly reported around $35-$65/hr.',
@@ -371,6 +471,11 @@ export const courses = [
         title: 'The Handshake AI Application Walkthrough, Step by Step',
         minutes: 12,
         overview: 'The application flow, end to end — simpler in some ways than Mercor since it reuses your existing Handshake identity, but with its own verification and matching steps.',
+        lecture: [
+          'Because Handshake AI lives inside an account most eligible users already have, the practical first step is simply logging into Handshake and finding "AI Work" in the navigation — there\'s no separate site to sign up for, and being suspicious of anything claiming otherwise is a reasonable instinct. From there, the profile step asks for detail beyond your standard Handshake career profile, specifically the background information needed to match you to AI training projects rather than traditional jobs, so it\'s worth treating this as its own dedicated profile rather than assuming your existing resume upload covers it.',
+          'Identity verification comes early and is non-negotiable: a government-issued ID, checked against your account, before you\'re eligible for matching. Have this ready before you start rather than getting partway through and stalling — there\'s no way to meaningfully participate without clearing this step, so it isn\'t something to defer.',
+          'After that, the waiting period works the same way it does on Mercor: projects appear on a rolling basis as AI lab partners post demand, so there\'s no fixed timeline between finishing your profile and getting an invitation. When your profile does match an open project, you\'ll get an email asking if you want to express interest — and saying yes there isn\'t the finish line, it\'s the start of that specific project\'s own assessment, covered next.',
+        ],
         steps: [
           'Step 1 — Log in to your existing Handshake account (or create one) and open "AI Work" in the left-hand navigation.',
           'Step 2 — Complete your profile with the additional detail Handshake AI needs to match you to projects, beyond your standard Handshake career profile.',
@@ -389,6 +494,11 @@ export const courses = [
         title: 'Handshake AI Assessments: What to Expect',
         minutes: 11,
         overview: 'Assessments here are project-specific rather than one shared platform-wide gate like Mercor\'s single AI interview.',
+        lecture: [
+          'This is the most important structural difference from Mercor to internalize before your first assessment: there is no single interview that gates the whole platform. Instead, each project you\'re invited to has its own assessment, typically a practice task or sample submission reviewed by Handshake AI\'s team or that project\'s own reviewers, sometimes paired with a written or skills-based evaluation specific to that project\'s domain. That means your prep strategy should be project-specific too — the general "get good at explaining your reasoning clearly" habits from the Mercor lessons still apply, but the actual content you study should come from that project\'s own materials, not a generic playbook.',
+          'That\'s genuinely the highest-leverage move available to you here: the onboarding materials you\'re given for a specific project are designed to mirror the real work on it, which makes them a far more direct study source than anything generic. Read them closely, actually attempt any practice examples provided, and treat mismatches between your instinct and the guidance as the exact thing to correct before you submit.',
+          'Expect a processing period after you submit before you hear back — this is completely normal and not a signal that something\'s wrong. And don\'t be thrown if part of the evaluation is AI-conducted rather than reviewed by a person; that mirrors the same shift toward automated, scalable screening you\'ve already seen with Mercor, and the same underlying advice applies: be clear, be specific, and don\'t assume charm compensates for a vague answer.',
+        ],
         steps: [
           'Expect a practice task or sample submission, reviewed by the Handshake AI team or that project\'s reviewers, plus a written or skills-based evaluation relevant to the specific project\'s domain.',
           'Prepare using the project\'s own onboarding materials as your primary study source — assessments are designed to mirror the real work on that project, so the materials you\'re given are the most direct prep available.',
@@ -405,6 +515,11 @@ export const courses = [
         title: 'If You Don\'t Pass: Handshake AI\'s Retake Policy',
         minutes: 9,
         overview: 'This is where Handshake AI differs from Mercor in a way worth knowing before you sit an assessment: the consequence of failing is scoped to that one project, not your whole standing on the platform.',
+        lecture: [
+          'It\'s worth pausing on this difference because it should change how much anxiety you bring into any one assessment. On Mercor, the single AI interview is a shared gate — fail it and every currently matching role closes at once, with only a few total attempts to work with. On Handshake AI, each project has its own independent assessment, and failing one doesn\'t touch your eligibility for anything else. Your overall standing on the Fellowship survives a single miss; only that specific project doesn\'t.',
+          'That said, don\'t read "lower stakes" as "not worth preparing for." Retakes on the same project generally aren\'t available once you\'ve failed it, so each individual attempt is still effectively a one-shot situation for that project specifically — you just get to try again elsewhere rather than starting over from zero. The practical takeaway is to prepare seriously for every assessment using that project\'s own materials, while keeping perspective that one miss is a setback on one opportunity, not a verdict on you.',
+          'This structural difference is worth factoring into how you spend your time across the two platforms if you\'re eligible for both. Mercor rewards concentrated, high-stakes preparation for one pivotal interview. Handshake AI rewards a steadier, lower-drama approach: apply to projects that genuinely fit, prepare well using what\'s given to you, and treat an occasional miss as routine rather than catastrophic.',
+        ],
         steps: [
           'Understand that failing an assessment means you didn\'t meet that specific project\'s minimum score or quality threshold — nothing more.',
           'Know that retakes for that same project are generally not available once you\'ve failed it.',
@@ -421,6 +536,11 @@ export const courses = [
         title: 'Getting Paid on Handshake AI',
         minutes: 9,
         overview: 'How and when money actually arrives once you\'re working a project.',
+        lecture: [
+          'Handshake AI runs on a predictable weekly cadence that\'s worth memorizing once so you never have to wonder about it again: your work week runs Monday through Sunday, payout processes by the following Wednesday, and funds are typically available to withdraw by Friday. Once you know that rhythm, you can plan around it the same way you\'d plan around any regular paycheck, rather than checking anxiously after every submission.',
+          'Payouts move through either Deel or Stripe depending on the specific project you\'re on — both are standard, legitimate payment infrastructure used widely across contractor platforms, so which one applies to you isn\'t something to worry about, just something to note so you know where to look. What does vary by project is whether you\'re paid hourly or per-task, and that\'s specified in each project\'s own Project Terms, which is the document to check before you start rather than assuming it matches whatever your last project used.',
+          'Carry over the one habit that matters most from the Mercor lessons: keep your own simple record of hours worked or tasks submitted, independent of whatever the platform shows you. It costs a few minutes a week and it\'s the difference between a quick, confident conversation and a stressful one if a payout ever looks off.',
+        ],
         steps: [
           'Know the payout schedule: work is tracked Monday through Sunday, paid out by the following Wednesday, with funds typically available for withdrawal by Friday.',
           'Know the rail: payouts are processed weekly via Deel or Stripe, depending on the project.',
@@ -437,6 +557,11 @@ export const courses = [
         title: 'Building a Profile That Gets Matched',
         minutes: 12,
         overview: 'Your profile is what the platform\'s matching system and human recruiters both use to route you to projects.',
+        lecture: [
+          'It helps to think of your profile less like a social media bio and more like structured data that a matching algorithm and a human reviewer both need to parse quickly and correctly. Every field you leave blank or vague is a field the system can\'t use to match you, which means incomplete profiles don\'t just look less impressive — they\'re often filtered out of matching entirely before a human ever sees them. Completing every field fully is the single easiest thing you can do to improve your match rate, and most applicants underinvest in it because it feels like paperwork rather than the actual application.',
+          'Specificity is the second lever, and it matters more than most people expect. A skills tag like "AI" or "tech-savvy" matches almost nothing precisely, because it could describe thousands of wildly different backgrounds. A tag like "Python backend development, pytest, code review" matches a specific category with a specific pay band, and gets routed there fast. The same logic applies to every part of your profile: the more precisely you describe what you actually do, the more precisely the system can place you.',
+          'Verification deserves urgency, not patience. Most platforms in this space block paid project access entirely until identity and work-eligibility verification clears, and that process can take real time to process on the platform\'s end even after you submit it. Doing it on day one, before you\'re even matched to anything, means it\'s already cleared by the time an opportunity appears — doing it after you\'re matched means you\'re burning the goodwill of an actual open project while paperwork catches up.',
+        ],
         steps: [
           'Complete every profile field fully — incomplete profiles are typically filtered out of matching before a human ever sees them.',
           'Add specific, verifiable skills tags (languages, subjects, technical tools, industries) instead of generic ones like "AI".',
@@ -455,6 +580,13 @@ export const courses = [
         minutes: 15,
         overview:
           'AI-training platforms route CVs through both automated filters and human reviewers. Here\'s how to build one that clears both.',
+        lecture: [
+          'Forget everything you know about a traditional narrative résumé for a moment — the CV that works on these platforms is closer to a skills inventory built for a machine to parse and a reviewer to skim in under thirty seconds. Both readers are looking for the same thing from different angles: can this document quickly prove you belong in a specific task category. Everything about how you structure it should serve that one goal.',
+          'Lead with a one-line specialty summary that states your category outright — "Backend engineer specializing in Python code review and technical documentation" or "Registered nurse with 6 years in emergency medicine, strong technical writing background" tells both a parser and a human exactly which bucket to sort you into before they\'ve read another word. Follow it with your relevant expertise first: subject areas, languages, tools, and any prior evaluation, teaching, editing, or research experience — the things that map directly onto the task categories from earlier in this module, not your entire career history in chronological order.',
+          'Quantify everything you can. "Years of experience," "projects shipped," "papers published," "repositories maintained," "students taught" are all concrete, checkable claims, and this entire ecosystem rewards claims that can be checked over claims that can\'t. This is the same instinct the AI Interview scoring rewards — specific, quantified statements outperform vague ones consistently, and building that habit into your CV means you\'re already practicing it before you ever sit an interview.',
+          'Now, the CV is not truly one-size-fits-all across every category, even though the underlying format stays consistent. For writing and evaluation roles, foreground any editing, research, or teaching experience and include a couple of writing samples if you have them — the platform wants proof you can write clearly under a rubric, not just that you have opinions about quality. For coding and technical roles, name specific languages, frameworks, and shipped projects rather than a generic "full-stack developer" label, and link a GitHub or portfolio if you have one — vague technical claims read as weaker than they should. For domain-expert roles in law, medicine, or finance, lead with your specific credential and sub-specialty ("corporate tax law," not just "law"), since precision here is what separates a fast match from a slow one. For voice, audio, or multimodal roles, mention any language, accent, or accessibility expertise explicitly, since that\'s exactly what those categories are screening for and it rarely shows up on a generic résumé.',
+          'Mechanically, keep formatting simple and text-based. Heavy graphics, multi-column layouts, and embedded tables look polished to a human eye but frequently break automated résumé parsers, silently turning a strong candidate into a garbled, unmatched one. And proofread it line by line — on platforms where writing quality and attention to detail are literally what\'s being graded, a typo in your own CV is a uniquely bad first impression to make.',
+        ],
         steps: [
           'Lead with a one-line specialty summary (e.g. "Backend engineer specializing in Python code review and technical documentation").',
           'List relevant expertise first: subject areas, languages, technical tools, and any prior evaluation, teaching, editing, or research experience.',
@@ -474,6 +606,12 @@ export const courses = [
         title: 'Acing the Skills Assessment',
         minutes: 13,
         overview: 'Most platforms gate project access behind a graded skills test before you can apply to specific work.',
+        lecture: [
+          'Skills assessments across this entire space share a common design goal: they\'re trying to simulate the actual work you\'d be doing, compressed into a short, timed, gradeable exercise. That means the best preparation isn\'t generic test-taking strategy — it\'s getting genuinely comfortable with the specific task shape (rating pairs of responses, spotting errors, writing rubric-based feedback) before you sit the real thing, so the format itself isn\'t what trips you up.',
+          'Reading comprehension matters more than most people expect going in. Instructions on these assessments are often detailed and specific, and scoring frequently weighs how closely you followed them as heavily as whether your final answer was correct. Read every instruction twice before you start answering, and resist the urge to skim toward the task itself — a technically correct answer that ignored a stated constraint often scores worse than you\'d expect.',
+          'Whenever a written justification is requested, treat it as being scored just as closely as your actual judgment, because it usually is. A vague justification attached to a correct answer signals a guess that happened to land right, while a clear, specific justification signals real reasoning — and assessors are trying to tell those two things apart, not just check whether you got the "right" answer.',
+          'If you fail, don\'t assume the door is closed for good. Most platforms have some retake or reapplication window, even if it isn\'t immediate — check the specific platform\'s current policy rather than assuming based on another platform\'s rules, since this is exactly the kind of detail that varies and changes over time.',
+        ],
         steps: [
           'Block out uninterrupted time — most assessments are timed and don\'t allow retakes for a period after a fail.',
           'Read every instruction twice before answering; scoring usually weighs instruction-following as heavily as the answer itself.',
@@ -491,6 +629,11 @@ export const courses = [
         title: 'The Interview Playbook',
         minutes: 14,
         overview: 'What to expect after you clear the initial screen, from recruiter contact through your first paid task.',
+        lecture: [
+          'Across nearly every platform in this space, the same four-stage shape shows up even when the exact labels differ: your application and CV get screened against current project needs, you complete a graded skills or qualification test, you go through some form of interview (increasingly AI-conducted rather than human), and finally you complete a short paid trial task that confirms your quality before you\'re handed ongoing work. Recognizing this pattern means you\'re never caught off guard by an unfamiliar stage — you\'re just seeing this platform\'s specific version of a structure you already understand.',
+          'The paid trial task deserves more respect than it usually gets. Because it\'s the final stage, it\'s tempting to relax once you\'ve reached it, but it\'s often the real decision point — everything before it filtered candidates down to a shortlist, and the trial task is what decides who from that shortlist gets ongoing access. Treat it with exactly the same care as your first several real tasks would deserve, because functionally, that\'s what it is.',
+          'One habit that serves you at every single stage: prepare two or three concrete, specific examples of relevant work you can describe clearly in under a minute. This isn\'t just interview prep — it\'s useful in a CV summary, in a written screening answer, and in a live conversation, because every stage in this pipeline is ultimately asking some version of the same question: show me proof, not just a claim.',
+        ],
         steps: [
           'Stage 1 — Application review: your profile and CV are screened against currently open project needs.',
           'Stage 2 — Skills/qualification test: a graded task specific to the project you\'re being considered for.',
@@ -509,6 +652,12 @@ export const courses = [
         title: 'Job Guide: Writing & Response Evaluation Roles',
         minutes: 12,
         overview: 'The most common entry point on these platforms — rating, ranking, or rewriting AI-generated text.',
+        lecture: [
+          'Writing and response evaluation roles are usually the fastest category to get matched into, and it\'s worth understanding why: the core skill they require — reading something carefully and judging whether it\'s good, accurate, and well-expressed — is one a huge number of people already have from completely unrelated backgrounds, not just professional writers. If you\'ve ever graded student work, edited a colleague\'s writing, or reviewed content professionally, you already have the core instinct this category is testing for.',
+          'The actual task is almost always some version of comparing two or more AI responses against a rubric and explaining, in writing, which is better and why. The habit that separates strong evaluators from mediocre ones is checking factual accuracy first, before judging tone or style — it\'s easy to be seduced by a confident, well-written response that\'s subtly wrong, and rubrics on these platforms are specifically designed to catch evaluators who let polish substitute for correctness.',
+          'For your CV specifically, this category rewards foregrounding anything that involved judging or improving other people\'s writing under some kind of standard: editing experience, teaching, academic grading, content review, even structured peer feedback from a past job. You don\'t need a journalism degree — you need evidence you can apply a consistent standard to someone else\'s work and explain your judgment clearly, and almost any background that involved that pattern is worth surfacing explicitly.',
+          'Treat this category as a genuine on-ramp rather than a ceiling. Many people use writing and evaluation roles to build platform tenure and a track record while they work toward qualifying for a higher-paying specialist category that matches their deeper background — there\'s no penalty for starting here even if your longer-term goal is coding or domain-expert work.',
+        ],
         steps: [
           'Understand the core task: comparing two or more model responses against a rubric and explaining your choice.',
           'Build a habit of checking claims for factual accuracy before judging tone or style.',
@@ -525,6 +674,12 @@ export const courses = [
         title: 'Job Guide: Coding & Technical Evaluation Roles',
         minutes: 14,
         overview: 'Higher-paying roles for reviewing, debugging, and rating AI-generated code.',
+        lecture: [
+          'Coding and technical evaluation roles pay more than general writing evaluation for a straightforward reason: judging whether AI-generated code is actually correct, efficient, and safe requires real hands-on engineering ability, which is scarcer than general reading and writing skill. The core task is close to doing a rigorous code review — running the code, reading it line by line, and judging it against correctness and best practices, not just checking whether it looks plausible.',
+          'Assessments in this category frequently include a live coding component, not just multiple-choice questions about code shown to you, so refreshing your fundamentals in whichever specific languages you\'ll be tested on matters — rusty syntax under time pressure costs you more here than in almost any other category. Alongside the technical judgment itself, practice explaining why code is wrong, not just flagging that it is: written justification is very often scored as its own separate component, and "this is broken" scores far worse than "this fails on empty input because the loop assumes at least one element."',
+          'For your CV, this category rewards depth over breadth specifically. Naming the one or two languages and frameworks you\'re genuinely strong in, along with real shipped-project experience, reads as far more credible than a broad "full-stack developer, familiar with React, Node, Python, Go, Rust" list that signals shallow exposure to everything. Link a GitHub profile or portfolio with real code in it if you have one — for this category more than most, evidence beats description.',
+          'Depth in one or two languages consistently outperforms shallow familiarity with many, both in how you\'re matched and in how you perform once you\'re working — being able to explain a bug clearly in writing is, in the end, as valuable to these platforms as being able to find it in the first place.',
+        ],
         steps: [
           'Understand the core task: running, reading, and judging AI-generated code against correctness and best practices.',
           'Refresh fundamentals in the languages you\'ll be tested on — assessments often include a live coding component.',
@@ -541,6 +696,12 @@ export const courses = [
         title: 'Job Guide: Subject-Matter Expert Reviewer Roles',
         minutes: 13,
         overview: 'Specialized, typically higher-paying roles for people with real credentials in law, medicine, finance, science, or similar fields.',
+        lecture: [
+          'This category exists because there are errors an AI model can make that only someone with real professional training would even notice — a subtly wrong dosage, a misapplied statute, a financial calculation that\'s technically plausible but practically wrong. That scarcity is exactly why domain-expert roles pay the most of any category in this space: the platforms need people who can catch mistakes a generalist reviewer, however careful, simply couldn\'t.',
+          'The core task is verifying AI outputs against real domain knowledge and professional or regulatory standards, which means vetting here tends to be more rigorous and multi-step than general rater roles — expect it to take real proof, not just an assertion of expertise. Gather your actual credentials in advance: degrees, licenses, certifications, publications, or a clear record of years in professional practice, since these platforms need to verify you\'re who you say you are before trusting your judgment on client work.',
+          'For your CV, precision about your specific sub-specialty is what separates a fast match from a slow one. "Corporate tax law" screens completely differently from "law," and "interventional cardiology" screens completely differently from "medicine" — the more precisely you name your actual specialty, the more precisely the platform can match you to projects that genuinely need exactly that expertise, rather than routing you into a generic pool.',
+          'Set expectations honestly on volume: these roles often have a smaller, slower-moving pool of available projects than generalist categories, simply because there\'s less client demand for any single narrow specialty at any given moment. Credentials open the door, but once you\'re in, clear written explanations of your reasoning are still what determines whether you stay qualified — expertise gets you matched, communication is what keeps you working.',
+        ],
         steps: [
           'Understand the core task: verifying AI outputs against domain knowledge and professional/regulatory standards.',
           'Gather proof of expertise: degrees, licenses, publications, or years of professional practice.',
@@ -557,6 +718,12 @@ export const courses = [
         title: 'Job Guide: Voice, Audio & Multimodal Trainer Roles',
         minutes: 11,
         overview: 'Roles evaluating or generating audio, image, and video training data alongside text.',
+        lecture: [
+          'Multimodal work exists because AI models increasingly need to handle more than plain text, and the underlying skill this category tests is the same core instinct as text evaluation — careful judgment against a rubric — applied to a different medium. You\'re typically rating things like transcription accuracy, how natural a synthesized voice sounds, or how well an image or video is described, rather than judging written prose.',
+          'The practical preparation that matters most here is often overlooked because it isn\'t about skill at all: your equipment and environment. Any assessment involving audio should start with actually testing your microphone and recording space in a genuinely quiet room beforehand — a strong candidate can fail an otherwise winnable assessment purely because of background noise or a poor microphone, which is a completely avoidable and somewhat frustrating way to lose an opportunity.',
+          'Because feedback in this category is still almost always written, practice describing audio and visual issues in precise language even though the content itself isn\'t text — "the pacing rushes on multi-syllable words" is a far more useful evaluation than "sounds a bit off." If you bring specific language, accent, or accessibility expertise (fluency in a less-common language, familiarity with a regional accent, experience with accessibility standards), name it explicitly on your profile, since multimodal categories frequently need exactly that specific coverage and it rarely shows up unless you say so directly.',
+          'One quiet advantage of this category worth knowing: it tends to be less commoditized than text-only rating, simply because fewer applicants have both the equipment and the specific expertise these roles need, which often means less competition for the roles that do open.',
+        ],
         steps: [
           'Understand the core task: rating transcription accuracy, voice naturalness, or image/video-description quality.',
           'Test your recording setup (microphone, quiet room) before any assessment that involves audio.',
@@ -573,6 +740,11 @@ export const courses = [
         title: 'Staying Qualified & Scaling Across Platforms',
         minutes: 12,
         overview: 'Once you\'re in, the real work is staying qualified and growing your income across more than one platform.',
+        lecture: [
+          'Getting matched to your first project is a milestone, but it\'s not the finish line — the real long-term game on these platforms is staying qualified and steadily growing access to better work over months, not landing one good gig and coasting. Platforms watch quality and accuracy scores closely where they\'re visible, and the candidates who keep getting offered more (and better-paying) work are consistently the ones who address a dip in performance the moment they notice it, rather than waiting for a warning or suspension notice to force the issue.',
+          'Diversifying across two or three platforms rather than concentrating on one is one of the more underrated pieces of advice in this whole space, because project demand genuinely fluctuates independently across platforms — a quiet week on Mercor might coincide with strong demand on Handshake AI or elsewhere, and being spread across a few sources smooths out income in a way that being deep on just one can\'t. Being under-diversified is, in practice, the single most common reason someone\'s income on this kind of work suddenly drops for reasons that feel mysterious but usually aren\'t.',
+          'Keep a running log of feedback you receive, and actually revisit it before starting a new project or task type — feedback that just gets read once and forgotten is feedback that has to be relearned the hard way. And periodically reapply or express interest in higher-tier and specialist roles as your track record builds, even if you started in an accessible category like general writing evaluation — platforms and clients do notice sustained quality over time, and reapplying costs you little compared to what a category upgrade can be worth.',
+        ],
         steps: [
           'Track your quality/accuracy score (where visible) and address dips immediately rather than waiting for a suspension notice.',
           'Diversify across 2-3 platforms so a slow week on one doesn\'t stall your income entirely.',
@@ -590,6 +762,11 @@ export const courses = [
         minutes: 16,
         overview:
           'Everything in this module — pay ranges, requirements, even which platforms are legitimate — changes constantly, and this space attracts copycat and scam listings alongside real ones. This lesson is a repeatable, five-minute habit for verifying anything before you trust it or hand over your information, so you never have to take this course\'s word (or anyone else\'s) over the platform\'s own current terms.',
+        lecture: [
+          'Every specific number and process in this module — Mercor\'s retake count, Handshake AI\'s payout schedule, the pay ranges attached to each task category — was accurate at the time it was researched, and every one of them is the kind of detail that platforms change without much notice. That\'s not a flaw specific to this course; it\'s the nature of a fast-moving space with real companies making real business decisions. The right response isn\'t distrust of everything you read, it\'s a habit of quick, cheap verification before you act on anything that matters — money, personal data, or hours of your time.',
+          'The single highest-value habit in this whole lesson is also the simplest: go direct. Type a platform\'s domain into your browser yourself instead of clicking a link from a message, comment, or ad, and treat the platform\'s own current Careers or Help Center pages as the only genuinely up-to-date source of truth — not this course, not a forum post, not a screenshot someone shared in a group chat. Everything else in this lesson is really a variation on that same principle, applied to different situations: verifying the company itself, verifying who\'s actually interviewing you, and verifying terms before you commit real hours.',
+          'If you take away nothing else from this entire module, take away the one red flag that matters most: any request for money, a "processing fee," or sensitive financial details before real vetting has happened is the clearest, most reliable scam signal in this whole space. Legitimate platforms make money by taking a cut of the work they place, not by charging contributors to apply. The moment you see that pattern, stop, regardless of how convincing everything else around it looks.',
+        ],
         steps: [
           'Go direct: type the platform\'s domain into your browser yourself rather than clicking a link from a DM, comment, or ad. Confirm the URL and company name match what you expect before entering any information.',
           'Read the primary source: check the platform\'s own Careers/Help Center/FAQ pages for current role types, application steps, and stated pay. Treat this as the only up-to-date source of truth — not a course, a forum post, or a screenshot someone shared.',
@@ -622,6 +799,11 @@ export const courses = [
         title: 'Planning Your Site Structure',
         minutes: 8,
         overview: 'Decide what pages you actually need before generating anything.',
+        lecture: [
+          'The temptation with any AI website builder is to open it and start generating immediately, because the tool makes that so easy. Resist it. The businesses that end up with confusing, bloated websites almost always skipped this exact planning step — they let the tool\'s suggestions define the site structure instead of deciding it themselves first, and ended up with pages that exist because the AI suggested them, not because a visitor actually needs them.',
+          'Start from the visitor\'s intent, not a generic template list. Home, About, Services, and Contact are a reasonable default only because they map to real visitor questions — where am I, who are you, what do you offer, how do I reach you. For each page, write one honest sentence about what a visitor should actually do there; if you can\'t write that sentence, the page probably shouldn\'t exist yet.',
+          'A simple sitemap sketch — even five boxes and some arrows on paper — pays for itself the moment you\'re inside the builder, because it turns "what do I build next" into "which box am I filling in now." That small shift in mental overhead is the difference between a focused build session and an hour of aimless clicking around a tool\'s menu.',
+        ],
         steps: [
           'List your core pages: Home, About, Services/Offer, Contact.',
           'Write one sentence describing the goal of each page — what should a visitor do when they land here?',
@@ -634,6 +816,11 @@ export const courses = [
         title: 'Choosing the Right AI Website Tool',
         minutes: 10,
         overview: 'The three broad categories of AI website tools solve different problems — picking the wrong one wastes the most time in this module.',
+        lecture: [
+          'People new to AI website tools tend to assume there\'s one "best" one, then get frustrated when whichever one they picked doesn\'t quite fit. In reality, the three broad categories genuinely trade off against each other, and the right choice depends entirely on what you\'re building, not which tool has the flashiest demo.',
+          'All-in-one AI site builders — the ones where you type a prompt and get a full generated site — are unbeatable for speed on a straightforward marketing site or portfolio, precisely because they make nearly every decision for you. That strength is also their limit: the more custom or unusual your needs, the more you\'ll fight the tool instead of being helped by it. Traditional builders with AI features layered on give up some of that speed in exchange for real manual control over layout and design, which suits people who have a specific visual outcome in mind and want AI to accelerate getting there, not decide it for them.',
+          'The third path, AI coding assistants paired with a real framework and a proper host, is the most powerful and the most work, and it\'s only the right call when the site genuinely needs custom functionality — a real login system, a custom booking flow, anything a template fundamentally can\'t do. If that\'s your situation, the App Creation & Deployment module covers this path start to finish; for the simple marketing site most people actually need, reaching for that level of power is usually solving a problem you don\'t have yet.',
+        ],
         steps: [
           'All-in-one AI site builders (prompt-to-website tools built on top of drag-and-drop editors): fastest for a marketing site or portfolio, least flexible for custom functionality.',
           'Traditional builders with AI features bolted on (AI-assisted layout/copy inside an existing page builder): good middle ground if you want more manual control over design.',
@@ -650,6 +837,11 @@ export const courses = [
         title: 'Generating Pages with AI',
         minutes: 16,
         overview: 'Use an AI website builder to draft copy and layout quickly.',
+        lecture: [
+          'This is where the plan from lesson one earns its keep: feeding your sitemap and a genuine brand description into the builder gives it real material to work from, instead of forcing it to invent a business from nothing, which is exactly when AI-generated sites start to feel generic and interchangeable. The more concrete detail you give it upfront, the less regenerating you\'ll do later.',
+          'Treat the very first draft as exactly that — a draft, not a decision. Read the generated homepage copy specifically for accuracy, not just tone: AI builders will happily generate a confident-sounding claim about your business that isn\'t actually true, and that\'s a far worse problem on a real website than clunky phrasing is. When a section reads as generic, don\'t just hit regenerate blindly — go back and make your prompt more specific, since generic input reliably produces generic output.',
+          'Placeholder imagery is the last thing worth flagging before you move on: stock photos and AI-generated filler images look fine in isolation but read as obviously fake the moment a real visitor who knows the industry looks closely. Swapping in real or properly licensed photography, even just a handful of genuine images, does more for perceived trustworthiness than almost any copy change you could make.',
+        ],
         steps: [
           'Feed the builder your sitemap and a short brand description.',
           'Generate a first draft of the homepage and review the copy for accuracy.',
@@ -665,6 +857,11 @@ export const courses = [
         title: 'Writing Prompts That Produce On-Brand Copy',
         minutes: 12,
         overview: 'The difference between generic AI website copy and copy that actually sounds like your brand comes down to what you put in the prompt.',
+        lecture: [
+          'Two prompts asking for "professional website copy" will produce two versions of the exact same bland voice, because "professional" describes almost nothing specific. The gap between generic AI copy and copy that actually sounds like a real, distinct brand isn\'t a limitation of the tool — it\'s almost always a limitation of what was put into the prompt.',
+          'Give the tool real material to imitate: two or three specific adjectives paired with one example sentence written in that exact voice does more than a paragraph of vague description, because it gives the model a concrete target to match rather than an abstract quality to guess at. Naming your actual target customer with real specificity — not "photography clients" but "freelance photographers booking their first weddings" — does the same job for tone and content: a specific audience produces specific, relevant copy in a way a generic audience never can.',
+          'When a regenerated section still comes back generic, the fix isn\'t a third or fourth regeneration with the same prompt — it\'s adding one concrete detail the AI genuinely couldn\'t have guessed: a real number, a real constraint, a real specific client type. That one addition usually breaks the genericness far more reliably than repeating the same request and hoping for a different result.',
+        ],
         steps: [
           'Describe your brand voice in the prompt with 2-3 adjectives and one example sentence in that voice, not just "professional" or "friendly."',
           'Name your specific target customer, not a generic audience — "freelance photographers booking their first weddings" beats "photography clients."',
@@ -681,6 +878,11 @@ export const courses = [
         title: 'SEO Basics for AI-Generated Sites',
         minutes: 13,
         overview: 'AI-generated copy can quietly hurt search rankings if you skip these checks — search engines penalize thin or duplicate-sounding content.',
+        lecture: [
+          'AI-generated websites have a specific, avoidable SEO risk worth understanding directly: because many builders reuse similar underlying templates and phrasing patterns across thousands of sites, content that reads as generic to a human very often reads as generic to a search engine too, and search engines are explicitly built to deprioritize thin, interchangeable content in favor of pages that seem genuinely specific and useful. The fixes are cheap, but they don\'t happen automatically.',
+          'Title tags and meta descriptions are the highest-leverage, lowest-effort fix on this whole list — many builders leave these as generic defaults, and writing a unique, specific one for every page is a small task with an outsized effect on how a page shows up in search results. Pair that with a genuine heading hierarchy, one H1 per page followed by a logical structure of H2s and H3s that actually reflects how the content is organized, since search engines use that structure to understand what a page is actually about.',
+          'Alt text on images serves two purposes at once worth doing properly rather than skipping: it\'s an accessibility requirement for visitors using screen readers, and it\'s additional context search engines use to understand a page — writing real, specific descriptions instead of leaving it blank or generic pays off on both fronts simultaneously. And once your domain is live, confirming a sitemap.xml exists and submitting it to Google Search Console is what actually gets your pages discovered and indexed in a reasonable timeframe, rather than waiting to be found passively.',
+        ],
         steps: [
           'Give every page a unique, descriptive title tag and meta description — many AI builders leave these generic by default.',
           'Use one H1 per page and a logical H2/H3 hierarchy underneath it, matching how the page is actually organized.',
@@ -698,6 +900,11 @@ export const courses = [
         title: 'Custom Domain Setup',
         minutes: 10,
         overview: 'Connect a real domain name so your site looks professional.',
+        lecture: [
+          'A site built entirely on a free builder subdomain reads as unfinished no matter how good the design is, because a custom domain is one of the strongest subtle trust signals a small website has. It\'s also one of the cheapest professional upgrades available — a domain typically costs very little per year, and connecting it is a mechanical, well-documented process rather than a genuinely hard technical problem.',
+          'The two records you\'ll deal with most are worth actually understanding rather than just copy-pasting blindly: an A record points a domain directly at a server\'s numeric IP address, while a CNAME record points a subdomain at another domain name instead. Your website builder will tell you exactly which one it needs and what value to use — your job is entering it correctly in your registrar\'s DNS settings, plus any TXT record requested purely to prove you actually own the domain.',
+          'The one thing worth planning around explicitly: DNS changes are not instant. Propagation can take anywhere from a few minutes to a full 24-48 hours depending on your registrar and your visitors\' own internet providers, so this is not a step to do the morning of a planned launch — do it early, and confirm HTTPS is actually active on the new domain before sharing the link anywhere.',
+        ],
         steps: [
           'Purchase a domain from a registrar (or use one you already own).',
           'Copy the DNS records your website builder provides — usually an A record (points a bare domain to an IP) and/or a CNAME record (points a subdomain to another domain).',
@@ -712,6 +919,11 @@ export const courses = [
         title: 'Adding Forms, Analytics & Legal Pages',
         minutes: 12,
         overview: 'The unglamorous last mile that turns a pretty page into a real, trackable, compliant business site.',
+        lecture: [
+          'This lesson covers the parts of a website that nobody gets excited about and almost everybody underinvests in, precisely because they don\'t show up in a screenshot. A beautifully designed site that has no working way to contact the business, no visibility into who\'s visiting, and no basic legal pages isn\'t actually finished, no matter how polished the homepage looks.',
+          'A contact or lead-capture form is only real once you\'ve personally sent a test submission through it and confirmed it actually arrives somewhere you\'ll see — plenty of forms look correct in the builder\'s preview and silently fail once live, because a notification email wasn\'t configured or a field mapping broke. Treat "I tested it myself, live" as the actual definition of done here, not "it looks right in the editor."',
+          'Analytics is the other piece worth doing before launch specifically, not after: installing a tool like Google Analytics and verifying your domain in Google Search Console only starts collecting data from the moment it\'s live, so every day you delay is data about your earliest visitors that\'s gone permanently. Round it out with a genuine Privacy Policy and Terms page — most builders offer a generator, but actually reading the output once before publishing is worth the ten minutes, since a plausible-sounding generated policy that doesn\'t match how your site actually works is worse than none at all.',
+        ],
         steps: [
           'Add a contact or lead-capture form and send yourself a real test submission before launch.',
           'Install an analytics tool (e.g. Google Analytics) and verify the domain in Google Search Console so you can see real traffic once you launch.',
@@ -736,6 +948,11 @@ export const courses = [
         title: 'Choosing Your Stack',
         minutes: 7,
         overview: 'Pick tools that match your skill level and the app you want to build.',
+        lecture: [
+          'The most common way people waste time in this module is picking a tool before they\'ve actually pinned down what they\'re building, and then fighting the tool for the rest of the project because it wasn\'t the right fit from the start. The fix is embarrassingly simple and constantly skipped: decide what kind of thing you\'re actually making — a website, a mobile app, an internal tool for one team — before you open any specific builder or assistant, because that one decision eliminates most of the wrong options immediately.',
+          'For genuinely simple tools with no complex custom logic, a no-code app builder alone is often completely sufficient, and reaching for anything more powerful just adds unnecessary complexity. The moment real custom behavior enters the picture — logic a template genuinely can\'t express — an AI coding assistant paired with a standard web framework and a proper host becomes the right call, trading some speed for real flexibility.',
+          'Writing a one-paragraph spec of the app\'s core feature before choosing anything is the single habit that prevents most false starts: it forces the tool choice to follow the actual need, instead of picking an exciting tool first and then trying to bend your idea to fit it. And whatever you land on, aim to ship the smallest real version of the idea first — a working core feature you can expand later beats a half-built ambitious version every time, because the smallest version is the one that actually teaches you what to build next.',
+        ],
         steps: [
           'Decide if you need a website, mobile app, or internal tool — each points toward different tools.',
           'For simple internal tools or MVPs with no custom logic: a no-code app builder is often enough on its own.',
@@ -749,6 +966,11 @@ export const courses = [
         title: 'Writing a Spec Your AI Assistant Can Actually Build From',
         minutes: 12,
         overview: 'The single biggest lever on how well an AI coding assistant performs is how clearly you specify what you want before you start.',
+        lecture: [
+          'A vague request to an AI coding assistant produces vague, often subtly wrong code — not because the assistant is bad, but because "vague" leaves it to guess at exactly the decisions that actually determine whether the result matches what you had in mind. The fix isn\'t learning to code better prompts through trial and error; it\'s borrowing a format professional software teams already use for exactly this reason: the user story.',
+          '"As a [user], I want to [action], so that [outcome]" forces you to name the actual goal before any implementation detail, which matters because assistants (and human developers) build fundamentally better solutions when they understand why something is needed, not just what was asked for literally. Pairing that with two or three concrete acceptance criteria — specific, checkable statements of what has to be true for the feature to count as done — gives you and the assistant a shared, unambiguous definition of finished, instead of a fuzzy feeling of "close enough."',
+          'Edge cases deserve explicit mention because assistants default to the happy path unless told otherwise, the same way a junior developer might. Naming at least one — what happens on empty input, what happens when there are no results, what happens if a request fails — up front means it gets built in from the start instead of discovered as a bug later. And keeping your very first spec to exactly one feature, resisting the urge to describe the whole app at once, consistently produces sharper, more correct code than trying to cover everything simultaneously, which tends to produce something vaguely right about everything and precisely right about nothing.',
+        ],
         steps: [
           'Write the core feature as a user story: "As a [user], I want to [action], so that [outcome]" — this forces you to name the actual goal, not just a vague feature.',
           'List 2-3 concrete acceptance criteria: what has to be true for this feature to count as done.',
@@ -765,6 +987,11 @@ export const courses = [
         title: 'Building the Core Feature',
         minutes: 22,
         overview: 'Turn your spec into a working feature with an AI pair-programmer.',
+        lecture: [
+          'With a real spec in hand from the previous lesson, this is where it actually becomes working software — describing the feature to your AI assistant in plain language, using the user story and acceptance criteria you already wrote rather than reconstructing the request from scratch in the moment. Good spec work up front pays off directly here: a clear spec tends to produce a clear first draft, while a vague request produces code you\'ll spend far longer fixing than you would have spent specifying properly the first time.',
+          'The habit that matters most in this whole lesson, and the one people skip most often when they\'re excited about how fast AI coding feels: actually reading the generated code before you run it. This isn\'t about distrust of the tool, it\'s about the basic engineering discipline of understanding what you\'re about to execute — an assistant occasionally makes reasonable-looking but wrong assumptions, and catching that in a code review takes seconds, while catching it after it\'s already running in your app can take much longer.',
+          'Testing manually with three to five realistic inputs, not just one obvious happy-path example, is what actually validates the feature works the way you intended rather than just "runs without crashing." And when something\'s wrong, the instinct to reach for is iterating on your prompt to fix it, rather than diving in to hand-edit the generated code directly — staying in the conversation with your assistant keeps you both working from the same understanding of the feature, while silent manual edits create a growing gap between what you asked for and what actually exists.',
+        ],
         steps: [
           'Describe the core feature to your AI assistant in plain language, using the spec from the previous lesson.',
           'Review generated code before running it — never paste unread code into production.',
@@ -780,6 +1007,12 @@ export const courses = [
         title: 'Adding Accounts & a Database',
         minutes: 18,
         overview: 'The moment your app needs to remember anything specific to a user between visits, you need real accounts and persistent storage — not just local browser state.',
+        lecture: [
+          'There\'s a specific, recognizable moment in almost every app\'s development where it stops being a self-contained demo and starts needing a real backend: the instant it has to remember something about a specific person after they close the tab, or needs to know who\'s currently using it at all. Recognizing that moment clearly matters, because building past it with the wrong foundation (browser-only storage, no real accounts) means redoing foundational work later instead of building it right the first time.',
+          'For the overwhelming majority of small apps, standing up your own server and database from scratch is solving a much bigger problem than you actually have. A backend-as-a-service — a hosted database paired with built-in authentication — gets you real accounts and real persistent storage without needing to build or secure server infrastructure yourself, and it\'s almost always the right starting point precisely because it lets you focus on the feature instead of the plumbing underneath it.',
+          'Access control deserves attention before anything else gets built on top of accounts: confirm, explicitly and by testing it yourself, that a logged-out user or a different logged-in user genuinely cannot see someone else\'s private data. This is far easier to build correctly from the start than to retrofit later, once other features have quietly come to assume access works a certain way.',
+          'On schema design, resist the urge to plan every field you might ever need before you\'ve built anything. Start with the smallest data shape that fits the feature in front of you, and add fields as new features genuinely require them — this keeps the database honest about what the app actually does today, rather than cluttered with speculative structure for features that may never get built.',
+        ],
         steps: [
           'Recognize the signal: if the app needs to remember something after the browser tab closes, or needs to know who\'s using it, it needs a real backend.',
           'For most small apps, a backend-as-a-service (a hosted database plus built-in authentication) is the fastest path — it avoids standing up and securing your own server from scratch.',
@@ -796,6 +1029,11 @@ export const courses = [
         title: 'Testing Before You Ship',
         minutes: 11,
         overview: 'A manual pass before every deploy catches the failures that "it worked when I built it" misses.',
+        lecture: [
+          '"It worked when I tested it" and "it works" are not the same claim, and the gap between them is almost always the exact path you, as the builder, happened to take through your own app — which is rarely the path a genuinely new user takes. Deliberately walking through the entire feature as a brand-new user would, rather than the specific sequence you used while building it, is what actually catches confusing flows and missed edge cases before a real person does.',
+          'Testing on a phone-sized screen specifically, not just your comfortable desktop browser, is worth treating as mandatory rather than optional — most real users of most apps are on mobile, and layout or interaction problems that are invisible on a wide desktop screen are often immediately obvious and frustrating on a phone.',
+          'Trying to actively break your own app — submitting empty fields, pasting in huge amounts of text, double-clicking a submit button, using the browser\'s back button mid-flow — feels adversarial toward your own work, but it\'s exactly the kind of behavior real users produce accidentally, constantly. Finding and fixing these before you deploy costs you minutes; a real user finding the same bug costs you their trust in the product, which is a much more expensive thing to lose.',
+        ],
         steps: [
           'Walk through the entire feature yourself as a brand-new user would, not just the specific path you were coding.',
           'Test on a phone-sized screen, not just your desktop browser — most real users will be on mobile.',
@@ -812,6 +1050,11 @@ export const courses = [
         title: 'Deploying to Production',
         minutes: 13,
         overview: 'Get your app live and reachable by real users.',
+        lecture: [
+          'Deployment is where a project stops living only on your machine and becomes a real thing other people can use, and modern hosting has made the mechanical part of this genuinely simple: push your code to a hosting platform connected to your version control, and it typically builds and deploys automatically from there. The parts that still deserve real care are the ones that don\'t happen automatically.',
+          'Environment variables and secrets — API keys, database credentials, anything sensitive your app needs to run — have to be set explicitly on the hosting platform itself, separate from your code. This is a security practice, not a formality: these values should never be committed directly into your codebase, since anything in version control has a way of becoming more widely visible than intended, even in a project you consider private.',
+          'The step people most often skip, right when it matters most: personally running a smoke test on the actual live URL, checking that the core flows genuinely work in production, before you tell anyone it\'s ready. A deploy completing without errors is not the same claim as the app actually working for a real visitor, and the only way to know for certain is to check it yourself, live, before announcing it.',
+        ],
         steps: [
           'Push your code to a hosting platform connected to version control.',
           'Set required environment variables and secrets.',
@@ -826,6 +1069,11 @@ export const courses = [
         title: 'Monitoring, Errors & Iterating After Launch',
         minutes: 12,
         overview: 'Shipping is the start, not the finish — this is how you catch problems and keep improving without a full rewrite every time.',
+        lecture: [
+          'Launch day feels like the finish line, but for any app that\'s actually being used, it\'s closer to the starting line of the part that matters most: finding out how the app behaves under real, unpredictable use, and responding to that. Basic error tracking or logging is what makes that possible at all — without it, a crash on some real user\'s device somewhere is completely invisible to you, and invisible problems don\'t get fixed, they just quietly erode trust in the product one silent failure at a time.',
+          'Giving users one simple way to reach you — even just a plain email link — and then actually reading what comes in is a small addition with an outsized payoff, because real users surface real problems and real feature requests you\'d never think to test for yourself. The habit that matters most once feedback and errors start coming in: fix the specific thing that\'s broken with the smallest change that genuinely fixes it, rather than using the opportunity to rewrite surrounding code "while you\'re in there" — that instinct feels productive but usually introduces new risk for no real benefit.',
+          'Keep a running list of small, low-risk improvements and ship them one at a time rather than batching them into an occasional big rewrite. Small, frequent changes are lower-risk in a very concrete way: if a small change breaks something, you know immediately which change did it; if a large batched rewrite breaks something, you\'re debugging through weeks of accumulated changes at once, which is a fundamentally harder problem to isolate.',
+        ],
         steps: [
           'Set up basic error tracking or logging so a crash on a real user\'s device doesn\'t go completely invisible to you.',
           'Add one simple way for users to send feedback (even just an email link) and actually read what comes in.',
@@ -850,6 +1098,11 @@ export const courses = [
         title: 'Anatomy of a Great Prompt',
         minutes: 9,
         overview: 'The four ingredients every reliable prompt needs.',
+        lecture: [
+          'Every technique in this module is really an elaboration on one central fact: a language model responds to exactly what you give it, not to what you meant. There\'s no shared context it can silently infer the way a human colleague might — the prompt is the entire world it has to work with, which means every ambiguity you leave in it becomes a real ambiguity in the response you get back.',
+          'Four ingredients cover the large majority of what separates a reliable prompt from an inconsistent one. Stating a role or persona focuses the model\'s style and priorities ("respond as a senior copyeditor" behaves noticeably differently from no persona at all). Stating the task clearly and specifically removes room for the model to guess at what you actually want. Providing relevant context or examples grounds the response in your actual situation instead of a generic one. And specifying the output format you expect means you get something usable immediately, instead of a well-written response in the wrong shape you now have to reformat by hand.',
+          'None of these four are exotic tricks — they\'re closely related to how you\'d brief a capable but literal-minded new hire who has zero background on your project and can\'t ask clarifying questions before starting. That mental model, more than any specific technique, is the single most transferable thing to take from this entire module: specificity isn\'t a nice-to-have, it\'s the whole mechanism by which prompting actually works.',
+        ],
         steps: [
           'State the role/persona you want the model to take.',
           'State the task clearly and specifically.',
@@ -863,6 +1116,11 @@ export const courses = [
         title: 'Few-Shot Examples: Showing Instead of Telling',
         minutes: 11,
         overview: 'Giving the model 2-3 examples of exactly what you want is often more reliable than any amount of written instruction.',
+        lecture: [
+          'Written instructions are an indirect way of describing what you want — you\'re using language to describe a pattern, and the model has to reconstruct that pattern from your description. An example skips that translation step entirely: it shows the pattern directly, which is why two or three good examples frequently outperform several sentences of careful written instruction, especially for anything involving a specific tone, format, or style that\'s genuinely hard to describe in the abstract.',
+          'The examples you choose matter more than how many you include. They need to actually represent the range of inputs you\'ll give the model in practice, not just the single easiest, cleanest case — three examples that are all variations of the same simple scenario teach the model far less than two examples that span the real range of what you\'ll actually ask it to handle. Placing your real request last, right after the examples, lets the model treat it naturally as "continue this pattern" rather than a separate, disconnected ask.',
+          'When output quality drifts or feels inconsistent across attempts, the fix usually isn\'t rewriting your instructions from scratch — it\'s diagnosing the specific failure pattern you\'re actually seeing and adding one more targeted example that addresses exactly that gap. This turns prompt refinement from a vague "try rewording it" exercise into something closer to genuine debugging: identify the failure, add a targeted fix, verify it worked.',
+        ],
         steps: [
           'Write 2-3 example input/output pairs in the exact format and tone you want, before your real request.',
           'Keep the examples genuinely representative of the range of inputs you\'ll actually give it — not just the easiest case.',
@@ -879,6 +1137,11 @@ export const courses = [
         title: 'Chain-of-Thought: When to Ask for Step-by-Step Reasoning',
         minutes: 10,
         overview: 'Asking a model to reason through a problem before answering measurably improves accuracy on complex tasks — but it\'s wasted effort on simple ones.',
+        lecture: [
+          'Language models generate their response one piece at a time, building on what they\'ve already produced — which means asking a model to reason through a problem step by step before stating a final answer genuinely changes the quality of that answer, because the reasoning itself becomes material the model can build the conclusion on top of, rather than jumping straight to a guess. For genuinely multi-step or judgment-heavy tasks — math, weighing several factors against each other, debugging — this measurably improves accuracy, and it\'s one of the few prompting techniques with that kind of directly demonstrable effect.',
+          'It\'s just as important to know when this technique is wasted effort, because it isn\'t free — it adds length and response time for no benefit on tasks that don\'t need it. A simple factual lookup or a straightforward formatting request doesn\'t become more accurate by asking for reasoning first; it just becomes slower. Reaching for chain-of-thought reasoning is a decision to match to the actual complexity of the task, not a default to apply everywhere.',
+          'When you do use it and need a clean final answer for something downstream (an app, an automation), ask explicitly for the reasoning first and a clearly marked final answer last, so you can reliably parse out just the answer without extra work. And when an answer comes back wrong, the visible reasoning trail is usually the fastest possible way to find out why — reading where the logic actually broke is far more informative than just seeing a wrong final number with no explanation attached.',
+        ],
         steps: [
           'For multi-step or judgment-heavy tasks (math, multi-factor decisions, debugging), explicitly ask the model to reason step by step before giving a final answer.',
           'For simple factual or formatting tasks, skip this — it adds unnecessary length and latency without improving the result.',
@@ -895,6 +1158,11 @@ export const courses = [
         title: 'Context Windows & Memory',
         minutes: 11,
         overview: 'Understand how much information a model can "see" at once and why it matters.',
+        lecture: [
+          'A context window is the total amount of text a model can actually "see" at once — your prompt, any documents you\'ve pasted in, and the conversation history so far, all combined. It\'s tempting to treat a large context window as an excuse to paste in everything that might possibly be relevant, but more text isn\'t free: the more the model has to sift through, the more likely genuinely important details get diluted among less relevant ones, even well within the technical limit.',
+          'Practicing the discipline of trimming irrelevant text before pasting it into a prompt is a skill that pays off constantly — a two-paragraph excerpt of exactly the relevant section usually produces a better, more focused response than pasting an entire ten-page document and hoping the model finds the right part on its own.',
+          'For genuinely long documents you need to reference across multiple follow-up prompts, summarizing once up front and working from that summary afterward is almost always more effective than re-pasting the full document into every new message. It keeps every subsequent prompt cleaner and more focused, and in practice, cleaner and shorter context reliably beats a technically-within-limits wall of text.',
+        ],
         steps: [
           'Learn what a context window is and why longer isn\'t always better.',
           'Practice trimming irrelevant text before pasting it into a prompt.',
@@ -907,6 +1175,11 @@ export const courses = [
         title: 'System Prompts vs. User Prompts',
         minutes: 10,
         overview: 'Knowing which instructions belong at the system level versus in each individual message is what makes a multi-turn AI feature behave consistently.',
+        lecture: [
+          'The distinction between a system prompt and a user prompt matters most the moment you\'re building anything with more than one exchange — a chatbot, an assistant feature, anything with an ongoing conversation rather than a single one-off request. A system prompt is set once and holds true for the whole conversation: persona, tone, formatting rules, hard constraints. A user prompt is the specific ask in front of you right now, the thing that changes every single turn.',
+          'Mixing the two together is a common source of inconsistent behavior in anything you build: if persistent rules live buried inside individual user messages instead of the system prompt, they compete for attention with whatever the specific request of that turn is, and they tend to get followed less reliably the deeper a conversation goes. Keeping the system prompt focused purely on identity and rules, not the task itself, is what keeps it acting as a stable foundation rather than one more thing the model has to juggle.',
+          'This distinction becomes a genuine safety consideration, not just a tidiness one, the moment you\'re building something end users interact with rather than just chatting yourself. Anything you never want a user to be able to talk the model out of belongs at the system level specifically, because a clever or adversarial user message can often override an instruction that was only ever placed in a regular prompt — the system prompt is a meaningfully stronger place to put a genuine hard constraint.',
+        ],
         steps: [
           'Use a system prompt for anything that should hold true for the entire conversation: persona, tone, formatting rules, hard constraints.',
           'Use the user prompt for the specific request in front of you right now — the thing that changes turn to turn.',
@@ -923,6 +1196,11 @@ export const courses = [
         title: 'Structured Output Techniques',
         minutes: 14,
         overview: 'Force consistent, parseable output for use in apps and automations.',
+        lecture: [
+          'A response that reads perfectly well to a human is often completely useless to a program that needs to parse it — this is exactly the gap this lesson closes, and it\'s the single most important prompting skill for anyone connecting a model into an app or automation (including every AI step you\'ve built or will build in the n8n module). If code downstream needs to read a specific field, a nicely written paragraph mentioning that value somewhere isn\'t good enough; you need a predictable, consistent structure every time.',
+          'The most reliable way to get that structure is the same lesson from the few-shot examples earlier in this module, applied specifically to format: ask for a specific structure (JSON, a table, a numbered list) and, even more importantly, show an example of the exact structure you want rather than only describing it in words. A concrete example of the target shape is worth far more than an abstract description of it, because "give me JSON" leaves the exact field names and structure to chance, while showing one example locks it in precisely.',
+          'Explicit constraints close the remaining gaps: telling the model to include only specific named fields, or to produce no extra commentary before or after the structured output, prevents the small amounts of conversational padding that otherwise break automated parsing. And for anything feeding directly into code, validate the output programmatically rather than trusting it blindly, and build in a retry when validation fails — even a very reliable prompt will occasionally produce a malformed result, and a system that expects that and handles it gracefully is far more robust than one that assumes perfection.',
+        ],
         steps: [
           'Ask for output in a specific format (JSON, table, numbered list).',
           'Provide an example of the exact structure you want.',
@@ -936,6 +1214,12 @@ export const courses = [
         title: 'Evaluating & Iterating on Your Prompts',
         minutes: 13,
         overview: 'Treat prompt changes like code changes — test them against a consistent set of examples instead of eyeballing one output and calling it done.',
+        lecture: [
+          'The most common mistake in prompt writing isn\'t any specific technique — it\'s calling a prompt "done" after seeing it work once, on one example, without ever actually testing whether it\'s reliable. A prompt that produces a great result on the first thing you happen to try it on hasn\'t been validated, it\'s just been observed once, and those are very different claims to make about something you\'re about to depend on.',
+          'Treating prompt iteration like code testing fixes this directly: build a small set of eight to ten realistic inputs, deliberately including a couple of genuinely tricky edge cases, before you\'re willing to call any version of a prompt finished. Run every candidate version of the prompt against that full set, not just the one example that happened to come to mind first — a prompt that looks strong on a single cherry-picked test often reveals real weaknesses the moment it meets a slightly different input.',
+          'When you find failures, look for the pattern across them rather than treating each one as an isolated, unrelated glitch — a genuine pattern points you toward exactly what the prompt needs to address, while treating each failure separately leads to scattershot fixes that don\'t generalize. And change exactly one thing at a time between versions, the same discipline as a controlled experiment, because changing several things simultaneously means you can\'t actually tell which change caused an improvement or a regression.',
+          'Finally, save your best-performing prompt versions somewhere durable — a document, a notes file — rather than letting them live only in a chat history that\'s easy to lose track of. A prompt that took real iteration to get right is a genuine, reusable asset, and treating it as disposable throws away real work.',
+        ],
         steps: [
           'Build a small test set of 8-10 realistic inputs, including a couple of tricky edge cases, before you consider a prompt "finished."',
           'Run every prompt version against the full test set, not just the one example you happened to try first.',
@@ -961,6 +1245,11 @@ export const courses = [
         title: 'Picking a Profitable Niche',
         minutes: 10,
         overview: 'Find a content angle with real audience demand before you produce anything.',
+        lecture: [
+          'The instinct to pick a niche based purely on personal passion, without checking whether an audience actually exists for it, is the single most common reason faceless channels stall before they ever get traction. A niche needs two things simultaneously to be worth building on: real, checkable demand, and low enough competition that a new channel has a realistic path to being noticed within it. Passion alone satisfies neither.',
+          'Start broad and let real signal narrow it down. List five topics you could genuinely sustain content about — genuine interest matters here, but as a filter for what you can keep producing, not as the primary selection criterion — then check actual search and social volume for each before committing to any of them. A topic with real, visible search and social activity has a real audience already looking; a topic with none of that, however interesting it is to you personally, means you\'d be creating content for an audience that doesn\'t yet exist.',
+          'Between two niches with roughly similar demand, the tiebreaker that matters most for a faceless channel specifically is sustainability, not novelty. You\'re going to be producing content in this niche regularly for months if it\'s going to work — a niche you can keep generating fresh angles on consistently will outperform a "perfect," trendier niche you burn out on after three weeks, every time.',
+        ],
         steps: [
           'List 5 topics you find genuinely interesting or can research quickly.',
           'Check search and social volume for each topic.',
@@ -973,6 +1262,11 @@ export const courses = [
         title: 'Building a Content Pillar System',
         minutes: 11,
         overview: 'A small, repeatable set of content types means you\'re never staring at a blank page trying to invent a new idea from scratch.',
+        lecture: [
+          'The blank page is the actual enemy of consistent content, far more than lack of skill or lack of tools — and a content pillar system exists specifically to remove it from your process entirely. Instead of asking the open-ended, exhausting question "what should I post today," you\'re asking the much easier, bounded question "which of my three or four established formats is next," which is a decision you can make quickly and repeatedly without creative fatigue setting in.',
+          'Defining three or four recurring pillars — a myth-versus-fact format, a quick-tip format, a before-and-after format, whatever fits your specific niche — gives you reusable structures to pour new content into, rather than reinventing the format every single time. Writing five specific post ideas under each pillar up front, before you need them, builds a genuine backlog you can draw from during a busy week instead of scrambling for an idea the day you need to post.',
+          'The system pays off doubly once you have real performance data: revisiting which pillar actually performs best every few weeks and shifting more of your effort toward it turns content creation from a guessing game into something you can genuinely optimize over time, based on what your specific audience actually responds to rather than what you assumed they would.',
+        ],
         steps: [
           'Define 3-4 content pillars for your niche — recurring formats like "myth vs. fact," "quick tip," "before/after," or "reacting to a common question."',
           'Write 5 specific post ideas under each pillar so you have a real backlog, not just categories.',
@@ -989,6 +1283,11 @@ export const courses = [
         title: 'AI-Generated UGC Scripts',
         minutes: 13,
         overview: 'Write scripts for AI avatars or voiceover-style content.',
+        lecture: [
+          'A script written to be read on a page and a script written to be spoken aloud are genuinely different documents, even when they cover the same content — spoken delivery needs shorter sentences, natural pauses, and a rhythm that written prose doesn\'t. Before AI avatars or voice tools enter the picture at all, the script itself has to be right, because no amount of polished delivery fixes an awkwardly structured script underneath it.',
+          'The opening few seconds deserve disproportionate attention relative to everything after them, because on short-form platforms specifically, that\'s the entire decision point for whether anyone keeps watching at all — a strong hook with a mediocre middle outperforms a weak hook with a brilliant middle nearly every time, simply because the brilliant middle never gets seen. From there, a clear problem-solution-call-to-action structure gives the viewer a reason to keep watching (the problem), a payoff for doing so (the solution), and a next step once they\'re engaged (the call to action).',
+          'Length discipline matters more on these platforms than almost any other creative decision: trimming to the platform\'s ideal range, typically fifteen to thirty seconds for most short-form content, forces genuine editing rather than padding, and a tight script that respects the platform\'s actual attention patterns consistently outperforms a longer one that technically covers more ground but loses viewers along the way.',
+        ],
         steps: [
           'Draft a hook for the first 3 seconds of the video.',
           'Write a script with a clear problem → solution → call to action structure.',
@@ -1002,6 +1301,12 @@ export const courses = [
         title: 'Producing Content with AI Avatars & Voice Tools',
         minutes: 15,
         overview: 'The practical workflow for turning a finished script into a finished video without showing your own face or recording your own voice.',
+        lecture: [
+          'A "faceless" channel doesn\'t mean an anonymous, inconsistent one — the whole strategy only works if your audience can still recognize the channel as one consistent creator across posts, even without ever seeing a real human face. That recognizability comes entirely from consistency in your chosen avatar or voice, which is why picking one and sticking with it matters more than hunting for the technically "best" option and switching whenever something newer comes along.',
+          'Feed your finished script into the generation tool exactly as written, including the pauses and emphasis you marked while scripting — pasting an unformatted wall of text throws away the delivery planning you already did and leaves pacing entirely to the tool\'s defaults, which are rarely as good as a deliberately marked-up script.',
+          'Watching the entire generated clip before publishing, every single time, is non-negotiable, and it\'s the step most likely to get skipped when you\'re producing in volume. Mispronunciations, awkward pacing, or a gesture that doesn\'t match the line being spoken are common in generated content and completely avoidable with one full watch-through — a single mispronounced word can undercut an otherwise strong video far more than viewers might expect.',
+          'For sections where the avatar is just talking with nothing else happening on screen for too long, simple b-roll or on-screen text keeps the video visually interesting rather than static — this is a small production choice that measurably affects retention, since a viewer\'s eyes wandering is often the first step toward them scrolling away entirely.',
+        ],
         steps: [
           'Pick one AI avatar or cloned/synthetic voice and stick with it across posts — consistency is what makes a "faceless" channel still feel like a recognizable creator.',
           'Feed the script in exactly as written, including your marked pauses and emphasis, rather than pasting a wall of unformatted text.',
@@ -1018,6 +1323,11 @@ export const courses = [
         title: 'Posting Cadence & the Algorithm',
         minutes: 11,
         overview: 'Consistency beats sporadic virality — most faceless channels succeed on volume and testing, not on any single hit.',
+        lecture: [
+          'It\'s tempting to imagine growth on these platforms comes down to producing one perfect, viral post, but the channels that actually succeed at scale almost always got there through sustained volume and continuous small experiments, not a single lucky hit. A cadence you can genuinely sustain for months, even if it\'s modest, will outperform an intense burst of posting that burns you out after two weeks — the algorithm broadly rewards accounts that keep showing up consistently over ones that appear and disappear.',
+          'Batch production is what actually makes a sustainable cadence realistic: sitting down once and producing several videos at a time from your content pillar backlog, then scheduling them out, removes the daily pressure of having to create something from scratch every single day, which is exactly the pressure that causes most people to quietly stop posting.',
+          'Treat every post\'s opening line as a genuine experiment rather than a fixed choice: varying the hook across otherwise similar videos and tracking which style holds attention longer turns your content into a running study of what actually works for your specific audience, rather than a guess repeated indefinitely. And resist judging any single format after one underperforming post — a real pattern only emerges across several attempts, and abandoning a genuinely promising format after one weak data point is a common, avoidable mistake.',
+        ],
         steps: [
           'Commit to a posting frequency you can actually sustain for months, not the maximum frequency you can manage for one good week.',
           'Batch-produce multiple videos in one sitting using your content pillar backlog, then schedule them out.',
@@ -1034,6 +1344,11 @@ export const courses = [
         title: 'Running Your First Ad Set',
         minutes: 15,
         overview: 'Turn a working organic post into a small, controlled paid test.',
+        lecture: [
+          'The most reliable way to start with paid advertising on a faceless channel is not to create a new ad from scratch — it\'s to take content that\'s already proven itself organically and put a small amount of money behind it. A post that already performed well earned that performance from real viewers with no financial incentive behind it, which is a far stronger signal that the creative actually works than any guess about what might perform well as a fresh ad.',
+          'Starting with a small daily budget you\'re genuinely comfortable testing with, rather than a large one you\'re nervous about, keeps the downside contained while you\'re still learning how your specific audience responds to paid placement versus organic reach — these can behave differently, and a small test protects you from a expensive surprise. Targeting a narrow audience based on the niche research from earlier in this module, rather than a broad general audience, gives the ad platform a clearer signal about who\'s actually responding.',
+          'The discipline that matters most here is patience with the data: let the ad run three to four days before making any changes, and never judge results after less than 48-72 hours. Ad platforms need a real sample size to optimize delivery, and reacting to the first few hours of data, which is often noisy and unrepresentative, is one of the most common ways people sabotage an ad that would have performed fine if left alone slightly longer. Decide whether to kill or scale based on cost-per-result specifically, not on how the numbers feel in the moment.',
+        ],
         steps: [
           'Pick your best-performing organic post as the ad creative.',
           'Set a small daily budget you\'re comfortable testing with.',
@@ -1049,6 +1364,11 @@ export const courses = [
         title: 'Reading Your Analytics & Doubling Down',
         minutes: 12,
         overview: 'The metrics that actually predict growth are different from the ones that feel the most satisfying to watch.',
+        lecture: [
+          'Likes feel good to watch climb, but they\'re a relatively weak signal of what\'s actually driving growth on most platforms — watch time and hook retention, meaning how far into a video people actually stick around, are far more directly tied to how the algorithm decides to distribute content further. Learning to check retention specifically, not just the more visible, more emotionally satisfying like count, is the actual skill this lesson is teaching.',
+          'Saves and shares deserve to be tracked as their own distinct category rather than lumped in with likes, because they represent a meaningfully stronger signal — someone saving a post or sharing it with another person is investing more effort than a passive tap, which usually means the content was genuinely useful or resonant, not just momentarily amusing.',
+          'The actual habit this lesson is building toward: at the end of each month, identify your two or three best-performing posts and ask specifically what they have in common — hook style, topic, length, format. Growth on these platforms usually comes not from constant creative reinvention but from noticing what already works and deliberately producing more of exactly that pattern, treating each new post as an informed bet based on real data rather than a fresh roll of the dice every time.',
+        ],
         steps: [
           'Prioritize watch time / hook retention (how far into the video people actually watch) over raw likes — retention is what the algorithm rewards most directly.',
           'Track saves and shares separately from likes — they\'re a stronger signal that content was genuinely useful, not just briefly amusing.',
@@ -1073,6 +1393,11 @@ export const courses = [
         title: 'What Is Automation?',
         minutes: 6,
         overview: 'The core idea behind automating repetitive business tasks, before any specific tool enters the picture.',
+        lecture: [
+          'Strip away every tool and buzzword, and automation is a genuinely simple idea: something happens (a trigger), and because of that, something else happens automatically (an action), with no human doing the in-between steps by hand. That\'s the entire concept. Everything else in this module — n8n, workflows, nodes, credentials — is just the specific vocabulary and tooling for implementing that one idea reliably and at scale.',
+          'The reason this matters as a business skill, not just a technical one, is that most small businesses are drowning in exactly this kind of repetitive manual work without realizing it\'s automatable: copying a form reply into a spreadsheet, sending the same follow-up email to every new customer, manually updating a status when something changes. None of it is hard work individually, but it adds up to real hours every week, and it\'s exactly the kind of work a client will happily pay someone to make disappear.',
+          'Before you touch any tool, practice spotting these patterns in the world around you. Any time you notice yourself (or someone else) doing the identical sequence of steps in response to the identical trigger, that\'s a candidate for automation — and training your eye to see that pattern is arguably a more valuable skill than knowing any specific automation tool, because tools change and that instinct doesn\'t.',
+        ],
         steps: [
           'Define automation as "trigger → action" without manual steps in between.',
           'List 5 repetitive tasks in a typical small business (e.g. copying form replies into a spreadsheet, sending the same follow-up email, updating a status column by hand).',
@@ -1084,6 +1409,11 @@ export const courses = [
         title: 'What Is AI Automation?',
         minutes: 8,
         overview: 'Where AI models fit inside an automated workflow, and where they don\'t.',
+        lecture: [
+          'A plain automation follows a fixed rule: if this exact condition, then that exact action. It\'s fast, predictable, and cheap to run, but it breaks the moment a situation falls outside the rule it was given. AI automation adds a different kind of step into the mix — one that can exercise judgment on unstructured input: summarizing a messy email, classifying an ambiguous request, drafting a reasonable first-pass reply. That\'s the entire distinction this lesson is building: rules for anything with a clear yes/no answer, AI for anything that genuinely requires judgment.',
+          'The mistake beginners make in both directions is worth naming explicitly. Using an AI step where a plain rule would do is slower, more expensive, and less predictable than it needs to be — if "always route orders over $500 to the manager" is the actual rule, an IF node handles that instantly and for free, and involving an AI model adds cost and unpredictability for zero benefit. Going the other way, trying to force a rigid rule onto something genuinely ambiguous, like "is this customer message angry," usually produces a brittle system that breaks constantly, because language doesn\'t sort cleanly into keyword-based buckets.',
+          'The practical skill this lesson is building is triage: before you build any workflow, look at every step in the process and ask whether it needs judgment or just needs a rule. That one question, asked honestly at each step, is what separates automations that are cheap, fast, and reliable from ones that are needlessly expensive or needlessly brittle.',
+        ],
         steps: [
           'Identify steps in a workflow that need judgment, not just rules (e.g. summarizing, classifying, drafting a reply).',
           'See how an AI step can replace a manual review step, while a plain logic step (an IF/filter) handles anything with a clear yes/no rule.',
@@ -1096,6 +1426,12 @@ export const courses = [
         minutes: 9,
         overview:
           'n8n is an open-source, node-based workflow automation tool. You build workflows visually on a canvas — trigger nodes start a run, other nodes act on the data, and connections between nodes control the flow — and it can run in the cloud or on your own server.',
+        lecture: [
+          'n8n\'s core idea is a visual canvas where each "node" is one step in a process, and connecting nodes together with lines defines the order data flows through them. A trigger node sits at the start and decides when the workflow runs at all; everything connected after it processes, transforms, or acts on the data that trigger produced. You never write a traditional program — you assemble a sequence of pre-built steps and configure each one, which is the entire meaning of "no-code" here: the logic is real and can be genuinely sophisticated, but it\'s expressed visually instead of in code.',
+          'The choice between n8n Cloud and self-hosting isn\'t just a pricing decision, it\'s a real trade-off worth understanding early. Cloud means someone else runs the infrastructure — you sign up and start building immediately, at the cost of a recurring subscription and someone else\'s server holding your data. Self-hosting means you run n8n yourself, on your own server, which takes real setup work (covered in depth later in this module) but removes per-seat or per-execution pricing at scale and gives you full control over exactly where your automation data lives — a meaningful selling point for privacy-conscious clients.',
+          'Compared to more mainstream tools like Zapier or Make, which most business owners have at least heard of, n8n trades a gentler learning curve for substantially more control: you can drop into a code step when a visual node genuinely can\'t do what you need, you\'re not capped by an artificial step limit, and self-hosting removes the recurring per-task costs that make those other tools expensive at real scale. That control is exactly why n8n has become a favorite among people building automation as a service for clients, rather than just automating their own one-off tasks.',
+          'One feature is worth understanding early because it removes almost every "but what if the tool I need isn\'t supported" worry before it starts: the generic HTTP Request node can call literally any API on the internet that\'s documented, whether or not n8n has a dedicated node for that specific app. That single fact is what makes "n8n doesn\'t have a native integration for X" almost never a real blocker — it just means you\'ll configure the HTTP Request node by hand instead of using a pre-built shortcut.',
+        ],
         steps: [
           'Understand the two ways to run n8n: n8n Cloud (hosted for you, paid subscription, zero setup) or self-hosted (you run it yourself, more setup, much cheaper at scale, full data control).',
           'Understand why n8n is popular for an automation agency specifically: no per-task pricing when self-hosted, full control over data, and it can call any API through the generic HTTP Request node even without a dedicated integration.',
@@ -1111,6 +1447,12 @@ export const courses = [
         title: 'n8n Core Concepts: Nodes, Triggers & Data',
         minutes: 13,
         overview: 'The handful of concepts every n8n workflow is built from — learn these once and every workflow afterward is a variation on the same pattern.',
+        lecture: [
+          'Every n8n workflow, regardless of how elaborate it eventually looks, is built from the same small vocabulary of concepts repeated in different combinations. Learning these thoroughly now means every remaining lesson in this module is really just a new application of ideas you already understand, rather than new material.',
+          'A trigger node is what starts a workflow run, and choosing the right trigger type is often the first real design decision in any automation: a Manual Trigger for testing (you click a button), a Schedule Trigger for anything time-based (run every day at 9am), a Webhook for anything that needs to respond instantly to an external event (a form submission, an API call from another system), or an app-specific trigger like "New Row Added" that watches a connected service for changes. Everything after the trigger node is a regular node, which either transforms the data (reshaping or renaming fields with a Set node), branches it (an IF or Switch node sending data down different paths based on a condition), or acts on it externally (calling an API, sending an email, writing to a spreadsheet).',
+          'The single most important mental model to build is that data flows between nodes as structured JSON, and every node\'s output becomes the next node\'s input. This isn\'t an abstract detail — it\'s the actual debugging tool you\'ll use constantly. Click any node after running it once, and its output panel shows you exactly what data it produced, in exactly the shape the next node will receive it. Reading that panel, honestly and carefully, is the single highest-leverage skill in all of n8n, because the vast majority of "why isn\'t this working" problems come down to a field not existing, being named differently than expected, or nested one level deeper than you assumed.',
+          'Expressions, written as {{ $json.fieldName }}, are how you pull a value produced by an earlier node into a field anywhere later in the workflow — this is the mechanism that lets a name captured in step one show up in an email sent in step five. And credentials are stored once, centrally, per connection (one Google account, one Slack workspace) and then reused by reference across every node and workflow that needs that connection, rather than being retyped or pasted into each individual node — this is both more convenient and meaningfully more secure, since a credential lives in exactly one place instead of being scattered across dozens of node configurations.',
+        ],
         steps: [
           'Trigger nodes start a workflow: Manual Trigger (you click "run"), Schedule Trigger (runs on a timer), Webhook (runs when a URL is called), or an app-specific trigger like "New Row Added."',
           'Regular nodes act on data as it flows left to right across the canvas: transform it (Edit Fields / Set), branch it (IF, Switch), call an API (HTTP Request, or an app-specific node like Gmail or Google Sheets).',
@@ -1129,6 +1471,11 @@ export const courses = [
         title: 'Creating Your n8n Account: Cloud vs. Self-Hosted',
         minutes: 10,
         overview: 'Get an n8n instance running so you can start building. Pick cloud for the fastest start; self-hosting is covered in depth later in this module.',
+        lecture: [
+          'The fastest way to start learning is genuinely not the way you\'ll necessarily end up running things in production, and that\'s fine — n8n Cloud exists precisely to remove setup friction while you\'re still building the core skill, which is designing workflows, not administering servers. Sign up for a Cloud trial and you\'re looking at an empty canvas within a couple of minutes, with zero infrastructure to think about.',
+          'If you\'d rather avoid a subscription entirely while learning, running n8n locally is genuinely free and takes only slightly more setup: install Node.js if you don\'t already have it, then run a single command that starts a local n8n instance you can open in your browser. This local instance behaves identically to the Cloud version for everything you\'ll do in this module — the same nodes, the same canvas, the same everything — it just lives on your own machine instead of someone else\'s server.',
+          'Whichever path you take, treat your first workflow as a genuine sandbox, not a real automation: give it an obviously non-production name, and resist the temptation to connect real client credentials to it while you\'re still learning the mechanics. Running the built-in example workflow n8n ships with is worth doing immediately — it\'s a fast, guaranteed way to confirm your instance is actually executing nodes correctly before you invest time building your own.',
+        ],
         steps: [
           'For the fastest start: sign up for an n8n Cloud trial and open the empty canvas — no installation needed.',
           'For a free local option instead: install Node.js, then run n8n locally with a single command (`npx n8n`) and open the local URL it prints.',
@@ -1145,6 +1492,11 @@ export const courses = [
         title: 'Building Your First Workflow: Trigger to Action',
         minutes: 16,
         overview: 'Your first real, working workflow — small on purpose, so the mechanics are the whole lesson.',
+        lecture: [
+          'This first workflow is deliberately trivial in what it accomplishes, because the goal isn\'t the output — it\'s building comfort with the mechanics you\'ll use in every single workflow for the rest of this module. A Manual Trigger gives you a repeatable "run it now" button so you can iterate quickly without waiting for a real event. An Edit Fields node right after it lets you create test data by hand, standing in for whatever a real trigger (a form, an API call) would eventually provide.',
+          'The HTTP Request node you add next is worth paying close attention to, because it\'s the single most versatile node in all of n8n — it\'s what you reach for any time you need to call an API that doesn\'t have a dedicated n8n node, which, as covered in the "What Is n8n?" lesson, is most of the internet. Mapping one of your Set node\'s fields into the request using an expression is your first hands-on rep at the exact skill from the previous lesson: pulling data from an earlier step into a later one.',
+          'Executing the workflow and reading each node\'s output panel in order is the actual point of this lesson, more than the workflow itself. And deliberately breaking something — misspelling a field name in an expression on purpose — is worth doing even though it feels backwards, because seeing what an n8n error actually looks like once, in a low-stakes sandbox, makes real errors far less intimidating later, when you\'re debugging something that actually matters to a client.',
+        ],
         steps: [
           'Add a Manual Trigger node as the starting point.',
           'Add an Edit Fields (Set) node after it and create a couple of test fields, e.g. name and email, with values you type in yourself.',
@@ -1162,6 +1514,12 @@ export const courses = [
         title: 'Connecting Google Sheets as Your Database',
         minutes: 15,
         overview: 'Most client automations need somewhere to store data. A Google Sheet is the fastest "database" to stand up with no infrastructure.',
+        lecture: [
+          'Almost every automation you\'ll build for a real client needs to remember something between runs — a list of leads, a log of processed orders, a status per customer — and a proper database is overkill for the scale most small businesses actually operate at. A Google Sheet, connected properly, gives you a "database" a client can already read, edit, and understand without any technical background, which matters enormously for client trust: they can open it themselves any time and see exactly what your automation has been doing.',
+          'Connecting it requires a short detour through Google\'s own developer tooling: enabling the Sheets API on a Google Cloud project, then completing an OAuth sign-in inside n8n to authorize access. This can feel like unnecessary ceremony the first time you do it, but it\'s standard practice across virtually every service with real user data behind it, and you\'ll repeat a near-identical process for Gmail in the next lesson and for production credentials later in this module — so getting comfortable with it once pays off repeatedly.',
+          'The header row of your sheet deserves real planning before you touch the workflow builder, because n8n\'s Google Sheets node reads those headers to map fields automatically. Decide your columns deliberately — Name, Email, Source, Status, Date Added is a reasonable starting shape for a lead-tracking sheet — before you start wiring up Append or Update operations, since redesigning columns after a workflow is already built means going back and remapping every field reference.',
+          'Practice both directions deliberately: appending new rows is the more obvious operation, but reading existing rows back out (Get Rows or Search) is equally important and easy to neglect while learning, since your workflows will very often need to check what\'s already there before deciding what to do next.',
+        ],
         steps: [
           'In Google Cloud Console, enable the Google Sheets API for a project (create a project first if you don\'t have one).',
           'In n8n, create a new Google Sheets credential and complete the OAuth sign-in flow to connect your Google account.',
@@ -1180,6 +1538,12 @@ export const courses = [
         title: 'Connecting Gmail & Sending Automated Emails',
         minutes: 14,
         overview: 'Add real email sending to a workflow — the other integration nearly every client automation needs.',
+        lecture: [
+          'If Google Sheets gives your automations memory, Gmail gives them a voice — the ability to actually notify someone, follow up, or confirm an action happened, without a human sitting there writing the message. Between Sheets and Gmail, you now have the two integrations that cover a genuine majority of what small-business automation actually asks for: remember something, and tell someone about it.',
+          'Setting it up follows the same OAuth pattern as Sheets, but it\'s a genuinely separate credential even though it\'s the same underlying Google account — Google scopes access per-API, not per-account, so don\'t assume connecting Sheets automatically grants Gmail access too. Building the subject and body with expressions is where this lesson connects directly back to the core-concepts lesson: addressing someone by a name captured earlier in the workflow, or referencing a specific detail from their submission, is what makes an automated email read as personal rather than obviously templated.',
+          'Sending a real test email to yourself before this ever touches a customer is not optional, and it\'s worth checking more than just whether it arrived: look at line breaks specifically, since plain text formatting in an expression doesn\'t always translate the way you\'d expect into an email body, and check every dynamic field actually populated instead of showing a raw unrendered placeholder.',
+          'The credential manager point is worth repeating here because email is exactly the kind of integration where the temptation to shortcut is highest: never paste an API key, password, or app-specific token directly into a node\'s field. Store it in n8n\'s credential manager, once, and reference it — that\'s what keeps a secret from being scattered across every workflow that happens to send an email.',
+        ],
         steps: [
           'In Google Cloud Console, enable the Gmail API on the same project you used for Sheets.',
           'In n8n, create a Gmail credential and complete the OAuth sign-in flow (this is separate from the Sheets credential even though it\'s the same Google account).',
@@ -1197,6 +1561,11 @@ export const courses = [
         title: 'Using a Form as Your Automation Trigger',
         minutes: 14,
         overview: 'Turn a real intake form into the start of an automation, so leads flow in without anyone copying and pasting.',
+        lecture: [
+          'Everything you\'ve built so far has started with a Manual Trigger — you clicking a button. Real automation replaces that click with something that fires on its own when a real event happens, and for lead-generation and intake workflows specifically, that event is almost always "someone filled out a form." This lesson is where your workflows stop being demos and start being genuinely automated.',
+          'You have two real paths here, and the right one depends on the client\'s situation rather than which is objectively "better." n8n\'s own built-in Form Trigger node is the fastest path when you don\'t need the form to live anywhere specific — it generates a hosted form and a live URL with zero external tooling. The alternative, watching an external form\'s connected Google Sheet with a Google Sheets Trigger node polling for new rows, is the right call when a client already has an existing form, landing page, or website they don\'t want to replace — you\'re meeting their existing setup instead of asking them to adopt a new one.',
+          'Whichever path you choose, resist the temptation to consider the workflow finished after testing it with the "Execute Workflow" button. That button runs the workflow using dummy or cached data, not the real trigger path — a workflow that\'s only ever been fired manually hasn\'t actually proven it\'s automated. Submit a real, live test through the actual form itself, end to end, before you consider this workflow done.',
+        ],
         steps: [
           'Understand your two main options: n8n\'s own built-in Form Trigger node (fastest, no external tool needed), or an external form (Google Forms, Typeform, a landing-page builder) that writes to a Google Sheet you then watch for new rows.',
           'For the built-in option: add a Form Trigger node, define your fields, and use the URL n8n generates as your live form link.',
@@ -1213,6 +1582,11 @@ export const courses = [
         title: 'Source & UTM Tracking Setup',
         minutes: 11,
         overview: 'Capture where each lead actually came from, so a client can see which channel is working instead of one undifferentiated pile of leads.',
+        lecture: [
+          'A form that just collects name and email answers "who\'s interested" but not "what actually got them here" — and that second question is very often what a client cares about most, because it\'s what tells them where to spend their marketing time and budget next. Adding source tracking is a small technical addition to your form with an outsized impact on the value of the automation as a whole.',
+          'The mechanism is simple: hidden fields on the form, or query parameters appended to the form\'s URL (utm_source, utm_medium, utm_campaign are the standard convention), that get captured silently alongside the visible fields whenever someone submits. The important habit inside your workflow is pulling those values out into their own dedicated columns in your tracking sheet, rather than leaving them buried in one long combined URL string that\'s technically present but practically unreadable to a client skimming the sheet.',
+          'Pairing source data with a Date Added column turns a flat list of leads into something genuinely analyzable — you can now ask not just "which source brings leads" but "which source brings leads, and is that changing over time." Building one small weekly report workflow that reads the sheet, counts submissions per source, and emails the result is often disproportionately appreciated by clients relative to how little effort it takes to build — it\'s tangible, recurring proof the automation is working, delivered without them having to ask.',
+        ],
         steps: [
           'Add hidden fields to your form (or query parameters to your form\'s URL) for utm_source, utm_medium, and utm_campaign.',
           'In your workflow, pull those values out of the incoming submission with an expression and map them into their own columns in your tracking sheet, rather than leaving them buried in one combined URL field.',
@@ -1229,6 +1603,12 @@ export const courses = [
         title: 'Building the Pipeline: A Lightweight CRM in a Spreadsheet',
         minutes: 18,
         overview: 'Structure your Google Sheet as a working pipeline so a client can see exactly where every lead stands, without buying separate CRM software.',
+        lecture: [
+          'A "CRM" sounds like it requires dedicated software, but the actual defining feature of a CRM isn\'t the software, it\'s the discipline of tracking every lead through a defined set of stages. A well-structured spreadsheet with a genuinely enforced Status column does that job completely legitimately for a small business, and building one is a real, sellable deliverable in its own right, separate from whatever automation runs on top of it.',
+          'The Status column is the whole system, and it works because every lead sits in exactly one stage at a time — New, Contacted, Qualified, Won, Lost, or whatever set genuinely matches how the client\'s sales process actually works. Add an Owner column the moment more than one person touches leads, so accountability is visible at a glance instead of requiring someone to ask around.',
+          'The technical detail that matters most here, and that trips people up constantly: update rows by matching a stable unique identifier (a generated ID, or an email address) rather than by row number. Row numbers shift every time a row is added or removed above them, so a workflow that references "row 12" will silently start updating the wrong lead the moment the sheet\'s layout changes — matching by a value that doesn\'t change is what keeps updates reliable as the sheet grows.',
+          'Know where this approach\'s ceiling is, too, so you don\'t oversell it. A spreadsheet-based pipeline works well for a small business with a modest, steady lead volume; once a client\'s scale genuinely outgrows what a sheet can comfortably handle, the honest move is connecting n8n to a dedicated CRM instead, via its own n8n node or a generic HTTP Request to its API — the same underlying skills you\'ve been building transfer directly, just pointed at a different destination.',
+        ],
         steps: [
           'Add a Status column with a fixed set of stages (e.g. New, Contacted, Qualified, Won, Lost) so every lead sits in exactly one stage at a time.',
           'Add an Owner column if more than one person on the client\'s team handles leads.',
@@ -1246,6 +1626,11 @@ export const courses = [
         title: 'Building Workflow 1: Lead Routing',
         minutes: 20,
         overview: 'Automatically route new leads to the right person or list using everything from this module so far.',
+        lecture: [
+          'This is the point in the module where individual lessons stop being isolated skills and start assembling into a real, complete product. Lead routing is one of the most commonly requested automations in this space precisely because it solves a universal problem: a business with more than one person handling leads needs those leads sorted correctly and quickly, and manual sorting is exactly the kind of repetitive, rule-based task automation exists for.',
+          'The Switch node is the piece doing the real work here, and it\'s worth understanding as a formalized version of the "if this, then that" thinking from the very first lesson in this module — except now branching by region, budget, or product interest based on real submitted data, sending each branch down a genuinely different path rather than one linear sequence. Each branch typically ends in the same two actions in some order: notify the right person (so a human knows to follow up), and log the lead into your pipeline sheet (so nothing gets lost even if the notification is missed).',
+          'Testing this workflow properly means something specific and easy to skip: submit at least three test leads that are each designed to take a different branch through your Switch node, not three variations of the same branch. It\'s extremely common to build a routing workflow, test it once with an easy input, watch it work, and ship it — only to discover weeks later that a less common branch was silently broken the entire time, because nobody had tested it. Testing every branch, not just the happy path, is the difference between a workflow that works in the demo and one that actually works in production.',
+        ],
         steps: [
           'Trigger: your Form Trigger or Google Sheets Trigger from lesson 9.',
           'Add an IF or Switch node to route by region, budget, or product interest based on the submitted fields.',
@@ -1260,6 +1645,11 @@ export const courses = [
         title: 'Building Workflow 2: AI Content Repurposing',
         minutes: 18,
         overview: 'Turn one piece of content into multiple formats automatically using an AI step.',
+        lecture: [
+          'This is the first workflow in the module where an AI step is the right tool rather than an unnecessary one, and it\'s worth noticing why: turning one piece of long-form content into a summary, a social caption, and an email blurb genuinely requires judgment about what matters and how to compress it, which is exactly the kind of task the "What Is AI Automation?" lesson flagged as AI-appropriate rather than rule-appropriate.',
+          'Mechanically, this usually means an HTTP Request node (or a dedicated AI node, if your n8n version ships one) calling a language model\'s API with the source content and a clear instruction for each output format you want, then a Set node to organize the results into distinct, clearly labeled fields rather than one undifferentiated blob of text. From there, each output routes to its actual destination — a Gmail draft, a row in a scheduled-posts sheet — using the same node types you\'ve already used in earlier lessons.',
+          'The one addition that isn\'t optional, and that separates a responsible content-automation workflow from a risky one: a human approval step before anything goes live publicly. Write outputs to a "Pending Approval" sheet or similar staging area a real person reviews, rather than auto-publishing directly. AI-generated content can be wrong, off-brand, or occasionally strange in ways that are obvious to a human glance and easy to miss if nobody\'s looking — an approval gate costs a small delay and prevents a genuinely embarrassing publish.',
+        ],
         steps: [
           'Trigger: a Schedule Trigger, or a Webhook called when new content is published.',
           'Add an HTTP Request node (or a dedicated AI node if your n8n version has one) calling an AI model\'s API to generate a summary, a social caption, and an email blurb from the source content.',
@@ -1274,6 +1664,12 @@ export const courses = [
         title: 'Building Workflow 3: Customer Follow-Up',
         minutes: 17,
         overview: 'Never let a customer inquiry go cold, using n8n\'s Wait node to handle the time delay correctly.',
+        lecture: [
+          'Every business loses some leads not because nobody wanted to help them, but because a busy person simply forgot to follow up within a window where the customer was still paying attention. This workflow automates the one job that\'s purely about not forgetting — freeing a human to focus on conversations that actually need judgment, while the system reliably handles the ones that just need a nudge.',
+          'The Wait node is the mechanical star of this lesson, and it\'s worth understanding why it\'s the right tool rather than, say, a separately scheduled workflow that polls every hour checking for old inquiries. A Wait node pauses the specific workflow run itself for a defined period — 24 hours, in this case — and n8n handles keeping that paused execution alive without you building or maintaining any separate scheduling logic. It\'s simpler, cleaner, and exactly matches how a human would think about the problem: "wait a day, then check."',
+          'The check after the wait is what makes this genuinely useful rather than just annoying: an IF node that looks at the lead\'s current status in your pipeline sheet and only proceeds with a follow-up if it\'s still sitting untouched. If someone already handled it manually in the meantime, the workflow recognizes that and stops, rather than sending a redundant, slightly embarrassing "just checking in" message to a lead that\'s already been contacted.',
+          'Routing high-priority tickets to a human instead of auto-sending, using the same branching pattern from Workflow 1, is worth treating as a firm rule rather than an optional nicety. Some situations — an angry customer, a high-value inquiry, anything with real ambiguity — genuinely deserve a human\'s judgment, and a good automation designer knows exactly where that line sits for a given business, rather than trying to automate everything indiscriminately.',
+        ],
         steps: [
           'Trigger: a new support ticket or inquiry logged in your pipeline sheet.',
           'Add a Wait node set to pause for 24 hours (n8n keeps the workflow paused without you needing to run a separate scheduled check).',
@@ -1288,6 +1684,12 @@ export const courses = [
         title: 'Error Handling & Monitoring Your Workflows',
         minutes: 13,
         overview: 'An automation agency lives or dies on monitoring, not just building — this is what keeps a failed run from going unnoticed for a week.',
+        lecture: [
+          'It\'s worth being honest about something most automation tutorials skip: every workflow you build, no matter how carefully, will eventually fail at least once — an API goes down temporarily, a credential expires, a field you depended on gets renamed upstream. The difference between a professional automation and an amateur one isn\'t that the professional one never breaks; it\'s that the professional one tells someone the moment it does, instead of failing silently for days or weeks while a client assumes everything is fine.',
+          'The Executions list is your first line of visibility, and it\'s worth checking manually a few times as you build simply to get familiar with what it shows: every past run, its status, and the exact data at each step for anything that failed. That last part is what makes it genuinely useful for debugging, not just monitoring — a failed execution shows you precisely what data arrived and where the workflow choked on it.',
+          'Two settings turn that manual visibility into something that actually protects you. Enabling "Retry On Fail" on nodes that call external services absorbs the single most common category of failure — a brief network hiccup or a momentarily overloaded API — without any human intervention at all. And building a dedicated Error Workflow, which n8n can trigger automatically whenever any other workflow fails, converts "check the Executions list periodically and hope you notice" into "get notified immediately, every time, without having to remember to look."',
+          'As your client count grows, the manual habits matter as much as the technical ones: a simple dashboard sheet listing every active workflow and its owner keeps things from quietly slipping through the cracks as the number of things you\'re responsible for climbs, and a scheduled monthly review of execution history catches the slow-drift problems — a workflow that technically still runs but has been silently degrading — that error notifications alone won\'t catch.',
+        ],
         steps: [
           'Open the Executions list for any workflow to see every past run, its status, and the exact data at each step for failed runs.',
           'On nodes that call external services (HTTP Request, Gmail, Sheets), enable "Retry On Fail" so a temporary network hiccup doesn\'t kill the whole run.',
@@ -1306,6 +1708,12 @@ export const courses = [
         minutes: 22,
         overview:
           'Move from n8n Cloud to your own server once you\'re running real client workflows — cheaper at scale and full control over your data. The steps below are generic and apply to most VPS providers (Hostinger, DigitalOcean, etc.); consult your specific provider\'s docs for exact panel screens.',
+        lecture: [
+          'This is the lesson where an automation hobby starts to look like an actual, independently owned business infrastructure — and it\'s worth doing once you\'re past the learning phase and genuinely running client workflows, not before. Self-hosting trades the convenience of someone else managing your infrastructure for real, tangible advantages: no per-seat or per-execution pricing that scales against you as you take on more clients, and full control over exactly where sensitive client automation data physically lives, which matters a great deal to privacy-conscious clients specifically.',
+          'The setup itself is standard modern web infrastructure, and if this is your first time doing it, know that every piece is genuinely learnable in an afternoon. A VPS (virtual private server) is just a rented computer with a public IP address. Docker packages n8n and everything it needs into a container that runs consistently regardless of the underlying server\'s configuration — and running it with a persistent volume attached is the one detail that\'s truly non-negotiable, because without it, every container restart or update wipes every workflow and credential you\'ve built, with no warning and no recovery.',
+          'A domain pointed at your server\'s IP, plus a reverse proxy (Nginx or Caddy are the two most common choices) handling SSL, is what takes your n8n instance from a bare, unencrypted IP address to a real, trustworthy HTTPS domain — this matters for security, and it matters for how professional the whole setup looks to a client who might eventually see it.',
+          'Save real attention for the environment variables, because this is where self-hosting setups most commonly go subtly wrong: N8N_HOST, N8N_PROTOCOL, and WEBHOOK_URL all need to correctly reflect your actual domain, since every Webhook and Form Trigger node generates its public URL from these values. Get one wrong and every webhook-based workflow breaks — not with a loud, obvious error, but silently, in a way that can go unnoticed until a client asks why their form stopped working. Set these deliberately and verify them by re-running a known-working test workflow once the migration is done, rather than assuming everything transferred correctly.',
+        ],
         steps: [
           'Provision a small VPS from any provider and note its public IP address.',
           'Install Docker on the server (most providers offer a one-click Docker image, or install it via your distro\'s package manager).',
@@ -1326,6 +1734,12 @@ export const courses = [
         title: 'Setting Up Google OAuth Credentials for Production',
         minutes: 16,
         overview: 'The Google OAuth setup you did earlier for Sheets and Gmail was likely on a shared/test app. Production, client-facing work needs your own properly configured credentials.',
+        lecture: [
+          'The Google credentials you set up earlier in this module worked fine for learning, but they were almost certainly running against a personal or test project with the default limits that come with that — fine for one person experimenting, not appropriate for a real automation agency connecting client accounts. This lesson is about graduating to credentials that actually belong to your business.',
+          'Starting with a dedicated Google Cloud project for your agency, rather than reusing whatever project you learned on, keeps your production infrastructure cleanly separated from your sandbox — a habit worth carrying into everything you build going forward, not just this. From there, enabling exactly the APIs each specific workflow actually needs, and configuring the OAuth consent screen with your real agency name, is what a client sees when they\'re asked to grant access, and it\'s worth it looking legitimate and intentional rather than like a half-finished test app.',
+          'If you\'ll ever be connecting other people\'s Google accounts, not just your own, plan for Google\'s app verification process explicitly — an unverified app shows users a scary-looking warning screen and can hit hard user limits, both of which undermine client trust at exactly the moment you\'re trying to build it. This isn\'t instant, so it\'s worth starting well before you\'re relying on it for a live client engagement, not the week you need it.',
+          'The redirect URI is where this lesson connects directly back to the self-hosting lesson before it: your OAuth Client ID\'s authorized redirect URI has to match your actual n8n domain exactly, protocol included, which is the same N8N_HOST and WEBHOOK_URL values you set up when self-hosting. A mismatch here is the single most common reason production OAuth setup fails, and it fails with an error message that doesn\'t always make the actual mismatch obvious — so double-checking this one value against what you configured in the previous lesson is worth the extra minute.',
+        ],
         steps: [
           'In Google Cloud Console, create a dedicated project for your automation agency rather than reusing a personal test project.',
           'Enable the specific APIs each workflow needs (Sheets API, Gmail API, etc.) on that project.',
@@ -1344,6 +1758,11 @@ export const courses = [
         title: 'Pricing & Proposals',
         minutes: 14,
         overview: 'Turn your workflows into a sellable service package.',
+        lecture: [
+          'Everything up to this lesson has been about building the technical skill; this lesson is about turning that skill into an actual income. The single biggest pricing mistake people make when they first start selling automation work is pricing by the hour it took to build, which systematically undervalues the work — a workflow that takes you three hours to build because you\'re experienced might save a client fifteen hours a week forever, and pricing based on your build time completely ignores that ongoing value.',
+          'Packaging into clear tiers — a starter tier covering one simple workflow, a growth tier covering a connected system like the lead-routing-plus-pipeline build from this module, a custom tier for anything bespoke — gives a prospective client an easy mental model to choose from, instead of an open-ended, intimidating "what do you need" conversation. Each tier\'s price should reflect ongoing maintenance and monitoring, not just the initial build, since the error-handling lesson earlier in this module made clear that a workflow left completely unmonitored eventually breaks — and someone has to be paid to keep watching it.',
+          'A reusable one-page proposal template is worth building once and refining over time: what the automation does, what it saves the client (in hours or money, stated as concretely as you can), the price, and what ongoing support is included. Having this ready before you need it means you can respond to a prospective client quickly and professionally, instead of scrambling to write a proposal from scratch under time pressure with a real opportunity on the line.',
+        ],
         steps: [
           'Package workflows into tiers (starter, growth, custom).',
           'Estimate build hours and set a price that reflects ongoing maintenance, not just setup.',
@@ -1357,6 +1776,11 @@ export const courses = [
         title: 'Bonus: Full System Walkthrough',
         minutes: 25,
         overview: 'A start-to-finish walkthrough connecting every workflow from this module into one system.',
+        lecture: [
+          'Every lesson in this module taught one piece in isolation, which is the right way to learn but not how any of this actually gets used in the real world — a real client engagement isn\'t "build a Google Sheets connection," it\'s a complete system where a lead comes in, gets tracked, gets routed, gets followed up with, and the whole thing tells you the moment something breaks. This closing lesson is about seeing that full shape at once.',
+          'Walk the pipeline end to end mentally before you touch anything: a form captures a new lead (Using a Form as Your Automation Trigger), source data gets attached automatically (Source & UTM Tracking), the lead gets routed to the right person and logged into your pipeline sheet (Workflow 1 and Building the Pipeline), a follow-up fires automatically if nobody\'s acted within a day (Workflow 3), and the whole system tells you immediately if any part of it fails (Error Handling & Monitoring). Seeing those five lessons as one connected system, rather than five separate exercises, is the actual graduation moment of this module.',
+          'The genuinely fastest way to cement everything you\'ve learned is to stop practicing in the abstract and automate one real task in your own life or business this week — something small and real beats something large and hypothetical every time, because a real task surfaces real edge cases a practice exercise never would. If you\'ve completed the self-hosting and production OAuth lessons, build it there; if not, your Cloud or local sandbox works exactly as well for a first real automation.',
+        ],
         steps: [
           'Review the full pipeline: form intake (lesson 9) → source tracking (lesson 10) → routing (lesson 12) → pipeline sheet (lesson 11) → follow-up (lesson 14) → error monitoring (lesson 15).',
           'Identify one real task in your own life or business to automate this week.',
@@ -1377,6 +1801,11 @@ export const courses = [
         title: 'Choosing Your Platform',
         minutes: 11,
         overview: 'Where you sell shapes almost every decision after this — pick based on how much control vs. built-in traffic you want.',
+        lecture: [
+          'Every e-commerce platform is really trading the same two things against each other in different proportions: control and built-in traffic. Understanding that trade-off explicitly, before you pick anywhere to sell, saves you from choosing based on which platform is trendiest and discovering the mismatch months in.',
+          'A hosted storefront gives you full control over branding, pricing, and customer data, but that control comes with a real cost most beginners underestimate: you own every bit of traffic generation yourself, since nobody\'s browsing a brand-new independent store by default. An established marketplace flips that trade entirely — built-in search traffic and existing buyer trust from day one, at the cost of marketplace fees and much less control over how your brand actually presents. A social-commerce platform sits somewhere adjacent again: it meets buyers exactly where they\'re already scrolling, but ties your store\'s fate closely to that specific platform\'s algorithm and rules, which you don\'t control and which can change without warning.',
+          'The right choice follows from the product, not from which platform sounds most exciting. Handmade or niche goods tend to do well on marketplaces specifically built around discovery for that kind of product, where buyers are already primed to browse. A brand you genuinely want full creative and data control over, that you\'re building for the long term, usually wants a hosted storefront despite the extra traffic work. And there\'s no requirement to pick only one forever — starting with a single channel while you\'re still learning what actually sells keeps the number of variables manageable, with room to expand once you have a working product.',
+        ],
         steps: [
           'A hosted storefront (e.g. Shopify-style) gives you full control over branding and customer data, but you own all the traffic generation.',
           'An established marketplace (e.g. Amazon, Etsy) gives you built-in search traffic and buyer trust, at the cost of marketplace fees and less brand control.',
@@ -1393,6 +1822,11 @@ export const courses = [
         title: 'AI-Powered Product Research',
         minutes: 12,
         overview: 'Use AI tools to shortlist products worth testing.',
+        lecture: [
+          'Product research used to mean hours of manual browsing across marketplaces trying to spot a pattern by eye. AI tools compress that into minutes by summarizing demand signals and competitive density across many candidates at once, which is genuinely valuable — but it\'s worth being precise about what that speed actually buys you: a faster shortlist, not a guaranteed winner.',
+          'Pull real trending product data from an actual marketplace research tool rather than guessing, then use an AI assistant to summarize demand signals and the competitive landscape for each candidate quickly, rather than reading through every listing yourself by hand. Scoring each candidate explicitly on margin, demand, and shipping complexity — not just "does this seem popular" — turns a vague gut feeling into a real, comparable shortlist across multiple products at once.',
+          'The one discipline that separates people who use this well from people who get burned by it: always sanity-check the numbers against the live marketplace yourself before committing real money to inventory or ads. AI summaries can be outdated, can miss context a human would catch immediately, or can occasionally overstate confidence in a genuinely uncertain read — a quick manual spot-check before you commit real spend is cheap insurance against a research summary that\'s subtly wrong.',
+        ],
         steps: [
           'Pull trending product data from a marketplace research tool.',
           'Ask an AI assistant to summarize demand signals and competition for each candidate.',
@@ -1405,6 +1839,11 @@ export const courses = [
         title: 'Generating Listings at Scale',
         minutes: 15,
         overview: 'Draft titles, bullet points, and descriptions quickly without sounding generic.',
+        lecture: [
+          'A listing has one real job: get a browsing shopper to trust that this specific product solves their specific problem, quickly enough that they don\'t bounce to a competitor\'s listing instead. AI drafting speeds up producing listings at scale, but only if you feed it enough specific material about the actual product and actual customer — the same "specificity in, specificity out" principle from the prompt engineering module applies directly here.',
+          'Generate a few title variations rather than accepting the first draft, and choose the clearest, most specific option rather than the most creative-sounding one — a shopper scanning search results rewards clarity about what the product actually is far more than clever wordplay. For the body copy, push the AI toward benefits rather than a plain feature list: "keeps drinks cold for 24 hours" tells a shopper what it does for them, while "double-walled vacuum insulation" tells them a spec they have to translate themselves.',
+          'Editing every generated listing for accuracy before publishing is the one step that\'s never optional, no matter how good the draft looks. Never let a listing publish a claim the product genuinely can\'t back up — a generated line that oversells the product isn\'t just an ethical problem, it\'s a direct path to returns, complaints, and bad reviews once a real customer discovers the gap between the listing and reality.',
+        ],
         steps: [
           'Feed the AI your product specs and target customer.',
           'Generate 3 title variations and pick the clearest, most specific one.',
@@ -1418,6 +1857,11 @@ export const courses = [
         title: 'Product Photography & Image Generation with AI',
         minutes: 14,
         overview: 'AI image tools can turn one rough product photo into a full, professional-looking listing gallery.',
+        lecture: [
+          'A professional product photoshoot used to be one of the biggest upfront costs of launching a new listing, and AI image tools have genuinely lowered that barrier — but the right way to use them is to enhance a real photo of your real product, not to generate an idealized product that doesn\'t actually exist. This distinction matters more than it might seem, and it\'s the one rule this lesson insists on above everything else.',
+          'AI background removal and replacement can turn an ordinary, cluttered photo into a clean, consistent, listing-ready image quickly, and generating lifestyle or in-context mockups — the product in use, or styled naturally — gives you a fuller gallery even without budget for a real photoshoot yet. Both are legitimate, useful techniques when applied to real photos of the actual product being sold.',
+          'The line not to cross, stated plainly: never let a generated image show features, colors, sizes, or details the real product doesn\'t actually have. This is the single fastest way to spike returns and bad reviews, because the customer who receives something visibly different from what they saw in the listing feels misled, whether or not that was the intent — and platforms increasingly penalize sellers for exactly this pattern. Keeping at least one completely unedited, true-to-life photo in every gallery is a simple habit that protects both the customer\'s trust and your own return rate.',
+        ],
         steps: [
           'Start from a real photo of the actual product — AI background/lighting cleanup works far better on a real image than a fully generated one, and never generate a fake product that doesn\'t match what ships.',
           'Use AI background removal or replacement to create a clean, consistent listing-style image.',
@@ -1434,6 +1878,11 @@ export const courses = [
         title: 'Automating Customer Support',
         minutes: 14,
         overview: 'Handle common order questions without manual replies.',
+        lecture: [
+          'A surprising share of e-commerce support volume is genuinely repetitive: where\'s my order, what\'s your return policy, does this come in another size — the same handful of questions, over and over, from different customers. Automating exactly that repetitive layer, while routing anything ambiguous or emotionally charged to a real person, is the highest-leverage move available in support, and it directly mirrors the chatbot design principles from the Zero-Code AI Chatbots module earlier in this course.',
+          'Start by actually reading through your own past order history and identifying your genuine top ten recurring questions, rather than guessing at what customers probably ask — the real list is often narrower and more predictable than people expect, and it\'s the exact set worth automating first. Connecting a support bot to real order-status data and your actual FAQ content is what lets it answer accurately instead of generically, the same grounding principle covered in depth in the chatbot module\'s knowledge base lesson.',
+          'Escalation rules deserve real thought rather than being an afterthought: define clearly what triggers a handoff to a human, with refunds and complaints as the two categories that almost always deserve one, since those situations carry real emotional stakes and financial consequences that a bot shouldn\'t be making unilateral calls about. Starting specifically with order-status automation is the lowest-risk, highest-volume win to build first — it\'s purely informational, rarely controversial, and immediately frees up real support time for the conversations that actually need a human.',
+        ],
         steps: [
           'Identify your top 10 recurring support questions from past orders.',
           'Connect a support bot to your order-status and FAQ data.',
@@ -1446,6 +1895,11 @@ export const courses = [
         title: 'Email & Abandoned Cart Automation',
         minutes: 13,
         overview: 'A handful of automated email flows recover sales you\'d otherwise lose to a customer simply forgetting to check out.',
+        lecture: [
+          'A meaningful share of e-commerce revenue is lost not to customers who didn\'t want the product, but to customers who genuinely intended to buy and simply got distracted before finishing checkout. A small set of automated email flows exists specifically to recover exactly that lost intent, and they\'re some of the highest-return automations in this entire space precisely because they\'re targeting people who already showed real interest, not cold prospects.',
+          'A welcome flow — two or three emails introducing your brand and best-sellers to a new subscriber — sets the relationship up before any purchase has happened at all. The abandoned cart flow is the centerpiece of this lesson: emailing anyone who added items but didn\'t complete checkout, typically starting a few hours later while the intent is still fresh, recovers sales that would otherwise simply vanish with zero additional effort once it\'s set up. A post-purchase flow — confirmation, shipping update, then a review request once the item should have arrived — closes the loop and builds the kind of ongoing relationship that turns a one-time buyer into a repeat one.',
+          'The discipline worth carrying from earlier in this course applies directly here: write the first message in each flow yourself, in your actual brand voice, then use AI to draft the variations from that foundation. These emails land at a genuinely vulnerable moment — a customer who\'s close to walking away — so review every AI-drafted variation with real care before it goes live automatically, the same scrutiny you\'d give a real listing, not a lower bar just because it\'s "only an email."',
+        ],
         steps: [
           'Set up a welcome flow for new subscribers — 2-3 emails introducing your brand and best-selling products.',
           'Set up an abandoned cart flow that emails anyone who added items but didn\'t check out, typically starting a few hours later.',
@@ -1462,6 +1916,11 @@ export const courses = [
         title: 'Running Profitable Ads',
         minutes: 16,
         overview: 'The basics of paid ads for a store: what to test, what to measure, and when to scale.',
+        lecture: [
+          'Paid advertising for a store is genuinely a different discipline from the content-focused advertising covered in the Faceless Marketing module, because the goal here is a direct, trackable purchase, not just engagement — which means the metrics that matter and the testing approach both shift accordingly. Concentrating a small, fixed daily budget on one platform, rather than splitting it thin across several at once, gives that platform\'s algorithm enough real signal to actually optimize delivery, something a fragmented budget across multiple platforms never gives any single one enough data to do well.',
+          'Test creative before you test audience targeting — three or four genuinely different images or videos against the same audience, because creative is consistently the bigger lever early on. A weak audience with strong creative frequently outperforms a perfectly targeted audience with weak creative, which surprises people who assume targeting precision is the main lever, when in practice the ad itself usually matters more.',
+          'ROAS — return on ad spend, revenue divided by ad spend — is the metric that actually tells you whether an ad is making money, and it deserves to be your primary number over clicks or impressions, which measure attention without measuring whether that attention converted into revenue. Give any test real time and a meaningful amount of spend, at minimum a few days, before judging it, since a single day of data is almost always too noisy to act on reliably. And when you do find a winner, scale it with small, gradual budget increases rather than dramatically multiplying spend overnight — a large sudden jump tends to reset the ad platform\'s delivery optimization and can paradoxically tank the performance of an ad that was genuinely working.',
+        ],
         steps: [
           'Start with a small, fixed daily budget on one platform rather than spreading a small budget across several at once.',
           'Test 3-4 different creatives (images/videos) against the same audience before testing different audiences — creative is usually the bigger lever early on.',
@@ -1487,6 +1946,11 @@ export const courses = [
         title: 'Scripting for AI Video',
         minutes: 9,
         overview: 'Write scripts that read naturally when spoken by an AI voice.',
+        lecture: [
+          'Writing meant to be read silently and writing meant to be heard out loud are genuinely different skills, even when covering identical content, and the gap between them becomes obvious the moment an AI voice tries to deliver a script written the wrong way — formal, complex sentences that read fine on a page come out stilted and unnatural when spoken. Short, spoken-style sentences are the fix, and they matter more here than in almost any other kind of writing in this course.',
+          'The genuinely reliable test for whether a script will sound right: read it out loud yourself before it ever reaches a voice tool. Anything that trips your own tongue or feels awkward to say will sound at least as awkward coming from an AI voice, and simplifying it now, while it\'s still just text, is far easier than trying to fix a stilted-sounding generated clip after the fact.',
+          'Marking pauses and emphasis directly in the script — even simple punctuation choices or bracketed notes — gives the voice generation tool real guidance toward natural-sounding delivery instead of leaving pacing entirely to its defaults. This small extra step in the writing phase consistently produces a noticeably better final result than a wall of unformatted text handed to the tool with no delivery guidance at all.',
+        ],
         steps: [
           'Write in short, spoken-style sentences instead of formal writing.',
           'Read the script aloud and simplify any awkward phrasing.',
@@ -1499,6 +1963,11 @@ export const courses = [
         title: 'Choosing the Right AI Video Tool for the Job',
         minutes: 11,
         overview: 'Different AI video tools solve different problems — picking the right category first saves you from fighting the wrong tool.',
+        lecture: [
+          'The AI video tool space is crowded enough that picking the wrong category for what you\'re actually trying to make is a genuinely common way to waste hours fighting a tool that was never built for your use case. Sorting tools into three broad categories before you evaluate any specific product cuts through most of that confusion quickly.',
+          'Talking-head avatar tools are built for exactly one job and do it well: a consistent presenter delivering a script directly to camera, without you filming yourself. Text-to-video generators solve a different problem — short, often abstract or illustrative clips where you don\'t need a consistent recurring character, closer to generated b-roll than a presenter. Voice cloning and text-to-speech tools solve a third, narrower problem again: natural-sounding narration over footage or images you already have, when the voice is what\'s missing, not the visuals.',
+          'Choosing based on what the specific video genuinely needs to show, rather than which tool had the most impressive demo you happened to see, is the actual decision-making principle here. And in practice, most real videos end up combining more than one category — an avatar for a direct-address intro, generated b-roll for the illustrative middle section — rather than relying on a single tool to carry the entire piece alone.',
+        ],
         steps: [
           'Talking-head AI avatar tools: best when you want a consistent presenter delivering a script to camera without filming yourself.',
           'Text-to-video generators: best for short b-roll-style clips or abstract visuals where you don\'t need a consistent character.',
@@ -1515,6 +1984,11 @@ export const courses = [
         title: 'Generating Avatars & Voiceover',
         minutes: 16,
         overview: 'Produce the visual and audio layers of your video with AI tools.',
+        lecture: [
+          'With a script written for spoken delivery and the right tool category chosen, this is where the video actually gets made. The avatar or voice you pick isn\'t just an aesthetic choice — it sets the tone for every video you produce going forward, so matching it deliberately to your brand\'s actual tone, rather than picking whatever option looks flashiest in the tool\'s preview, pays off across every piece of content you make afterward, not just this one.',
+          'Generate a first draft clip and treat it genuinely as a draft, because it usually is one. Reviewing it specifically for mispronunciations, awkward pacing, and any moment where the delivery doesn\'t match the intended meaning of the line is not optional polish — it\'s the core quality check of this entire lesson. Names, numbers, and jargon are the most common failure points for AI voice generation specifically, so give those particular words extra scrutiny on playback rather than assuming the tool got everything right.',
+          'When you find a problem, regenerate just the affected line or section rather than the entire clip where possible — this is faster and lets you iterate on the specific weak point without re-rolling the parts that already sounded good, which is a meaningfully more efficient workflow once you\'re producing video regularly rather than as a one-off.',
+        ],
         steps: [
           'Choose an AI avatar or voice that matches your brand tone.',
           'Generate a first draft clip from your script.',
@@ -1527,6 +2001,11 @@ export const courses = [
         title: 'B-Roll, Stock Footage & Visual Pacing',
         minutes: 13,
         overview: 'A static talking avatar for the whole video loses viewers — cutting in supporting footage keeps eyes on the screen.',
+        lecture: [
+          'An avatar talking to camera for an entire video, with no visual variation, loses viewers steadily even if the script itself is genuinely strong — human attention on short-form video is held as much by visual movement and change as by content quality, and a static shot for too long reads as a natural moment to scroll away. Breaking your script into segments and deliberately identifying which ones would benefit from a visual cutaway, rather than defaulting to avatar-only throughout, is the planning step that prevents this.',
+          'Searching for supporting footage with specific, concrete terms tied directly to your script — not generic ones — is what makes b-roll actually illustrate the line it accompanies, rather than being interchangeable filler that could sit under any script. Generic b-roll is instantly recognizable as filler to a viewer\'s eye, even subconsciously, and it undercuts the sense that the video was made carefully.',
+          'Pacing discipline matters as much as footage selection: cutting on action or on a natural sentence boundary, rather than mid-thought, keeps transitions feeling intentional instead of jarring, and keeping any single continuous shot to just a few seconds for short-form content specifically is what maintains the frequent visual movement that holds attention on these platforms. Frequent, purposeful cuts are consistently what separates content that holds attention from content that gets scrolled past within the first few seconds.',
+        ],
         steps: [
           'Break your script into segments and identify which ones would benefit from a visual cutaway instead of just the avatar talking.',
           'Search AI-assisted or standard stock footage libraries using specific, concrete search terms tied to your script, not generic ones.',
@@ -1543,6 +2022,11 @@ export const courses = [
         title: 'Captions & Accessibility',
         minutes: 10,
         overview: 'Captions aren\'t optional polish for social video — most viewers watch with sound off, and captions are what keeps them watching anyway.',
+        lecture: [
+          'It\'s worth stating this plainly because it changes how you should treat captions: most viewers on social platforms watch with the sound off by default, whether because they\'re scrolling somewhere public or the platform simply autoplays muted. A video with no captions is, for most of the audience that ever sees it, a silent video with no way to follow what\'s being said — which means captions aren\'t an accessibility nicety layered on top of the real content, they\'re effectively part of the content itself for the majority of viewers.',
+          'Auto-caption tools get most of the way there quickly, but they reliably mangle names, jargon, and numbers specifically — the exact words that matter most for someone actually understanding your content. Proofreading every auto-generated caption before publishing, rather than trusting the output unchecked, is the one step in this lesson that\'s never optional, regardless of how good the auto-captioning tool claims to be.',
+          'Style choices matter more than they might seem: high contrast against the background, text large enough to read comfortably on a small phone screen, and one short phrase visible at a time rather than dense blocks of text all directly affect whether captions actually get read or just get ignored as visual clutter. Syncing timing to match natural speech pauses, adjusting the tool\'s default break points where they land awkwardly, is a small extra step that makes captions feel considered rather than automatically bolted on.',
+        ],
         steps: [
           'Generate auto-captions with an AI captioning tool, then proofread them — auto-transcription reliably misses names, jargon, and numbers.',
           'Style captions for readability: high contrast against the background, large enough to read on a phone screen, one short phrase on screen at a time.',
@@ -1559,6 +2043,11 @@ export const courses = [
         title: 'Editing & Publishing',
         minutes: 13,
         overview: 'Polish the final cut and get it onto the right platforms.',
+        lecture: [
+          'This lesson pulls together everything from the module so far — script, generated footage, b-roll, captions — into a single finished piece, and the editing pass is where small inefficiencies in the raw material get cleaned up before anyone else sees it. Trimming dead air and tightening pacing at this stage matters even for content that was carefully scripted, because a script that read well on paper still tends to reveal a few slow moments once it\'s actually assembled and watched back.',
+          'Exporting in the correct aspect ratio for each destination platform — typically vertical 9:16 for most short-form platforms, horizontal 16:9 for long-form or YouTube — is a mechanical step that\'s easy to overlook and immediately obvious when done wrong: a horizontally cropped video on a vertical-first platform reads as visibly unpolished no matter how good the content inside it is.',
+          'Publishing timing is the final lever worth pulling, and it\'s one many people skip entirely: scheduling posts around when your specific audience is actually most active, rather than posting whenever the edit happens to finish, gives otherwise identical content a real early boost in visibility, since most platforms weight early engagement heavily in deciding how far to distribute something further.',
+        ],
         steps: [
           'Trim dead air and tighten pacing in an editor.',
           'Add captions for accessibility and silent autoplay viewing.',
@@ -1572,6 +2061,11 @@ export const courses = [
         title: 'Repurposing One Video Into Many',
         minutes: 12,
         overview: 'The most efficient creators produce once and cut many times, instead of scripting a brand-new video for every single post.',
+        lecture: [
+          'The creators who sustain a consistent posting cadence for the longest, without burning out, are almost never the ones scripting an entirely new video from scratch for every single post — they\'re the ones who\'ve learned to produce once and cut many times, treating one solid piece of source material as the seed for a week or more of separate content.',
+          'The skill worth building here is spotting standalone moments inside a longer piece: three to five self-contained segments that each work as their own short clip, complete with their own hook and payoff, rather than arbitrary chunks cut at fixed time intervals. A moment that only makes sense with the surrounding context isn\'t a good repurposing candidate — the goal is finding the pieces that stand entirely on their own.',
+          'Each repurposed clip deserves individual attention when it goes out, not a lazy copy-paste across platforms: re-captioning and re-cropping for the specific platform and aspect ratio it\'s posted to, rather than reusing one export everywhere, respects how differently content performs across different platforms\' native formats. And staggering the clips over days or weeks, rather than dumping all of them at once, is what actually sustains a consistent posting cadence — the entire benefit of repurposing evaporates if you post five clips in one day and then go silent for two weeks.',
+        ],
         steps: [
           'Film or generate one longer-form piece (a full explanation, a longer talking-head segment) as your source material.',
           'Identify 3-5 standalone moments inside it that work as their own short clip with a clear hook and payoff.',
@@ -1596,6 +2090,11 @@ export const courses = [
         title: 'Building Your AI Twin',
         minutes: 12,
         overview: 'Create a consistent AI persona for your content.',
+        lecture: [
+          'An "AI twin" is really just the Faceless Marketing module\'s consistency principle taken one step further and formalized into an explicit persona — a recognizable voice, tone, and visual identity that stays stable across every piece of content, so your audience is building trust in one consistent presence rather than a rotating cast of one-off videos. That trust is the actual asset an affiliate business is built on, since people buy recommendations from someone they\'ve come to trust, not from a stranger.',
+          'Defining your twin\'s voice and tone alongside three core content pillars up front gives future-you a clear, reusable identity to produce from, rather than reinventing the presentation from scratch every time you sit down to make something. Generating a consistent avatar or voice profile and genuinely reusing it across every piece of content, rather than switching whenever a newer option appears, is what makes the "twin" read as one coherent creator instead of a series of disconnected experiments.',
+          'A short bio and content mission statement, written once and kept close by, does more work than it might seem: it\'s a quick reference that keeps your content aligned to one consistent identity over time, especially months in when it\'s easy to drift without quite noticing. Consistency in tone and appearance compounds into trust far more reliably than any single viral post ever does — a big one-off hit fades from memory quickly, while a consistent, recognizable presence keeps earning attention and trust over the long run.',
+        ],
         steps: [
           'Define your twin\'s voice, tone, and 3 core content pillars.',
           'Generate a consistent avatar or voice profile to reuse across content.',
@@ -1608,6 +2107,11 @@ export const courses = [
         title: 'Choosing Affiliate Offers',
         minutes: 10,
         overview: 'Pick products worth promoting to your specific audience.',
+        lecture: [
+          'The instinct when picking affiliate offers is often to chase whichever program pays the highest commission, but that instinct gets the actual priority backwards. An offer that\'s only loosely related to your content pillars will convert poorly regardless of how generous the commission is, because the audience you\'ve built trusts you specifically within your niche — a mismatched recommendation reads as an ad, while a genuinely relevant one reads as a real suggestion from someone who understands their situation.',
+          'Shortlisting offers that are actually relevant to your established content pillars, rather than anything with an attractive payout, is the filter that matters most before anything else. From there, checking the commission structure, cookie duration (how long after someone clicks you still get credit for a resulting sale), and the program\'s actual payout reliability are the practical details that determine whether a good-looking offer is genuinely worth your time.',
+          'The simplest, most reliable filter of all: only promote something you\'d be genuinely comfortable explaining in real detail if someone asked you a direct follow-up question about it. If you can\'t confidently answer a real question about a product you\'re recommending, that\'s a clear sign you don\'t know it well enough to be recommending it credibly, and your audience will sense that gap even if they can\'t quite articulate why a recommendation feels thin.',
+        ],
         steps: [
           'Shortlist offers relevant to your content pillars.',
           'Check commission structure, cookie duration, and payout reliability.',
@@ -1620,6 +2124,11 @@ export const courses = [
         title: 'Disclosure & Compliance Basics',
         minutes: 10,
         overview: 'Affiliate content has real legal disclosure requirements — getting this wrong risks your accounts and your credibility, not just a warning.',
+        lecture: [
+          'This is one of the few lessons in this entire course where "figure it out as you go" is a genuinely bad strategy, and it\'s worth understanding why: affiliate disclosure isn\'t a platform courtesy you can skip if it feels inconvenient, it\'s a real regulatory expectation in most places affiliate marketing happens, and getting it wrong risks your accounts and your credibility together, not just a warning you can shrug off.',
+          'Disclosure needs to be clear and conspicuous in the post itself — not buried in a bio link nobody clicks, not hidden inside a hashtag nobody reads as a real disclosure. Using a platform\'s built-in paid-partnership or affiliate disclosure tool, where one exists, in addition to your own written disclosure, covers both the platform\'s specific requirements and the broader spirit of transparent disclosure at the same time.',
+          'The line on claims matters just as much as the disclosure itself: enthusiasm for a product you genuinely like is completely fine, but claiming a specific result or benefit you haven\'t actually verified is not, regardless of how minor it feels in the moment. Keeping a simple running record of which offers you\'re promoting and exactly how you\'re disclosing each one is cheap insurance — if a platform or a program ever asks, having that record ready is the difference between a quick, confident answer and a scramble.',
+        ],
         steps: [
           'Disclose affiliate relationships clearly and conspicuously, in the post itself, not buried in a bio link or hidden hashtag.',
           'Use the platform\'s built-in paid-partnership or affiliate disclosure tools where available, in addition to your own written disclosure.',
@@ -1636,6 +2145,11 @@ export const courses = [
         title: 'Content-to-Commission Funnel',
         minutes: 14,
         overview: 'Turn views into clicks and clicks into tracked sales.',
+        lecture: [
+          'Views alone don\'t pay the bills in affiliate marketing — only tracked clicks that convert into sales do, which means the entire point of this lesson is building a real, measurable path from someone watching your content to someone actually completing a purchase through your specific link. A great piece of content with no clear next step, and no trackable link attached, is functionally leaving commission on the table regardless of how many people saw it.',
+          'Every single post needs a clear call to action and a genuinely trackable link — not an implied "check the bio" with no explicit prompt, but a direct, specific instruction paired with a link that actually attributes the resulting sale back to you. A link-in-bio page becomes essential the moment you\'re promoting more than one offer at a time, since it gives you one organized, easy-to-navigate destination instead of constantly swapping a single bio link back and forth between different products.',
+          'The habit that separates people who improve over time from people who plateau: reviewing click and conversion data weekly, not just glancing at it occasionally, and using what you learn to deliberately double down on whatever\'s actually converting. You genuinely cannot improve a funnel you\'re not measuring — a gut feeling about what\'s "probably working" is a poor substitute for looking at the real numbers regularly and letting them guide where you put your effort next.',
+        ],
         steps: [
           'Add a clear call-to-action and trackable link to every post.',
           'Use a link-in-bio page to organize multiple offers.',
@@ -1649,6 +2163,11 @@ export const courses = [
         title: 'Diversifying Across Multiple Offers & Platforms',
         minutes: 11,
         overview: 'Relying on one affiliate program or one platform means one policy change can wipe out your entire income overnight.',
+        lecture: [
+          'The uncomfortable truth about affiliate income concentrated in a single program or a single platform: none of it is actually within your control. A program can change its commission structure, tighten its terms, or shut down entirely with little warning, and a platform can change its algorithm or suspend an account over a misunderstanding — and if either of those is where all your income lives, that single event can wipe out your entire income overnight, through no fault in your content or strategy at all.',
+          'Promoting two or three different offers within your niche, rather than putting all your content behind a single program, and publishing across more than one platform where your audience genuinely shows up, spreads that risk in a way that a single-source strategy fundamentally can\'t. This isn\'t about diluting focus — it\'s about not letting one external decision you don\'t control determine your entire income.',
+          'Watch specifically for any single offer or platform quietly becoming more than half your total income, and treat crossing that threshold as an active signal to diversify further, not a sign you\'ve simply found "the winner" to go all in on. And for whatever your current highest earner is specifically, it\'s worth having a real answer ready to the question "what would I promote instead if this program ended tomorrow" — having that answer ready before you need it is what turns a potential crisis into a manageable transition.',
+        ],
         steps: [
           'Promote at least 2-3 different offers within your niche, rather than putting all your content behind a single program.',
           'Publish your content on more than one platform where your audience actually shows up, not just the one that\'s currently easiest.',
@@ -1665,6 +2184,11 @@ export const courses = [
         title: 'Scaling: From One Twin to a Content System',
         minutes: 13,
         overview: 'Once the funnel works, the growth lever is volume and repeatability, not reinventing your approach for every post.',
+        lecture: [
+          'Once you\'ve got real evidence of a post that genuinely converts, the temptation is often to move on and chase the next fresh creative idea. The better move, and the one this lesson is built around, is turning that proven post into a reusable template — same structure, same call-to-action style, just a new product or angle slotted in — because a working pattern repeated deliberately outperforms constant creative reinvention in almost every case.',
+          'Batch-producing a week or two of content at once from that template, the same discipline covered in the Faceless Marketing module, is what actually makes scaling sustainable rather than a burst of effort followed by a slow fade. Tracking conversion rate specifically by content pillar, not just as one aggregate number, tells you precisely which pillar is actually driving commission — a detail an aggregate number hides completely, and one that directly shapes where your next batch of effort should go.',
+          'The time you save by templating your proven format isn\'t meant to just disappear — reinvest it deliberately into testing one genuinely new angle or offer per month, so the system keeps evolving instead of quietly going stale. A repeatable template for your best-converting format is what turns one lucky post into an actual income stream; the monthly test is what keeps that stream from plateauing once the current format\'s novelty wears off.',
+        ],
         steps: [
           'Turn your best-converting post into a template: same structure, same call-to-action style, new product or angle.',
           'Batch-produce a week or two of content at once using that template, the same way you would for the Faceless Marketing module.',
@@ -1689,6 +2213,11 @@ export const courses = [
         title: 'What\'s Actually in the Vault',
         minutes: 7,
         overview: 'A quick inventory so you know what to expect before you dive in — this vault is a head start, not a finished business.',
+        lecture: [
+          'It\'s worth setting honest expectations before this module goes any further, because "resource vault" language elsewhere in this space often implies more than it delivers. What\'s actually here is a genuine head start — real templates, checklists, and reference material pulled directly from lessons across this course — not a finished, ready-to-sell business you can activate with zero further work.',
+          'Concretely, that means proposal and contract templates from the Automation Agency and Faceless Marketing modules, ready to duplicate and adapt; prompt packs and named resources referenced throughout individual lessons, like the CV format or the ad budget planner; and checklists and trackers, like the application tracker or the VPS setup checklist, pulled out for quick standalone reference instead of being buried inside the lesson that originally introduced them.',
+          'The honest framing that the rest of this module builds on: every single one of these is a starting point to customize for your actual situation, not a plug-and-play business in a box. The remaining lessons cover exactly how to use them responsibly — customizing them properly, understanding what you\'re actually allowed to do with them, and turning one into a real offer if that\'s the direction you want to take it.',
+        ],
         steps: [
           'Proposal and contract templates from the Automation Agency and Faceless Marketing modules, ready to duplicate and rebrand.',
           'Prompt packs referenced throughout the course (CV format, ad budget planner, DNS cheat sheet, and similar named resources on individual lessons).',
@@ -1705,6 +2234,11 @@ export const courses = [
         title: 'Using the Template Library',
         minutes: 8,
         overview: 'How to find, customize, and reuse the included templates.',
+        lecture: [
+          'A template library is only useful if you actually treat it as a library — something you browse deliberately for the right piece, rather than grabbing the first thing you find and hoping it fits. Browsing by category (proposals, scripts, checklists, prompts) before picking anything means you\'re choosing based on what the specific situation in front of you actually needs, rather than defaulting to whatever\'s most familiar.',
+          'Duplicating a template before editing it, every single time, is a small habit that prevents a real, recurring frustration: editing a shared original directly means you\'ve lost the clean starting point the next time you need it for a different client or situation. Keep the original untouched, work from a copy, and you always have a fresh version ready for the next use.',
+          'The customization step is where a generic template becomes something that actually works for a specific real situation: swapping in your own branding, your own actual offer, and pricing that reflects your specific business, rather than sending a template out with placeholder text still visible. A template that clearly hasn\'t been personalized reads as exactly that to whoever receives it, which undercuts the professionalism it was supposed to project in the first place.',
+        ],
         steps: [
           'Browse the template categories: proposals, scripts, checklists, and prompts.',
           'Duplicate a template before editing so the original stays intact.',
@@ -1717,6 +2251,11 @@ export const courses = [
         title: 'Rebranding & Reselling',
         minutes: 11,
         overview: 'Turn included templates into your own sellable product.',
+        lecture: [
+          'A well-made template you\'re already customizing for your own use is closer to a sellable product than most people realize — the gap between "internal tool I use" and "product I sell" is often smaller than it feels, mostly a matter of packaging and confirming you\'re actually allowed to sell it rather than requiring a completely new build from scratch.',
+          'Confirming which specific assets are cleared for resale in the vault\'s usage terms comes first, always, before any packaging or selling decisions — this isn\'t a formality, it\'s the actual boundary between a legitimate offer and one that violates the terms you agreed to (the next lesson goes into this in real depth, since it\'s worth getting right). Once you\'ve confirmed you\'re clear, rebranding with your own name, logo, and pricing turns a shared starting point into something that reads as genuinely yours to a customer encountering it.',
+          'Packaging it as either a free lead magnet (to build an audience or an email list) or a paid mini-product (to generate direct revenue) are the two most common paths, and neither requires you to build something from nothing — you\'re taking a real, useful asset you already have and giving it a clear purpose and a clear audience, which is usually the harder part of launching any offer.',
+        ],
         steps: [
           'Confirm which assets are cleared for resale in the vault\'s usage terms.',
           'Rebrand the asset with your own name, logo, and pricing.',
@@ -1729,6 +2268,11 @@ export const courses = [
         title: 'Understanding License & Usage Rights Before You Resell',
         minutes: 10,
         overview: '"Done-for-you" and "resell rights" mean different things depending on the specific license attached to an asset — check before you claim full ownership of anything.',
+        lecture: [
+          '"Rebrandable" and "resellable" get used loosely and often interchangeably in casual conversation about templates and digital products, but they aren\'t actually the same permission, and confusing them is exactly how someone ends up selling something they didn\'t genuinely have the right to sell. This lesson is about reading the actual terms attached to a resource, not the marketing description of it, before you make any decisions based on what you assume it allows.',
+          'It\'s worth knowing the general shape of the common license tiers in this space, even in broad strokes: personal-use-only means you can use the asset yourself but not resell it in any form. Resell rights means you can sell the asset itself, typically as-is or with limited modification. Full private-label rights is the most permissive tier, letting you rebrand it and claim authorship as your own work. These tiers aren\'t interchangeable, and an asset licensed under one doesn\'t automatically carry the permissions of another, more generous one.',
+          'When you\'re genuinely unsure which tier applies to a specific resource, the safe default is treating it as personal-use-only until you\'ve confirmed otherwise in writing — assuming the more permissive interpretation and being wrong about it is the actual risk here, not the reverse. And regardless of which license tier legitimately applies, never represent a rebranded template as 100% original work to a paying client: rebranding the packaging and presentation is completely fine and expected, but misrepresenting the underlying origin to someone paying you is a different, more serious problem entirely.',
+        ],
         steps: [
           'Read the actual usage terms attached to a resource, not just the marketing description of it — "rebrandable" and "resellable" aren\'t always the same permission.',
           'Understand the general shape of common license tiers: personal-use-only (you can use it, not resell it), resell rights (you can sell the asset itself), and full private-label rights (you can rebrand and claim authorship).',
@@ -1745,6 +2289,11 @@ export const courses = [
         title: 'Packaging a Template Into a Lead Magnet or Paid Offer',
         minutes: 12,
         overview: 'The fastest way to turn one good template into your first product, once you\'ve confirmed you\'re clear to reuse it.',
+        lecture: [
+          'With licensing confirmed from the previous lesson, this is where a single good template actually becomes an offer someone can receive. The two paths — free lead magnet or paid mini-product — solve different goals, and picking the right one for your actual situation matters more than the packaging details underneath it.',
+          'A lead magnet works best kept narrow: simplify the template down to one clear, immediately useful piece rather than handing over your entire toolkit for free, and gate it behind an email opt-in so the exchange is honest on both sides — a specific, useful thing in return for a way to stay in touch. A paid mini-product, by contrast, earns its price by being more than a single document: bundling two or three genuinely related templates together, like a proposal plus a pricing sheet plus a checklist, so the price reflects a working system rather than one isolated file.',
+          'Whichever direction you choose, describe it around the person receiving it, not just a features list: one short page naming who it\'s for and the specific outcome it helps them reach communicates far more persuasively than a bare bullet list of what\'s technically included. And before building a full sales page or funnel around it, test it on a small audience first — a community post, a handful of direct messages — the same "confirm real demand before over-investing" instinct from the niche-picking lesson at the very start of the Faceless Marketing module, applied here to your very first product.',
+        ],
         steps: [
           'For a lead magnet: simplify the template to one clear, immediately useful piece (not your whole toolkit), and gate it behind an email opt-in.',
           'For a paid mini-product: bundle 2-3 related templates together (e.g. proposal + pricing sheet + checklist) so the price reflects a system, not a single document.',
