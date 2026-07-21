@@ -1,5 +1,5 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { CheckCircle2, ChevronLeft, ChevronRight, FileText, PlayCircle, Sparkles } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, ChevronRight, Clock, FileText, Sparkles } from 'lucide-react'
 import { courses } from '../data/courses'
 import { useAppData } from '../context/AppDataContext'
 
@@ -23,15 +23,10 @@ export default function LessonDetail() {
       </Link>
 
       <p className="text-brand-400 text-xs font-semibold uppercase tracking-wide mb-1">{course.title}</p>
-      <h1 className="text-white text-2xl font-bold mb-4">{lesson.title}</h1>
-
-      <div
-        className={`aspect-video rounded-xl bg-gradient-to-br ${course.color} flex items-center justify-center mb-4`}
-      >
-        <PlayCircle size={56} className="text-white/90" />
-      </div>
-
-      <p className="text-slate-500 text-xs mb-6">Lesson video placeholder &middot; ~{lesson.minutes} min</p>
+      <h1 className="text-white text-2xl font-bold mb-2">{lesson.title}</h1>
+      <p className="flex items-center gap-1.5 text-slate-500 text-xs mb-6">
+        <Clock size={13} /> ~{lesson.minutes} min read
+      </p>
 
       {lesson.overview && (
         <p className="text-slate-200 text-base leading-relaxed mb-6">{lesson.overview}</p>
