@@ -167,6 +167,185 @@ export const courses = [
     ],
   },
   {
+    id: 'platform-playbook',
+    title: 'Platform Playbook: Mercor, Handshake AI & Beyond',
+    blurb:
+      'A deep dive on real vetted-expert marketplaces: profiles, CVs, interviews, and role-by-role job guides.',
+    color: 'from-sky-600 to-blue-800',
+    lessons: [
+      {
+        id: 'l1',
+        title: 'How Mercor, Handshake AI & Rater Platforms Work',
+        minutes: 11,
+        overview:
+          'Mercor and Handshake AI are examples of vetted-contractor marketplaces that match people to paid AI training and evaluation work for AI labs and companies. This lesson covers the model they run on before you touch an application.',
+        steps: [
+          'Understand the core model: the platform vets contributors, then matches them to paid projects posted by AI labs and companies.',
+          'Learn the common project types: model-response evaluation, data labeling, subject-matter Q&A writing, coding benchmarks, and red-teaming/safety review.',
+          'Note that pay structure (hourly vs. per-task), project availability, and requirements change over time and by region — always confirm current details directly on the platform before relying on them.',
+          'Create accounts on Mercor and Handshake AI (or similar platforms) as your first two applications, using the profile practices from the next lesson.',
+        ],
+        takeaways: [
+          'These are real freelance marketplaces with real vetting — treat every application like a real job application.',
+          'Platform terms change frequently. Treat anything you read online (including this course) as a starting point, not the current source of truth.',
+        ],
+        resources: ['Platform Comparison Notes'],
+      },
+      {
+        id: 'l2',
+        title: 'Building a Profile That Gets Matched',
+        minutes: 12,
+        overview: 'Your profile is what the platform\'s matching system and human recruiters both use to route you to projects.',
+        steps: [
+          'Complete every profile field fully — incomplete profiles are typically filtered out of matching before a human ever sees them.',
+          'Add specific, verifiable skills tags (languages, subjects, technical tools, industries) instead of generic ones like "AI".',
+          'Link a portfolio, LinkedIn, GitHub, or writing samples that demonstrate the expertise you\'re claiming.',
+          'Complete identity and work-eligibility verification immediately — most platforms block paid project access until this clears.',
+          'Set accurate availability so you\'re only matched to workloads you can actually deliver on time.',
+        ],
+        takeaways: [
+          'Specificity beats breadth — "Python backend + pytest" gets matched more precisely than "coding".',
+          'Verification is usually a hard gate, not a formality. Do it on day one, not when a project is offered.',
+        ],
+      },
+      {
+        id: 'l3',
+        title: 'Writing a CV That Passes Screening',
+        minutes: 15,
+        overview:
+          'AI-training platforms route CVs through both automated filters and human reviewers. Here\'s how to build one that clears both.',
+        steps: [
+          'Lead with a one-line specialty summary (e.g. "Backend engineer specializing in Python code review and technical documentation").',
+          'List relevant expertise first: subject areas, languages, technical tools, and any prior evaluation, teaching, editing, or research experience.',
+          'Quantify experience wherever possible — years, projects shipped, papers published, repositories maintained, students taught.',
+          'Mirror the language used in the project or role description, without keyword-stuffing.',
+          'Keep formatting simple and text-based — heavy graphics, columns, or tables can break automated résumé parsers.',
+          'Proofread line by line. On platforms that grade writing and attention to detail, a typo in your own CV undermines the application.',
+        ],
+        takeaways: [
+          'Treat it as a skills inventory built for a parser and a reviewer, not a traditional narrative résumé.',
+          'A plain, well-organized document usually parses better than a beautifully designed template.',
+        ],
+        resources: ['CV Template (Skills-First Format)', 'Keyword Checklist'],
+      },
+      {
+        id: 'l4',
+        title: 'Acing the Skills Assessment',
+        minutes: 13,
+        overview: 'Most platforms gate project access behind a graded skills test before you can apply to specific work.',
+        steps: [
+          'Block out uninterrupted time — most assessments are timed and don\'t allow retakes for a period after a fail.',
+          'Read every instruction twice before answering; scoring usually weighs instruction-following as heavily as the answer itself.',
+          'Practice the task type in advance: rating pairs of responses, spotting factual errors, or writing rubric-based feedback.',
+          'Justify your reasoning clearly wherever a written explanation is requested — vague justifications are marked down even with a correct answer.',
+          'Review every answer before submitting if the platform allows it.',
+        ],
+        takeaways: [
+          'Assessments reward careful, rubric-following behavior over raw speed.',
+          'A failed assessment usually isn\'t permanent — check the platform\'s specific retake policy before reapplying.',
+        ],
+      },
+      {
+        id: 'l5',
+        title: 'The Interview Playbook',
+        minutes: 14,
+        overview: 'What to expect after you clear the initial screen, from recruiter contact through your first paid task.',
+        steps: [
+          'Stage 1 — Application review: your profile and CV are screened against currently open project needs.',
+          'Stage 2 — Skills/qualification test: a graded task specific to the project you\'re being considered for.',
+          'Stage 3 — Interview or live screen: expect questions about your background and how you\'d approach sample tasks.',
+          'Stage 4 — Paid trial task: a short, paid real task used to confirm quality before you\'re given ongoing work.',
+          'Prepare 2-3 concrete examples of relevant work you can describe clearly in under a minute each.',
+          'Ask clarifying questions during any live interview — it signals the same rigor these roles are evaluating for.',
+        ],
+        takeaways: [
+          'Treat the paid trial task as seriously as the interview itself — it\'s often the real decision point.',
+          'Every stage is testing the same underlying thing: can you follow detailed instructions consistently.',
+        ],
+      },
+      {
+        id: 'l6',
+        title: 'Job Guide: Writing & Response Evaluation Roles',
+        minutes: 12,
+        overview: 'The most common entry point on these platforms — rating, ranking, or rewriting AI-generated text.',
+        steps: [
+          'Understand the core task: comparing two or more model responses against a rubric and explaining your choice.',
+          'Build a habit of checking claims for factual accuracy before judging tone or style.',
+          'Practice writing concise, specific feedback — reviewers are often graded on clarity as much as correctness.',
+          'Position your CV around any writing, editing, teaching, or research background, even outside tech.',
+        ],
+        takeaways: [
+          'Strong general writing and critical reading skills matter more here than a technical background.',
+          'This is often the fastest role to qualify for — a good on-ramp while you build toward more specialized work.',
+        ],
+      },
+      {
+        id: 'l7',
+        title: 'Job Guide: Coding & Technical Evaluation Roles',
+        minutes: 14,
+        overview: 'Higher-paying roles for reviewing, debugging, and rating AI-generated code.',
+        steps: [
+          'Understand the core task: running, reading, and judging AI-generated code against correctness and best practices.',
+          'Refresh fundamentals in the languages you\'ll be tested on — assessments often include a live coding component.',
+          'Practice explaining why code is wrong, not just that it\'s wrong — written justification is usually scored separately.',
+          'Highlight specific languages, frameworks, and shipped-project experience on your CV rather than "full-stack developer".',
+        ],
+        takeaways: [
+          'Depth in 1-2 languages usually outperforms shallow familiarity with many.',
+          'Being able to explain a bug clearly in writing is as valuable here as finding it.',
+        ],
+      },
+      {
+        id: 'l8',
+        title: 'Job Guide: Subject-Matter Expert Reviewer Roles',
+        minutes: 13,
+        overview: 'Specialized, typically higher-paying roles for people with real credentials in law, medicine, finance, science, or similar fields.',
+        steps: [
+          'Understand the core task: verifying AI outputs against domain knowledge and professional/regulatory standards.',
+          'Gather proof of expertise: degrees, licenses, publications, or years of professional practice.',
+          'Expect a more rigorous, sometimes multi-step vetting process than general rater roles.',
+          'Be precise about your specific sub-specialty — "corporate tax law" screens differently than "law".',
+        ],
+        takeaways: [
+          'Credentials open the door here, but clear written explanations still decide who stays qualified.',
+          'These roles often pay more but have a smaller, slower-moving pool of available projects.',
+        ],
+      },
+      {
+        id: 'l9',
+        title: 'Job Guide: Voice, Audio & Multimodal Trainer Roles',
+        minutes: 11,
+        overview: 'Roles evaluating or generating audio, image, and video training data alongside text.',
+        steps: [
+          'Understand the core task: rating transcription accuracy, voice naturalness, or image/video-description quality.',
+          'Test your recording setup (microphone, quiet room) before any assessment that involves audio.',
+          'Practice describing audio/visual issues in precise written language, since feedback is usually text-based.',
+          'Note any language, accent, or accessibility expertise on your profile — multimodal roles often need specific coverage.',
+        ],
+        takeaways: [
+          'Equipment quality matters — a noisy recording environment can fail an otherwise strong application.',
+          'These roles are less commoditized than text-only rating, often with less applicant competition.',
+        ],
+      },
+      {
+        id: 'l10',
+        title: 'Staying Qualified & Scaling Across Platforms',
+        minutes: 12,
+        overview: 'Once you\'re in, the real work is staying qualified and growing your income across more than one platform.',
+        steps: [
+          'Track your quality/accuracy score (where visible) and address dips immediately rather than waiting for a suspension notice.',
+          'Diversify across 2-3 platforms so a slow week on one doesn\'t stall your income entirely.',
+          'Keep a running log of feedback you receive and revisit it before starting a new project type.',
+          'Reapply to higher-tier or specialist roles every few months as your track record builds.',
+        ],
+        takeaways: [
+          'Consistency over months is what unlocks better-paying, more consistent project access.',
+          'Being under-diversified across a single platform is the most common reason income suddenly drops.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'ai-website',
     title: 'AI Website Creation',
     blurb: 'Stand up a full website and custom domain with AI tooling.',
