@@ -30,12 +30,12 @@ export function AuthProvider({ children }) {
     setReady(true)
   }, [])
 
-  function signup(name, email, password, purchase = null) {
+  function signup(name, email, password) {
     const users = loadUsers()
     if (users.some((u) => u.email === email)) {
-      return { ok: false, error: 'An account with that email already exists.', code: 'exists' }
+      return { ok: false, error: 'An account with that email already exists.' }
     }
-    const newUser = { name, email, password, joined: new Date().toISOString(), purchase }
+    const newUser = { name, email, password, joined: new Date().toISOString() }
     saveUsers([...users, newUser])
     localStorage.setItem(SESSION_KEY, email)
     setUser(newUser)

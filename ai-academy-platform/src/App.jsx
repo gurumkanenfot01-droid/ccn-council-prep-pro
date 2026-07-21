@@ -4,8 +4,6 @@ import { AppDataProvider } from './context/AppDataContext'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
-import CheckoutSuccess from './pages/CheckoutSuccess'
-import CheckoutCancel from './pages/CheckoutCancel'
 import AppShell from './components/AppShell'
 import Community from './pages/Community'
 import Classroom from './pages/Classroom'
@@ -27,8 +25,6 @@ function AppRoutes() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      <Route path="/checkout/success" element={<CheckoutSuccess />} />
-      <Route path="/checkout/cancel" element={<CheckoutCancel />} />
       <Route
         path="/app"
         element={
