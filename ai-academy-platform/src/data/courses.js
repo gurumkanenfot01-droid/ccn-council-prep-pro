@@ -343,6 +343,31 @@ export const courses = [
           'Being under-diversified across a single platform is the most common reason income suddenly drops.',
         ],
       },
+      {
+        id: 'l11',
+        title: 'Verify Before You Trust: Your Due-Diligence Checklist',
+        minutes: 16,
+        overview:
+          'Everything in this module — pay ranges, requirements, even which platforms are legitimate — changes constantly, and this space attracts copycat and scam listings alongside real ones. This lesson is a repeatable, five-minute habit for verifying anything before you trust it or hand over your information, so you never have to take this course\'s word (or anyone else\'s) over the platform\'s own current terms.',
+        steps: [
+          'Go direct: type the platform\'s domain into your browser yourself rather than clicking a link from a DM, comment, or ad. Confirm the URL and company name match what you expect before entering any information.',
+          'Read the primary source: check the platform\'s own Careers/Help Center/FAQ pages for current role types, application steps, and stated pay. Treat this as the only up-to-date source of truth — not a course, a forum post, or a screenshot someone shared.',
+          'Cross-check the company itself: look for real news coverage or funding announcements, a LinkedIn company page with actual employees, and independent reviews on a site the company doesn\'t control.',
+          'Know the red flags cold: any request for payment, a "processing fee," or your bank/SSN details before real vetting has happened; unsolicited recruiter contact over WhatsApp or Telegram; guaranteed high pay with no real interview; pressure to decide immediately.',
+          'Verify who you\'re actually talking to: legitimate interviews happen through the platform\'s own domain-based tools or a scheduling link tied to their site — not a personal Gmail address or a random phone number.',
+          'Read the contractor agreement before accepting work: check payment terms, IP/confidentiality clauses, and how cancellations or disputes are handled.',
+          'Start small: don\'t commit large amounts of unpaid "trial" work. Confirm the payout method and timeline before investing significant hours in anything new.',
+          'Cross-check with independent workers: contractor forums, subreddits, or LinkedIn groups not run by the platform itself often surface current pay and requirement changes faster than official channels update.',
+          'Keep your own paper trail: screenshot postings, offers, and terms when you apply — listings get edited or removed later, and your own record is what protects you if a dispute comes up.',
+          'Put a recurring reminder on your calendar (monthly is enough) to re-check pay and requirements on every platform you actively work with.',
+        ],
+        takeaways: [
+          'Nothing you read — including this course — should replace checking a platform\'s own current terms before you act on them.',
+          'The single most reliable scam signal in this space is being asked for money or sensitive financial details before any real vetting has happened. If you see it, stop.',
+          'A five-minute verification habit, done consistently, protects hours of unpaid work and your personal data.',
+        ],
+        resources: ['Due-Diligence Checklist (Printable)', 'Scam Red-Flags Quick Reference'],
+      },
     ],
   },
   {
