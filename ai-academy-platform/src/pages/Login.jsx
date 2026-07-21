@@ -58,9 +58,9 @@ export default function Login() {
           Log In
         </button>
         <p className="text-slate-400 text-sm mt-4 text-center">
-          New here?{' '}
-          <Link to="/signup" className="text-brand-400 hover:underline">
-            Create an account
+          Not enrolled yet?{' '}
+          <Link to="/" className="text-brand-400 hover:underline">
+            View pricing
           </Link>
         </p>
       </form>

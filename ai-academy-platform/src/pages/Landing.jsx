@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Check, Quote } from 'lucide-react'
 import Logo from '../components/Logo'
 import ModuleCard from '../components/ModuleCard'
+import EnrollButton from '../components/EnrollButton'
 import { courses } from '../data/courses'
 import { testimonials } from '../data/testimonials'
 
@@ -11,12 +12,9 @@ export default function Landing() {
       <header className="sticky top-0 z-10 bg-magenta-500/95 backdrop-blur border-b border-black/10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <Logo light />
-          <Link
-            to="/signup"
-            className="bg-ink text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-black transition"
-          >
+          <EnrollButton className="bg-ink text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-black transition disabled:opacity-60">
             Join Now
-          </Link>
+          </EnrollButton>
         </div>
       </header>
 
@@ -34,12 +32,9 @@ export default function Landing() {
           <h2 className="mt-6 text-2xl sm:text-3xl font-extrabold leading-tight">
             Two Choices: You Either Master AI, or Get Left Behind By It.
           </h2>
-          <Link
-            to="/signup"
-            className="inline-block mt-8 bg-ink text-white font-semibold px-8 py-3 rounded-full hover:bg-black transition"
-          >
+          <EnrollButton className="inline-block mt-8 bg-ink text-white font-semibold px-8 py-3 rounded-full hover:bg-black transition disabled:opacity-60">
             Enroll Now
-          </Link>
+          </EnrollButton>
         </section>
 
         <section className="mt-14">
@@ -125,12 +120,15 @@ export default function Landing() {
           <h3 className="text-2xl font-display font-bold mb-4">
             Ready to build wealth with AI?
           </h3>
-          <Link
-            to="/signup"
-            className="inline-block bg-ink text-white font-semibold px-8 py-3 rounded-full hover:bg-black transition"
-          >
+          <EnrollButton className="inline-block bg-ink text-white font-semibold px-8 py-3 rounded-full hover:bg-black transition disabled:opacity-60">
             Enroll Now &mdash; $245
-          </Link>
+          </EnrollButton>
+          <p className="text-xs text-black/50 mt-3">
+            Already enrolled?{' '}
+            <Link to="/login" className="underline">
+              Log in
+            </Link>
+          </p>
         </section>
       </main>
     </div>
