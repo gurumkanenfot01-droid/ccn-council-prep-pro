@@ -4,7 +4,8 @@ import { QUESTION_BANK, CATEGORY_LIST } from "../App.jsx";
 
 const APP_VERSION = "1.0.0";
 const DEVELOPER_NAME = "Nenfot Gurumka";
-const DEVELOPER_BIO = "Registered Nurse & Nurse Intensivist, NGAS, from Kanke, Plateau State — Jos.";
+const DEVELOPER_TITLE = "Founder & Nurse Intensivist";
+const DEVELOPER_BIO = "Registered Nurse, NGAS, from Kanke, Plateau State — Jos.";
 const CONTACT_EMAIL = "gurumkanenfot01@gmail.com";
 
 function Row({ label, value }) {
@@ -44,7 +45,7 @@ export default function AboutScreen() {
           <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>Developer</div>
         </div>
         <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.6 }}>
-          Built and maintained by <strong style={{ color: t.text }}>{DEVELOPER_NAME}</strong> for the CCN Council Prep community.
+          Built and maintained by <strong style={{ color: t.text }}>{DEVELOPER_NAME}</strong>, {DEVELOPER_TITLE}, for the CCN Council Prep community.
         </div>
         <div style={{ fontSize: 12, color: t.textFaint, marginTop: 6, lineHeight: 1.5 }}>{DEVELOPER_BIO}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
