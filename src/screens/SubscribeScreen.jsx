@@ -34,7 +34,7 @@ function PlanCard({ id, onSubscribe, busy }) {
 }
 
 export default function SubscribeScreen() {
-  const { t, session, subscription, setSubscription, isExistingMember } = useApp();
+  const { t, session, subscription, setSubscription, isExistingMember, freeTrialRemaining, freeTrialLimit } = useApp();
   const [busyPlan, setBusyPlan] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -90,8 +90,9 @@ export default function SubscribeScreen() {
             <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>You're on the free preview</div>
           </div>
           <div style={{ fontSize: 12.5, color: t.textMuted, lineHeight: 1.5 }}>
-            Mixed Revision, Daily Challenge, Weak Topics review, and your Bookmarks/Wrong Answers are always free.
-            Subscribe to unlock everything else.
+            Mixed Revision, Daily Challenge, Weak Topics review, and your Bookmarks/Wrong Answers are free —
+            up to <strong>{freeTrialLimit} questions total</strong>. You have <strong>{freeTrialRemaining}</strong> left.
+            Subscribe to unlock everything else, with no limit.
           </div>
         </Card>
       )}
