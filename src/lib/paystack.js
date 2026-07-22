@@ -3,8 +3,8 @@ import { supabase } from "./supabase.js";
 const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 
 export const PLANS = {
-  "6month": { label: "6 Months", amountKobo: 150000, amountNaira: 1500 },
-  "1year": { label: "1 Year", amountKobo: 250000, amountNaira: 2500 },
+  "6month": { label: "6 Months", amountKobo: 200000, amountNaira: 2000 },
+  "1year": { label: "1 Year", amountKobo: 400000, amountNaira: 4000 },
 };
 
 let scriptPromise = null;
