@@ -276,6 +276,7 @@ function HomeScreen({ go, startQuiz }) {
         <QuickTile icon={XCircle} label="Wrong Answers" desc={`${Object.keys(wrongBank).length} to review`} color={t.red} bg={t.redSoft} onClick={() => go("wrongreview")} />
         <QuickTile icon={BarChart3} label="Performance" desc={`Avg ${avgPct}%`} color={t.emerald} bg={t.emeraldSoft} onClick={() => go("performance")} />
         <QuickTile icon={Trophy} label="Leaderboard" desc="See rankings" color={t.amber} bg={t.amberSoft} onClick={() => go("leaderboard")} />
+        <QuickTile icon={LifeBuoy} label="Customer Care" desc="We're here to help" color={t.navy} bg={t.navySoft} onClick={() => go("support")} />
       </div>
 
       {/* Recent activity */}
