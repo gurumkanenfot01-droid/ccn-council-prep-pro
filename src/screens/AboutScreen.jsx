@@ -1,6 +1,6 @@
 import { Info, Mail, ShieldCheck, Sparkles, BookOpenCheck, Code2 } from "lucide-react";
 import { Card, SectionHeader, useApp } from "../ui/kit.jsx";
-import { QUESTION_BANK, CATEGORY_LIST } from "../App.jsx";
+import { CATEGORY_LIST } from "../App.jsx";
 
 const APP_VERSION = "1.0.0";
 const DEVELOPER_NAME = "Nenfot Gurumka";
@@ -35,7 +35,6 @@ export default function AboutScreen() {
       <Card style={{ padding: 18, marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: t.navy, marginBottom: 4 }}>App Info</div>
         <Row label="Version" value={APP_VERSION} />
-        <Row label="Question bank" value={`${QUESTION_BANK.length.toLocaleString()} questions`} />
         <Row label="Categories" value={CATEGORY_LIST.length} />
       </Card>
 
