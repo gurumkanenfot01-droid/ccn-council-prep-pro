@@ -184,11 +184,15 @@ function GlobalStyle({ t }) {
       @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
       @keyframes pop { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
       @keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
+      .ecg-pulse { stroke-dasharray: 34 480; animation: ecgTravel 3.6s linear infinite; }
+      @keyframes ecgTravel { from { stroke-dashoffset: 480; } to { stroke-dashoffset: -34; } }
+      .tile-watermark { transition: transform 0.25s ease, opacity 0.25s ease; }
+      .card-hover:hover .tile-watermark { transform: scale(1.08) rotate(-4deg); opacity: 0.12 !important; }
       ::selection { background: ${t.navy}33; }
       button { font-family: inherit; }
       input, textarea { font-family: inherit; }
       button:focus-visible, [tabindex]:focus-visible { outline: 2px solid ${t.navy}; outline-offset: 2px; }
-      @media (prefers-reduced-motion: reduce) { .card-hover, .press, .fade-in, .slide-up, .pop { animation: none !important; transition: none !important; } }
+      @media (prefers-reduced-motion: reduce) { .card-hover, .press, .fade-in, .slide-up, .pop, .ecg-pulse { animation: none !important; transition: none !important; } }
     `}</style>
   );
 }
@@ -240,7 +244,7 @@ function HomeScreen({ go, startQuiz }) {
       {/* Hero */}
       <div style={{
         background: `linear-gradient(135deg, ${t.navy} 0%, ${t.navyDark} 100%)`,
-        borderRadius: 20, padding: "28px 26px", marginBottom: 22, color: "#fff", position: "relative", overflow: "hidden",
+        borderRadius: 20, padding: "28px 26px 22px", marginBottom: 22, color: "#fff", position: "relative", overflow: "hidden",
       }}>
         <div style={{ position: "absolute", right: -30, top: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
         <div style={{ position: "absolute", right: 40, bottom: -50, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
@@ -257,6 +261,11 @@ function HomeScreen({ go, startQuiz }) {
             )}
           </div>
         </div>
+        {/* Cardiac-monitor pulse line — a small nod to critical care, not just decoration */}
+        <svg viewBox="0 0 460 40" preserveAspectRatio="none" style={{ position: "relative", width: "100%", height: 30, marginTop: 18, display: "block" }}>
+          <polyline points="0,22 130,22 150,6 168,34 186,22 460,22" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="2" />
+          <polyline className="ecg-pulse" points="0,22 130,22 150,6 168,34 186,22 460,22" fill="none" stroke="#8FC1FF" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
       </div>
 
       {/* Customer Care banner */}
@@ -271,12 +280,15 @@ function HomeScreen({ go, startQuiz }) {
         <ChevronRight size={18} color={t.navy} />
       </Card>
 
-      {/* Stats grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 26 }}>
-        <StatCard icon={Grid3x3} label="Categories" value={CATEGORY_LIST.length} color={t.emerald} bg={t.emeraldSoft} onClick={() => go("categories")} />
-        <StatCard icon={ClipboardList} label="Exams Taken" value={totalAttempts} color={t.amber} bg={t.amberSoft} onClick={() => go("performance")} />
-        <StatCard icon={Bookmark} label="Bookmarked" value={bookmarks.length} color={t.red} bg={t.redSoft} onClick={() => go("bookmarks")} />
-      </div>
+      {/* Progress overview */}
+      <Card style={{ padding: 22, marginBottom: 26, display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
+        <ProgressRing pct={avgPct} size={100} stroke={9} label="Avg Score" />
+        <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", gap: 4 }}>
+          <MiniStatRow icon={Grid3x3} label="Categories" value={CATEGORY_LIST.length} color={t.emerald} onClick={() => go("categories")} />
+          <MiniStatRow icon={ClipboardList} label="Exams Taken" value={totalAttempts} color={t.amber} onClick={() => go("performance")} />
+          <MiniStatRow icon={Bookmark} label="Bookmarked" value={bookmarks.length} color={t.red} onClick={() => go("bookmarks")} />
+        </div>
+      </Card>
 
       {/* Quick actions */}
       <SectionHeader icon={Zap} title="Quick Actions" />
@@ -298,7 +310,11 @@ function HomeScreen({ go, startQuiz }) {
           <EmptyState icon={ClipboardList} text="No exams yet" sub="Start your first mock exam to see activity here" />
         ) : (
           history.slice(0, 5).map((h, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: i < Math.min(4, history.length - 1) ? `1px solid ${t.cardBorder}` : "none" }}>
+            <div key={i} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px 12px 12px",
+              borderBottom: i < Math.min(4, history.length - 1) ? `1px solid ${t.cardBorder}` : "none",
+              borderLeft: `3px solid ${h.pct >= 50 ? t.emerald : t.red}`, marginBottom: 1,
+            }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <IconBadge icon={h.pct >= 50 ? CheckCircle2 : XCircle} color={h.pct >= 50 ? t.emerald : t.red} bg={h.pct >= 50 ? t.emeraldSoft : t.redSoft} size={34} />
                 <div>
@@ -315,12 +331,29 @@ function HomeScreen({ go, startQuiz }) {
   );
 }
 
+function MiniStatRow({ icon: Icon, label, value, color, onClick }) {
+  const { t } = useApp();
+  return (
+    <div onClick={onClick} className="press" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 4px", cursor: "pointer" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <IconBadge icon={Icon} color={color} bg={color + "18"} size={30} />
+        <span style={{ fontSize: 13, color: t.textMuted, fontWeight: 600 }}>{label}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <span className="f-mono" style={{ fontSize: 15, fontWeight: 800, color: t.text }}>{value}</span>
+        <ChevronRight size={14} color={t.textFaint} />
+      </div>
+    </div>
+  );
+}
+
 function QuickTile({ icon: Icon, label, desc, color, bg, onClick }) {
   const { t } = useApp();
   return (
-    <Card hover onClick={onClick} style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+    <Card hover onClick={onClick} style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10, position: "relative", overflow: "hidden" }}>
+      <Icon size={72} color={color} strokeWidth={1.5} className="tile-watermark" style={{ position: "absolute", right: -14, bottom: -16, opacity: 0.08 }} />
       <IconBadge icon={Icon} color={color} bg={bg} size={38} />
-      <div>
+      <div style={{ position: "relative" }}>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text }}>{label}</div>
         <div style={{ fontSize: 11.5, color: t.textFaint, marginTop: 1 }}>{desc}</div>
       </div>
@@ -1394,7 +1427,7 @@ const FREE_CATEGORIES = ["Mixed Revision"];
 const FREE_QUIZ_LABELS = ["Daily Challenge", "Weak Topics", "Bookmarks", "Wrong Answers", "Retake"];
 // Lifetime cap on free-preview questions for brand-new (post-cutoff), unsubscribed
 // members — see startQuiz().
-const FREE_TRIAL_LIMIT = 100;
+const FREE_TRIAL_LIMIT = 200;
 
 // Grandfather cutoff: accounts created at or before this moment are "existing
 // members" and keep free access to everything that existed in the bank as of this
