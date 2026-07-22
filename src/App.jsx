@@ -15,6 +15,7 @@ import PaywallGate from "./screens/PaywallGate.jsx";
 import NewQuestionsScreen from "./screens/NewQuestionsScreen.jsx";
 import SupportScreen from "./screens/SupportScreen.jsx";
 import AdminNotifyScreen from "./screens/AdminNotifyScreen.jsx";
+import UpsellModal from "./screens/UpsellModal.jsx";
 import { CCN_SCHOOLS } from "./data/ccnSchools.js";
 import { isPushSupported, isPushSubscribed, subscribeToPush, unsubscribeFromPush } from "./lib/push.js";
 import {
@@ -258,6 +259,18 @@ function HomeScreen({ go, startQuiz }) {
         </div>
       </div>
 
+      {/* Customer Care banner */}
+      <Card hover onClick={() => go("support")} style={{ padding: "14px 18px", marginBottom: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: t.navySoft, border: `1px solid ${t.navy}22` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <IconBadge icon={LifeBuoy} color={t.navy} bg={t.card} size={38} />
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text }}>Need help?</div>
+            <div style={{ fontSize: 11.5, color: t.textFaint }}>Customer Care is here — WhatsApp or email us anytime</div>
+          </div>
+        </div>
+        <ChevronRight size={18} color={t.navy} />
+      </Card>
+
       {/* Stats grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 26 }}>
         <StatCard icon={Grid3x3} label="Categories" value={CATEGORY_LIST.length} color={t.emerald} bg={t.emeraldSoft} onClick={() => go("categories")} />
@@ -276,7 +289,6 @@ function HomeScreen({ go, startQuiz }) {
         <QuickTile icon={XCircle} label="Wrong Answers" desc={`${Object.keys(wrongBank).length} to review`} color={t.red} bg={t.redSoft} onClick={() => go("wrongreview")} />
         <QuickTile icon={BarChart3} label="Performance" desc={`Avg ${avgPct}%`} color={t.emerald} bg={t.emeraldSoft} onClick={() => go("performance")} />
         <QuickTile icon={Trophy} label="Leaderboard" desc="See rankings" color={t.amber} bg={t.amberSoft} onClick={() => go("leaderboard")} />
-        <QuickTile icon={LifeBuoy} label="Customer Care" desc="We're here to help" color={t.navy} bg={t.navySoft} onClick={() => go("support")} />
       </div>
 
       {/* Recent activity */}
@@ -1380,6 +1392,9 @@ const NAV_MORE = [
 // history, so they stay free regardless of what category that content came from.
 const FREE_CATEGORIES = ["Mixed Revision"];
 const FREE_QUIZ_LABELS = ["Daily Challenge", "Weak Topics", "Bookmarks", "Wrong Answers", "Retake"];
+// Lifetime cap on free-preview questions for brand-new (post-cutoff), unsubscribed
+// members — see startQuiz().
+const FREE_TRIAL_LIMIT = 100;
 
 // Grandfather cutoff: accounts created at or before this moment are "existing
 // members" and keep free access to everything that existed in the bank as of this
@@ -1428,6 +1443,7 @@ export default function App() {
   const [elapsed, setElapsed] = useState(0);
   const [lastQuizMeta, setLastQuizMeta] = useState({ category: "Mixed", dailyKey: null });
   const [leaderboardPrompt, setLeaderboardPrompt] = useState(false);
+  const [showUpsell, setShowUpsell] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -1458,6 +1474,9 @@ export default function App() {
       CATEGORY_LIST = computeCategoryList(bank);
       setProfile(p); setSubscription(sub); setBookmarks(b); setWrongBank(w); setHistory(h); setInProgress(ip); setThemeMode(th);
       if (!p.name) setView("profile");
+      const bootIsSubscribed = !!(sub && new Date(sub.expiresAt) > new Date());
+      const bootIsExistingMember = !!(p.createdAt && new Date(p.createdAt) <= EXISTING_MEMBER_CUTOFF);
+      if (!bootIsSubscribed && !bootIsExistingMember) setShowUpsell(true);
       setBooted(true);
     })();
   }, [session]);
@@ -1496,9 +1515,21 @@ export default function App() {
   const isExistingMember = !!(profile.createdAt && new Date(profile.createdAt) <= EXISTING_MEMBER_CUTOFF);
   const hasGrandfatheredAccess = isSubscribed || isExistingMember;
 
+  // Brand-new (post-cutoff), unsubscribed members get a lifetime cap of
+  // FREE_TRIAL_LIMIT questions across the free-preview categories/labels,
+  // on top of the existing free-preview restriction — once used up, even
+  // those free categories require a subscription. Grandfathered/subscribed
+  // members are never subject to this cap.
+  const questionsAnsweredTotal = history.reduce((s, h) => s + h.total, 0);
+  const freeTrialRemaining = Math.max(0, FREE_TRIAL_LIMIT - questionsAnsweredTotal);
+
   function startQuiz({ count, category, idPool, seedOverride, dailyKey }) {
     const isFreePreview = FREE_QUIZ_LABELS.includes(category) || FREE_CATEGORIES.includes(category);
     if (!hasGrandfatheredAccess && !isFreePreview) { go("subscribe"); return; }
+    if (!hasGrandfatheredAccess) {
+      if (freeTrialRemaining <= 0) { go("subscribe"); return; }
+      count = Math.min(count, freeTrialRemaining);
+    }
 
     // Existing (grandfathered) members who haven't subscribed only get content that
     // existed as of the cutoff — anything added afterward (is_legacy=false) still
@@ -1596,11 +1627,12 @@ export default function App() {
   }
 
   const isAdmin = profile.role === "admin";
-  const ctxValue = { t, theme: themeMode, profile, setProfile, subscription, setSubscription, isSubscribed, isExistingMember, hasGrandfatheredAccess, bookmarks, toggleBookmark, wrongBank, history, inProgress, streak, isMobile, session, userId: session.user.id, isAdmin, signOut };
+  const ctxValue = { t, theme: themeMode, profile, setProfile, subscription, setSubscription, isSubscribed, isExistingMember, hasGrandfatheredAccess, freeTrialRemaining, freeTrialLimit: FREE_TRIAL_LIMIT, bookmarks, toggleBookmark, wrongBank, history, inProgress, streak, isMobile, session, userId: session.user.id, isAdmin, signOut };
 
   return (
     <AppCtx.Provider value={ctxValue}>
       <GlobalStyle t={t} />
+      {showUpsell && <UpsellModal onClose={() => setShowUpsell(false)} go={go} />}
       <div className="f-sans" style={{ minHeight: "100vh", background: t.bg, color: t.text }}>
 
         {view !== "quiz" && (
