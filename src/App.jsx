@@ -256,7 +256,6 @@ function HomeScreen({ go, startQuiz }) {
 
       {/* Stats grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 26 }}>
-        <StatCard icon={Layers} label="Total Questions" value={QUESTION_BANK.length.toLocaleString()} color={t.navy} bg={t.navySoft} onClick={() => go("categories")} />
         <StatCard icon={Grid3x3} label="Categories" value={CATEGORY_LIST.length} color={t.emerald} bg={t.emeraldSoft} onClick={() => go("categories")} />
         <StatCard icon={ClipboardList} label="Exams Taken" value={totalAttempts} color={t.amber} bg={t.amberSoft} onClick={() => go("performance")} />
         <StatCard icon={Bookmark} label="Bookmarked" value={bookmarks.length} color={t.red} bg={t.redSoft} onClick={() => go("bookmarks")} />
@@ -402,7 +401,7 @@ function PapersScreen({ startQuiz }) {
       <SectionHeader icon={Award} title="Mock Exam Papers" />
       <Card style={{ padding: "14px 18px", marginBottom: 20, background: t.navySoft, border: `1px solid ${t.navy}22` }}>
         <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.5 }}>
-          Each paper draws <strong>{PAPER_LEN} questions</strong> proportionally from every category in the question bank ({totalAvailable} questions total across {CATEGORY_LIST.length} categories), so no single topic dominates — questions really can come from anywhere in the curriculum, same as the real exam. Every attempt pulls a new random set, so you can retake either paper as many times as you like.
+          Each paper draws <strong>{PAPER_LEN} questions</strong> proportionally from every category in the question bank across all {CATEGORY_LIST.length} categories, so no single topic dominates — questions really can come from anywhere in the curriculum, same as the real exam. Every attempt pulls a new random set, so you can retake either paper as many times as you like.
         </div>
       </Card>
 
