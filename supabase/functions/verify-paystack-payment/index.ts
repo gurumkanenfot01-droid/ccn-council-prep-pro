@@ -20,8 +20,8 @@ const CORS_HEADERS = {
 
 // amount in kobo -> plan
 const PLAN_AMOUNTS = {
-  150000: { plan: "6month", days: 182 },
-  250000: { plan: "1year", days: 365 },
+  200000: { plan: "6month", days: 182 },
+  400000: { plan: "1year", days: 365 },
 };
 
 Deno.serve(async (req) => {
