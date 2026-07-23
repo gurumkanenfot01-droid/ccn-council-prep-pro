@@ -233,6 +233,7 @@ function Toggle({ on, onClick, label }) {
 }
 function HomeScreen({ go, startQuiz }) {
   const { t, profile, bookmarks, history, wrongBank, streak } = useApp();
+  const preCouncilCount = QUESTION_BANK.filter(q => q.category === "Pre-Council").length;
   const totalAttempts = history.length;
   const avgPct = totalAttempts ? Math.round(history.reduce((s, h) => s + h.pct, 0) / totalAttempts) : 0;
   const inProgress = useApp().inProgress;
@@ -267,6 +268,23 @@ function HomeScreen({ go, startQuiz }) {
           <polyline className="ecg-pulse" points="0,22 130,22 150,6 168,34 186,22 460,22" fill="none" stroke="#8FC1FF" strokeWidth="2.5" strokeLinecap="round" />
         </svg>
       </div>
+
+      {/* Pre-Council Questions Bank */}
+      {preCouncilCount > 0 && (
+        <Card hover onClick={() => go("setup", { category: "Pre-Council" })} style={{
+          padding: "16px 18px", marginBottom: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14,
+          background: `linear-gradient(135deg, ${t.navy} 0%, ${t.navyDark} 100%)`, color: "#fff", border: "none",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <IconBadge icon={GraduationCap} color="#fff" bg="rgba(255,255,255,0.15)" size={42} />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>Pre-Council Questions Bank</div>
+              <div style={{ fontSize: 11.5, opacity: 0.8 }}>{preCouncilCount.toLocaleString()} real past pre-council exam questions</div>
+            </div>
+          </div>
+          <ChevronRight size={18} color="#fff" />
+        </Card>
+      )}
 
       {/* Customer Care banner */}
       <Card hover onClick={() => go("support")} style={{ padding: "14px 18px", marginBottom: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: t.navySoft, border: `1px solid ${t.navy}22` }}>
