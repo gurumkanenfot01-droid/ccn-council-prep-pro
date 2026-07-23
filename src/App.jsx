@@ -279,7 +279,7 @@ function HomeScreen({ go, startQuiz }) {
             <IconBadge icon={GraduationCap} color="#fff" bg="rgba(255,255,255,0.15)" size={42} />
             <div>
               <div style={{ fontSize: 14, fontWeight: 700 }}>Pre-Council Questions Bank</div>
-              <div style={{ fontSize: 11.5, opacity: 0.8 }}>{preCouncilCount.toLocaleString()} real past pre-council exam questions</div>
+              <div style={{ fontSize: 11.5, opacity: 0.8 }}>Practice with real past pre-council exam questions</div>
             </div>
           </div>
           <ChevronRight size={18} color="#fff" />
