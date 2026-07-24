@@ -362,25 +362,60 @@ async function fetchAllRows(table, columns, orderBy) {
   return all;
 }
 
+// ---- offline cache: last-known-good copy of read-mostly data, so the app is
+// still usable (browsing/practicing) when the network is unavailable. Only
+// covers data fetched here (question bank, study notes) — per-user writes
+// (exam results, bookmarks) still require a connection and are not queued.
+function saveOfflineCache(key, data) {
+  try { localStorage.setItem(`offline-cache:${key}`, JSON.stringify({ data, savedAt: Date.now() })); } catch (e) { /* storage full/unavailable — skip caching */ }
+}
+export function loadOfflineCache(key) {
+  try {
+    const raw = localStorage.getItem(`offline-cache:${key}`);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function fetchQuestionBank() {
-  const data = await fetchAllRows("questions", "id, topic, source, q, opts, ans_idx, exp, category, category_icon, is_legacy");
-  return data.map(r => ({
-    id: r.id,
-    topic: r.topic,
-    source: r.source,
-    q: r.q,
-    opts: r.opts,
-    ansIdx: r.ans_idx,
-    exp: r.exp,
-    category: r.category,
-    categoryIcon: r.category_icon,
-    isLegacy: !!r.is_legacy,
-  }));
+  try {
+    const data = await fetchAllRows("questions", "id, topic, source, q, opts, ans_idx, exp, category, category_icon, is_legacy");
+    if (!data.length) throw new Error("empty response");
+    const bank = data.map(r => ({
+      id: r.id,
+      topic: r.topic,
+      source: r.source,
+      q: r.q,
+      opts: r.opts,
+      ansIdx: r.ans_idx,
+      exp: r.exp,
+      category: r.category,
+      categoryIcon: r.category_icon,
+      isLegacy: !!r.is_legacy,
+    }));
+    saveOfflineCache("question-bank", bank);
+    return bank;
+  } catch (e) {
+    const cached = loadOfflineCache("question-bank");
+    if (cached) return cached.data;
+    return [];
+  }
 }
 
 export async function fetchStudyNotes() {
-  const data = await fetchAllRows("study_notes", "banner, bullets", "sort_order");
-  return data.map(r => ({ banner: r.banner, bullets: r.bullets }));
+  try {
+    const data = await fetchAllRows("study_notes", "banner, bullets", "sort_order");
+    if (!data.length) throw new Error("empty response");
+    const notes = data.map(r => ({ banner: r.banner, bullets: r.bullets }));
+    saveOfflineCache("study-notes", notes);
+    return notes;
+  } catch (e) {
+    const cached = loadOfflineCache("study-notes");
+    if (cached) return cached.data;
+    return [];
+  }
 }
 
 // ---- subscription (latest active row, or null) ----
