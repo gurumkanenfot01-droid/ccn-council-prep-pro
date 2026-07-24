@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mail, Lock, GraduationCap, ArrowRight } from "lucide-react";
 import { Card, Button, Field } from "../ui/kit.jsx";
 import { supabase } from "../lib/supabase.js";
 
 export default function AuthScreen({ t }) {
   const [mode, setMode] = useState("login"); // login | signup | forgot
+
+  // Capture ?ref=CODE from a shared referral link. Stored in localStorage
+  // (not applied yet — there's no session until sign-up/email-confirm
+  // completes) so App.jsx's boot flow can apply it once the user is
+  // actually logged in, via applyPendingReferralCode().
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) window.localStorage.setItem("pending-referral-code", ref.trim().toUpperCase());
+  }, []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);

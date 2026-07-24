@@ -1,23 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, Users, CreditCard, School, Search } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, School, Search, Gift, Trophy } from "lucide-react";
 import { Card, SectionHeader, EmptyState, StatCard, useApp } from "../ui/kit.jsx";
 import { supabase } from "../lib/supabase.js";
+
+const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default function AdminOverviewScreen() {
   const { t } = useApp();
   const [profiles, setProfiles] = useState([]);
   const [subs, setSubs] = useState([]);
+  const [topPerformers, setTopPerformers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     (async () => {
-      const [{ data: profileRows }, { data: subRows }] = await Promise.all([
-        supabase.from("profiles").select("id, name, email, school, role, disabled, created_at"),
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const [{ data: profileRows }, { data: subRows }, { data: leaderRows }] = await Promise.all([
+        supabase.from("profiles").select("id, name, email, school, role, disabled, created_at, referral_code, referred_by"),
         supabase.from("subscriptions").select("user_id, plan, status, expires_at").eq("status", "active"),
+        supabase.from("leaderboard_entries").select("name, pct, correct, total, created_at")
+          .gte("created_at", monthStart.toISOString()).order("pct", { ascending: false }).limit(3),
       ]);
       setProfiles(profileRows || []);
       setSubs(subRows || []);
+      setTopPerformers(leaderRows || []);
       setLoading(false);
     })();
   }, []);
@@ -44,6 +53,20 @@ export default function AdminOverviewScreen() {
       .filter(p => activeSubsByUser.has(p.id))
       .map(p => ({ ...p, sub: activeSubsByUser.get(p.id) }));
   }, [profiles, activeSubsByUser]);
+
+  const topReferrers = useMemo(() => {
+    const byId = new Map(profiles.map(p => [p.id, p]));
+    const counts = new Map();
+    for (const p of profiles) {
+      if (!p.referred_by) continue;
+      counts.set(p.referred_by, (counts.get(p.referred_by) || 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([id, count]) => ({ id, count, referrer: byId.get(id) }))
+      .filter(r => r.referrer)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+  }, [profiles]);
 
   const filtered = subscriberRows.filter(r =>
     query.length < 2 || (r.name || "").toLowerCase().includes(query.toLowerCase()) || (r.email || "").toLowerCase().includes(query.toLowerCase())
@@ -80,6 +103,44 @@ export default function AdminOverviewScreen() {
               <div key={school} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
                 <span style={{ color: t.textMuted }}>{school}</span>
                 <span style={{ fontWeight: 700, color: t.text }}>{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card style={{ padding: 16, marginBottom: 20 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+          <Trophy size={15} /> Top Performer This Month
+        </div>
+        <div style={{ fontSize: 11, color: t.textFaint, marginBottom: 10 }}>Manual reward — send airtime/token to the top scorer yourself, no automatic payout.</div>
+        {topPerformers.length === 0 ? (
+          <div style={{ fontSize: 12.5, color: t.textFaint }}>No leaderboard entries yet this month</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {topPerformers.map((p, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                <span style={{ color: t.text, fontWeight: 600 }}>{MEDALS[i] || "•"} {p.name}</span>
+                <span style={{ fontWeight: 700, color: t.emerald }}>{p.pct}% ({p.correct}/{p.total})</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card style={{ padding: 16, marginBottom: 20 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+          <Gift size={15} /> Top Referrers
+        </div>
+        <div style={{ fontSize: 11, color: t.textFaint, marginBottom: 10 }}>Manual reward — send a small referral bonus yourself.</div>
+        {topReferrers.length === 0 ? (
+          <div style={{ fontSize: 12.5, color: t.textFaint }}>No referrals yet</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {topReferrers.map(r => (
+              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                <span style={{ color: t.textMuted }}>{r.referrer.name || r.referrer.email}</span>
+                <span style={{ fontWeight: 700, color: t.text }}>{r.count} referral{r.count === 1 ? "" : "s"}</span>
               </div>
             ))}
           </div>
