@@ -21,7 +21,7 @@ async function loadProfile(fallback) {
   const userId = requireUserId();
   const { data, error } = await supabase
     .from("profiles")
-    .select("name, email, hospital, school, level, photo_url, role, disabled, created_at")
+    .select("name, email, hospital, school, level, photo_url, role, disabled, created_at, referral_code, referred_by, show_score_on_dashboard")
     .eq("id", userId)
     .single();
   if (error || !data) return fallback;
@@ -35,7 +35,32 @@ async function loadProfile(fallback) {
     role: data.role || "user",
     disabled: !!data.disabled,
     createdAt: data.created_at || null,
+    referralCode: data.referral_code || "",
+    referredBy: data.referred_by || null,
+    showScoreOnDashboard: data.show_score_on_dashboard !== false,
   };
+}
+
+// Applies a referral code captured at signup (stored in localStorage by
+// AuthScreen from a ?ref=CODE URL param) to the now-logged-in user's profile.
+// Best-effort and self-cleaning: the pending code is removed from
+// localStorage whether or not it resolves to a real referrer, so it's only
+// ever attempted once per link click.
+export async function applyPendingReferralCode() {
+  const code = window.localStorage.getItem("pending-referral-code");
+  if (!code) return;
+  window.localStorage.removeItem("pending-referral-code");
+  try {
+    const userId = requireUserId();
+    const { data: referrer } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("referral_code", code)
+      .maybeSingle();
+    if (referrer && referrer.id !== userId) {
+      await supabase.from("profiles").update({ referred_by: referrer.id }).eq("id", userId).is("referred_by", null);
+    }
+  } catch (e) { /* best effort */ }
 }
 
 async function dataUrlToBlob(dataUrl) {
@@ -66,6 +91,7 @@ async function saveProfile(value) {
       school: value.school,
       level: value.level,
       photo_url: photoUrl,
+      show_score_on_dashboard: value.showScoreOnDashboard !== false,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
