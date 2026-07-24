@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Eye, ArrowRight, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Eye, ArrowRight, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
 import { Card, Button, SectionHeader, EmptyState, Chip, useApp } from "../ui/kit.jsx";
 import { supabase } from "../lib/supabase.js";
 
@@ -28,6 +28,8 @@ export default function AdminReviewScreen() {
   const [category, setCategory] = useState("All");
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
+  const [picked, setPicked] = useState(null); // index the admin selected, or null before answering
+  const [session, setSession] = useState({ correct: 0, total: 0 });
 
   async function load() {
     setLoading(true);
@@ -52,11 +54,18 @@ export default function AdminReviewScreen() {
   const current = unreviewed[0];
   const reviewedInCategory = inCategory.length - unreviewed.length;
 
-  async function markReviewedAndNext() {
+  function pick(i) {
+    if (picked !== null) return; // already answered this one
+    setPicked(i);
+    setSession(s => ({ correct: s.correct + (i === current.ans_idx ? 1 : 0), total: s.total + 1 }));
+  }
+
+  async function next() {
     if (!current) return;
     setMarking(true);
     await supabase.from("question_reviews").upsert({ admin_id: userId, question_id: current.id }, { onConflict: "admin_id,question_id" });
     setReviewedIds(prev => new Set(prev).add(current.id));
+    setPicked(null);
     setMarking(false);
   }
 
@@ -72,6 +81,7 @@ export default function AdminReviewScreen() {
       idsToReset.forEach(id => next.delete(id));
       return next;
     });
+    setPicked(null);
   }
 
   if (loading) {
@@ -85,14 +95,15 @@ export default function AdminReviewScreen() {
 
   return (
     <div className="fade-in">
-      <SectionHeader icon={Eye} title="Review Questions" />
+      <SectionHeader icon={Eye} title="Review Questions"
+        action={session.total > 0 && <div style={{ fontSize: 12.5, fontWeight: 700, color: t.textMuted }}>Session: {session.correct}/{session.total} correct</div>} />
       <div style={{ fontSize: 12, color: t.textFaint, marginBottom: 14, lineHeight: 1.5 }}>
-        Step through the bank one question at a time — the correct answer and its explanation are shown right away, and once you move past a question it won't show again. AI-generated, deeper option-by-option explanations will be added here once an AI API key is set up.
+        Pick an option like a real question — you'll immediately see if you were right or wrong and the explanation. Once you move to the next question, it won't show again. Deeper, option-by-option AI explanations will be added here once an AI API key is set up.
       </div>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
         {categories.slice(0, 12).map(c => (
-          <Chip key={c} active={category === c} onClick={() => setCategory(c)}>{c}</Chip>
+          <Chip key={c} active={category === c} onClick={() => { setCategory(c); setPicked(null); }}>{c}</Chip>
         ))}
       </div>
 
@@ -109,29 +120,44 @@ export default function AdminReviewScreen() {
           <div style={{ fontSize: 15, fontWeight: 600, color: t.text, marginBottom: 16, lineHeight: 1.5 }}>{current.q}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
             {current.opts.map((opt, i) => {
+              const answered = picked !== null;
               const isCorrect = i === current.ans_idx;
+              const isPicked = i === picked;
+              let bg = t.bgAlt, border = t.cardBorder, color = t.text, weight = 500;
+              if (answered && isCorrect) { bg = t.emeraldSoft; border = t.emerald; color = t.emerald; weight = 700; }
+              else if (answered && isPicked && !isCorrect) { bg = t.redSoft; border = t.red; color = t.red; weight = 700; }
               return (
-                <div key={i} style={{
+                <div key={i} onClick={() => pick(i)} className={answered ? "" : "press"} style={{
                   display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10,
-                  background: isCorrect ? t.emeraldSoft : t.bgAlt,
-                  border: `1px solid ${isCorrect ? t.emerald : t.cardBorder}`,
+                  background: bg, border: `1px solid ${border}`, cursor: answered ? "default" : "pointer",
                 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: isCorrect ? t.emerald : t.textFaint }}>{LETTERS[i]}</div>
-                  <div style={{ flex: 1, fontSize: 13.5, color: isCorrect ? t.emerald : t.text, fontWeight: isCorrect ? 700 : 500 }}>{opt}</div>
-                  {isCorrect && <CheckCircle2 size={16} color={t.emerald} />}
+                  <div style={{ fontWeight: 700, fontSize: 13, color: answered && (isCorrect || isPicked) ? color : t.textFaint }}>{LETTERS[i]}</div>
+                  <div style={{ flex: 1, fontSize: 13.5, color, fontWeight: weight }}>{opt}</div>
+                  {answered && isCorrect && <CheckCircle2 size={16} color={t.emerald} />}
+                  {answered && isPicked && !isCorrect && <XCircle size={16} color={t.red} />}
                 </div>
               );
             })}
           </div>
-          <div style={{ background: t.navySoft, borderRadius: 10, padding: 14, marginBottom: 18 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: t.navy, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.4 }}>Explanation</div>
-            <div style={{ fontSize: 13, color: t.text, lineHeight: 1.55 }}>
-              {current.exp && current.exp.trim() ? current.exp : "No stored explanation for this question yet — add one via Admin > Manage Questions."}
-            </div>
-          </div>
-          <Button variant="primary" full icon={ArrowRight} disabled={marking} onClick={markReviewedAndNext}>
-            {marking ? "Saving..." : "Got It — Next Question"}
-          </Button>
+
+          {picked === null ? (
+            <div style={{ fontSize: 12.5, color: t.textFaint, textAlign: "center", padding: "10px 0" }}>Select an option to see if you're right</div>
+          ) : (
+            <>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: picked === current.ans_idx ? t.emerald : t.red, marginBottom: 12, textAlign: "center" }}>
+                {picked === current.ans_idx ? "Correct!" : `Not quite — the answer is ${LETTERS[current.ans_idx]}`}
+              </div>
+              <div style={{ background: t.navySoft, borderRadius: 10, padding: 14, marginBottom: 18 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: t.navy, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.4 }}>Explanation</div>
+                <div style={{ fontSize: 13, color: t.text, lineHeight: 1.55 }}>
+                  {current.exp && current.exp.trim() ? current.exp : "No stored explanation for this question yet — add one via Admin > Manage Questions."}
+                </div>
+              </div>
+              <Button variant="primary" full icon={ArrowRight} disabled={marking} onClick={next}>
+                {marking ? "Saving..." : "Next Question"}
+              </Button>
+            </>
+          )}
         </Card>
       )}
     </div>
