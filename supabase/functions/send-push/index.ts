@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       if (profile?.role !== "admin") return json({ success: false, error: "Admins only" }, 403);
     }
 
-    const { title, body, url } = await req.json();
+    const { title, body, url, audience } = await req.json();
     if (!title || !body) throw new Error("title and body are required");
 
     webpush.setVapidDetails(
@@ -54,7 +54,31 @@ Deno.serve(async (req) => {
       Deno.env.get("VAPID_PRIVATE_KEY")
     );
 
-    const { data: subs, error: subsErr } = await admin.from("push_subscriptions").select("id, endpoint, p256dh, auth");
+    // audience: "all" (default) sends to every device with push enabled.
+    // "subscribers" restricts to devices belonging to a user with a
+    // currently-active paid subscription — used for the referral-reminder
+    // send, which only makes sense for people who are already paying and
+    // presumably happy with the app.
+    let subs, subsErr;
+    if (audience === "subscribers") {
+      const { data: activeSubs, error: activeErr } = await admin
+        .from("subscriptions")
+        .select("user_id")
+        .eq("status", "active")
+        .gt("expires_at", new Date().toISOString());
+      if (activeErr) throw activeErr;
+      const userIds = [...new Set((activeSubs || []).map((s) => s.user_id))];
+      if (userIds.length) {
+        ({ data: subs, error: subsErr } = await admin
+          .from("push_subscriptions")
+          .select("id, endpoint, p256dh, auth")
+          .in("user_id", userIds));
+      } else {
+        subs = [];
+      }
+    } else {
+      ({ data: subs, error: subsErr } = await admin.from("push_subscriptions").select("id, endpoint, p256dh, auth"));
+    }
     if (subsErr) throw subsErr;
 
     const payload = JSON.stringify({ title, body, url: url || "/" });
