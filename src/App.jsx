@@ -438,13 +438,18 @@ function SetupScreen({ go, startQuiz, presetCategory }) {
   const { t, wrongBank } = useApp();
   const [count, setCount] = useState(50);
   const [category, setCategory] = useState(presetCategory || "All");
+  const [topic, setTopic] = useState("All");
   const [weakOnly, setWeakOnly] = useState(false);
   const presets = [20, 50, 100, 150, 200, 250];
-  const poolSize = category === "All" ? QUESTION_BANK.length : QUESTION_BANK.filter(q => q.category === category).length;
+  const topicList = category === "All" ? [] : Array.from(new Set(QUESTION_BANK.filter(q => q.category === category).map(q => q.topic))).sort();
+  const scopedByCategory = category === "All" ? QUESTION_BANK : QUESTION_BANK.filter(q => q.category === category);
+  const scopedByTopic = topic === "All" ? scopedByCategory : scopedByCategory.filter(q => q.topic === topic);
+  const poolSize = scopedByTopic.length;
   const weakIds = Object.keys(wrongBank).map(Number);
   const effectivePool = weakOnly ? weakIds.length : poolSize;
 
   useEffect(() => { if (presetCategory) setCategory(presetCategory); }, [presetCategory]);
+  useEffect(() => { setTopic("All"); }, [category]);
 
   return (
     <div className="fade-in">
@@ -480,12 +485,20 @@ function SetupScreen({ go, startQuiz, presetCategory }) {
           <div style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: 0.5 }}>Focus Area</div>
           <div className="f-mono" style={{ fontSize: 12, color: t.textFaint }}>{weakOnly ? weakIds.length : poolSize} available</div>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: topicList.length > 1 ? 12 : 14 }}>
           <Chip active={category === "All" && !weakOnly} onClick={() => { setCategory("All"); setWeakOnly(false); }}>📚 Mixed &middot; All Categories</Chip>
           {CATEGORY_LIST.map(c => (
             <Chip key={c.name} active={category === c.name && !weakOnly} onClick={() => { setCategory(c.name); setWeakOnly(false); }} icon={c.icon}>{c.name}</Chip>
           ))}
         </div>
+        {topicList.length > 1 && !weakOnly && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14, paddingLeft: 4 }}>
+            <Chip active={topic === "All"} onClick={() => setTopic("All")}>All units</Chip>
+            {topicList.map(tp => (
+              <Chip key={tp} active={topic === tp} onClick={() => setTopic(tp)}>{tp}</Chip>
+            ))}
+          </div>
+        )}
         <div style={{ borderTop: `1px solid ${t.cardBorder}`, paddingTop: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text }}>Weak topics only</div>
@@ -497,7 +510,11 @@ function SetupScreen({ go, startQuiz, presetCategory }) {
 
       <Button full size="lg" variant="accent" icon={PlayCircle}
         disabled={effectivePool === 0}
-        onClick={() => startQuiz({ count: Math.min(count, effectivePool), category: weakOnly ? "Weak Topics" : category, idPool: weakOnly ? weakIds : null })}>
+        onClick={() => startQuiz({
+          count: Math.min(count, effectivePool),
+          category: weakOnly ? "Weak Topics" : (topic === "All" ? category : topic),
+          idPool: weakOnly ? weakIds : (topic === "All" ? null : scopedByTopic.map(q => q.id)),
+        })}>
         {effectivePool === 0 ? "No questions available" : `Begin Exam \u2014 ${Math.min(count, effectivePool)} Questions`}
       </Button>
     </div>
