@@ -1749,17 +1749,19 @@ export default function App() {
   const freeTrialRemaining = Math.max(0, FREE_TRIAL_LIMIT - questionsAnsweredTotal);
 
   function startQuiz({ count, category, idPool, seedOverride, dailyKey }) {
+    const isAdminAccount = profile.role === "admin";
     const isFreePreview = FREE_QUIZ_LABELS.includes(category) || FREE_CATEGORIES.includes(category);
-    if (!hasGrandfatheredAccess && !isFreePreview) { go("subscribe"); return; }
-    if (!hasGrandfatheredAccess) {
+    if (!isAdminAccount && !hasGrandfatheredAccess && !isFreePreview) { go("subscribe"); return; }
+    if (!isAdminAccount && !hasGrandfatheredAccess) {
       if (freeTrialRemaining <= 0) { go("subscribe"); return; }
       count = Math.min(count, freeTrialRemaining);
     }
 
     // Existing (grandfathered) members who haven't subscribed only get content that
     // existed as of the cutoff — anything added afterward (is_legacy=false) still
-    // requires a subscription, even for them.
-    if (isExistingMember && !isSubscribed && !isFreePreview) {
+    // requires a subscription, even for them. Admins always get full access
+    // regardless of their own subscription status.
+    if (!isAdminAccount && isExistingMember && !isSubscribed && !isFreePreview) {
       idPool = idPool
         ? idPool.filter(id => { const q = QUESTION_BANK.find(qq => qq.id === id); return q && q.isLegacy; })
         : QUESTION_BANK.filter(q => (category === "All" || q.category === category) && q.isLegacy).map(q => q.id);

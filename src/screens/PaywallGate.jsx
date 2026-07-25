@@ -6,8 +6,8 @@ import { Card, Button, useApp } from "../ui/kit.jsx";
 // paying subscribers only, e.g. for genuinely new content grandfathered members
 // haven't paid for.
 export default function PaywallGate({ title, description, go, requireSubscription, children }) {
-  const { t, isSubscribed, hasGrandfatheredAccess } = useApp();
-  const unlocked = requireSubscription ? isSubscribed : hasGrandfatheredAccess;
+  const { t, isSubscribed, hasGrandfatheredAccess, isAdmin } = useApp();
+  const unlocked = isAdmin || (requireSubscription ? isSubscribed : hasGrandfatheredAccess);
   if (unlocked) return children;
   return (
     <div className="fade-in">
