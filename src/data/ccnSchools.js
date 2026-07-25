@@ -1,26 +1,17 @@
-// Nigerian institutions running Post Basic Critical Care Nursing programmes.
-// Best-effort list compiled from public admission notices (teaching hospital
-// nursing colleges commonly offering the Critical Care specialty) — not pulled
-// from a single authoritative registry, so it may be incomplete or need
-// correction. "Other" is always available so no one is locked out while this
-// list gets refined.
+// Nigerian institutions running an NMCN-accredited Post Basic Critical Care
+// Nursing programme. Verified against the NMCN "Updated List of Approved
+// Colleges of Nursing and Departments of Nursing" (@ December 2025) — every
+// entry below is directly confirmed in that document, except University of
+// Benin Teaching Hospital (UBTH), which isn't listed there but is included
+// per direct confirmation that the programme is currently running there.
+// "Other" is always available so no one is locked out.
 export const CCN_SCHOOLS = [
   "Jos University Teaching Hospital (JUTH), Jos",
-  "University College Hospital (UCH), Ibadan",
-  "Lagos University Teaching Hospital (LUTH), Lagos",
-  "Lagos State University Teaching Hospital (LASUTH), Lagos",
-  "University of Abuja Teaching Hospital (UATH), Gwagwalada",
-  "National Hospital, Abuja",
-  "Aminu Kano Teaching Hospital (AKTH), Kano",
-  "Ahmadu Bello University Teaching Hospital (ABUTH), Zaria",
   "University of Maiduguri Teaching Hospital (UMTH), Maiduguri",
-  "University of Benin Teaching Hospital (UBTH), Benin City",
-  "University of Nigeria Teaching Hospital (UNTH), Enugu",
-  "Nnamdi Azikiwe University Teaching Hospital (NAUTH), Nnewi",
-  "Usmanu Danfodiyo University Teaching Hospital (UDUTH), Sokoto",
+  "Aminu Kano Teaching Hospital (AKTH), Kano",
+  "University of Abuja Teaching Hospital (UATH), Gwagwalada",
+  "Alex Ekwueme Federal University Teaching Hospital (AEFUTHA), Abakaliki",
   "Federal Teaching Hospital, Gombe",
-  "Obafemi Awolowo University Teaching Hospital Complex (OAUTHC), Ile-Ife",
-  "University of Ilorin Teaching Hospital (UITH), Ilorin",
-  "68 Nigerian Army Reference Hospital, Yaba",
+  "University of Benin Teaching Hospital (UBTH), Benin City",
   "Other",
 ];
