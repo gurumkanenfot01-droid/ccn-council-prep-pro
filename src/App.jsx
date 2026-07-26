@@ -1776,8 +1776,15 @@ export default function App() {
 
   function resumeQuiz() {
     if (!inProgress) return;
-    setQuiz(inProgress.quiz); setAnswers(inProgress.answers); setFlagged(inProgress.flagged);
-    setIdx(inProgress.idx); setElapsed(inProgress.elapsed); setLastQuizMeta(inProgress.meta || { category: "Mixed" });
+    // A saved snapshot embeds the full quiz array as of exam start, so a malformed
+    // question saved before the fetchQuestionBank guard existed would otherwise
+    // keep crashing on every resume, forever. Re-validate here too so an old stuck
+    // snapshot recovers cleanly instead of staying permanently unfinishable.
+    const validQuiz = (inProgress.quiz || []).filter(q => Array.isArray(q.opts) && q.opts.length === 4 && Number.isInteger(q.ansIdx) && q.ansIdx >= 0 && q.ansIdx <= 3);
+    if (!validQuiz.length) { saveJSON("in-progress", null, false); setInProgress(null); return; }
+    const safeIdx = Math.min(inProgress.idx, validQuiz.length - 1);
+    setQuiz(validQuiz); setAnswers(inProgress.answers); setFlagged(inProgress.flagged);
+    setIdx(safeIdx); setElapsed(inProgress.elapsed); setLastQuizMeta(inProgress.meta || { category: "Mixed" });
     go("quiz");
   }
 
