@@ -409,18 +409,26 @@ export async function fetchQuestionBank() {
   try {
     const data = await fetchAllRows("questions", "id, topic, source, q, opts, ans_idx, exp, category, category_icon, is_legacy");
     if (!data.length) throw new Error("empty response");
-    const bank = data.map(r => ({
-      id: r.id,
-      topic: r.topic,
-      source: r.source,
-      q: r.q,
-      opts: r.opts,
-      ansIdx: r.ans_idx,
-      exp: r.exp,
-      category: r.category,
-      categoryIcon: r.category_icon,
-      isLegacy: !!r.is_legacy,
-    }));
+    // A malformed row (opts not exactly 4 options, or ans_idx out of range) used to
+    // crash the whole quiz screen the moment it was drawn — and since progress
+    // autosaves, resuming dropped the user right back on the same broken question
+    // every time, making the exam permanently unfinishable. Drop bad rows here,
+    // at the one place all question data enters the app, so every screen that
+    // reads QUESTION_BANK only ever sees well-formed questions.
+    const bank = data
+      .filter(r => Array.isArray(r.opts) && r.opts.length === 4 && Number.isInteger(r.ans_idx) && r.ans_idx >= 0 && r.ans_idx <= 3)
+      .map(r => ({
+        id: r.id,
+        topic: r.topic,
+        source: r.source,
+        q: r.q,
+        opts: r.opts,
+        ansIdx: r.ans_idx,
+        exp: r.exp,
+        category: r.category,
+        categoryIcon: r.category_icon,
+        isLegacy: !!r.is_legacy,
+      }));
     saveOfflineCache("question-bank", bank);
     return bank;
   } catch (e) {
