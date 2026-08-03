@@ -392,8 +392,8 @@ async function fetchAllRows(table, columns, orderBy) {
 // still usable (browsing/practicing) when the network is unavailable. Only
 // covers data fetched here (question bank, study notes) — per-user writes
 // (exam results, bookmarks) still require a connection and are not queued.
-function saveOfflineCache(key, data) {
-  try { localStorage.setItem(`offline-cache:${key}`, JSON.stringify({ data, savedAt: Date.now() })); } catch (e) { /* storage full/unavailable — skip caching */ }
+function saveOfflineCache(key, data, meta) {
+  try { localStorage.setItem(`offline-cache:${key}`, JSON.stringify({ data, meta: meta || null, savedAt: Date.now() })); } catch (e) { /* storage full/unavailable — skip caching */ }
 }
 export function loadOfflineCache(key) {
   try {
@@ -405,8 +405,24 @@ export function loadOfflineCache(key) {
   }
 }
 
+// Cheap "has anything changed?" check — a count plus the single newest
+// updated_at, a few dozen bytes total — run before ever paying for the full
+// bank download again. Relies on supabase/add_questions_updated_at_trigger.sql
+// keeping updated_at honest on every edit, including raw SQL fixes.
+async function fetchQuestionBankMeta() {
+  const { count } = await supabase.from("questions").select("id", { count: "exact", head: true }).eq("is_active", true);
+  const { data } = await supabase.from("questions").select("updated_at").eq("is_active", true).order("updated_at", { ascending: false }).limit(1);
+  if (count == null) return null;
+  return { count, latest: (data && data[0] && data[0].updated_at) || null };
+}
+
 export async function fetchQuestionBank() {
   try {
+    const meta = await fetchQuestionBankMeta();
+    const cached = loadOfflineCache("question-bank");
+    if (meta && cached && cached.meta && cached.meta.count === meta.count && cached.meta.latest === meta.latest) {
+      return cached.data;
+    }
     const data = await fetchAllRows("questions", "id, topic, source, q, opts, ans_idx, exp, category, category_icon, is_legacy");
     if (!data.length) throw new Error("empty response");
     // A malformed row (opts not exactly 4 options, or ans_idx out of range) used to
@@ -429,7 +445,7 @@ export async function fetchQuestionBank() {
         categoryIcon: r.category_icon,
         isLegacy: !!r.is_legacy,
       }));
-    saveOfflineCache("question-bank", bank);
+    saveOfflineCache("question-bank", bank, meta);
     return bank;
   } catch (e) {
     const cached = loadOfflineCache("question-bank");
