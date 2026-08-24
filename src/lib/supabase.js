@@ -9,4 +9,13 @@ if (!url || !anonKey) {
   );
 }
 
-export const supabase = createClient(url, anonKey);
+// flowType: "implicit" — password-reset (and other email) links are opened
+// from whatever app/browser the user's email client uses, which is usually
+// NOT the same browser session that requested the link. PKCE (the default)
+// needs a code_verifier stored in that original browser's localStorage, so
+// it silently fails across that mismatch and the user just lands back on
+// the login page. Implicit flow puts a self-contained token in the link
+// itself, so it works no matter where it's opened.
+export const supabase = createClient(url, anonKey, {
+  auth: { flowType: "implicit" },
+});
