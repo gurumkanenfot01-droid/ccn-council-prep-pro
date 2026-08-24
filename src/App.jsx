@@ -3,6 +3,7 @@ import { AppCtx, useApp, Card, IconBadge, StatCard, Button, Chip, Modal, Section
 import { loadJSON, saveJSON, fetchQuestionBank, fetchStudyNotes, fetchSubscription, setCurrentUserId, applyPendingReferralCode } from "./lib/dataStore.js";
 import { supabase } from "./lib/supabase.js";
 import AuthScreen from "./screens/AuthScreen.jsx";
+import ResetPasswordScreen from "./screens/ResetPasswordScreen.jsx";
 import AdminOverviewScreen from "./screens/AdminOverviewScreen.jsx";
 import AdminReviewScreen from "./screens/AdminReviewScreen.jsx";
 import AdminQuestionsScreen from "./screens/AdminQuestionsScreen.jsx";
@@ -1591,6 +1592,7 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [booted, setBooted] = useState(false);
   const [session, setSession] = useState(undefined); // undefined=checking, null=logged out, object=logged in
+  const [recoveryMode, setRecoveryMode] = useState(false);
   const [winWidth, setWinWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   const isMobile = winWidth < 900;
 
@@ -1645,7 +1647,14 @@ export default function App() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => setSession(sess));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      // Clicking the "reset password" email link lands back here with a
+      // temporary recovery session. Without this, that session looks just
+      // like a normal login and the user gets dropped straight into the
+      // app with no way to actually set a new password.
+      if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
+      setSession(sess);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
@@ -1837,6 +1846,14 @@ export default function App() {
 
   const streak = useMemo(() => computeStreak(history), [history]);
   const t = THEME[themeMode];
+
+  if (recoveryMode) {
+    return (
+      <AppCtx.Provider value={{ t }}>
+        <ResetPasswordScreen t={t} onDone={() => setRecoveryMode(false)} />
+      </AppCtx.Provider>
+    );
+  }
 
   if (!booted) {
     return (
