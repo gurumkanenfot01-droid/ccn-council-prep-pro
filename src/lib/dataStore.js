@@ -377,10 +377,12 @@ async function fetchAllRows(table, columns, orderBy) {
   let all = [];
   while (true) {
     let query = supabase.from(table).select(columns).range(from, from + pageSize - 1);
-    if (orderBy) query = query.order(orderBy);
+    query = query.order(orderBy || "id"); // stable order so pages never overlap or skip rows
     if (table === "questions") query = query.eq("is_active", true);
     const { data, error } = await query;
-    if (error || !data) break;
+    // Throw rather than return a partial list: a truncated bank would otherwise be
+    // saved to the offline cache and reused until the content next changes.
+    if (error || !data) throw error || new Error(`failed to load ${table}`);
     all = all.concat(data);
     if (data.length < pageSize) break;
     from += pageSize;
@@ -388,34 +390,108 @@ async function fetchAllRows(table, columns, orderBy) {
   return all;
 }
 
-// ---- offline cache: last-known-good copy of read-mostly data, so the app is
-// still usable (browsing/practicing) when the network is unavailable. Only
-// covers data fetched here (question bank, study notes) — per-user writes
-// (exam results, bookmarks) still require a connection and are not queued.
-function saveOfflineCache(key, data) {
-  try { localStorage.setItem(`offline-cache:${key}`, JSON.stringify({ data, savedAt: Date.now() })); } catch (e) { /* storage full/unavailable — skip caching */ }
+// ---- offline cache: last-known-good copy of read-mostly data (question bank,
+// study notes). It serves two jobs:
+//   1. Offline use — the app still works for browsing/practicing with no network.
+//      Per-user writes (exam results, bookmarks) still need a connection.
+//   2. Saving egress — on each open we ask the server for a tiny content
+//      fingerprint (content_version(), see supabase/schema_content_version.sql)
+//      and reuse the saved copy when it still matches, instead of re-downloading
+//      the whole bank every time. That full download was nearly all of the
+//      project's Supabase egress.
+// Stored in IndexedDB because the bank is several MB, close to localStorage's
+// ~5MB limit; falls back to localStorage if IndexedDB is unavailable.
+const IDB_NAME = "ccn-offline-cache";
+const IDB_STORE = "kv";
+let idbPromise = null;
+
+function openIdb() {
+  if (!idbPromise) {
+    idbPromise = new Promise((resolve, reject) => {
+      if (typeof indexedDB === "undefined") return reject(new Error("no indexedDB"));
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }).catch(e => { idbPromise = null; throw e; });
+  }
+  return idbPromise;
 }
-export function loadOfflineCache(key) {
+
+function idbRequest(mode, fn) {
+  return openIdb().then(db => new Promise((resolve, reject) => {
+    const req = fn(db.transaction(IDB_STORE, mode).objectStore(IDB_STORE));
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  }));
+}
+
+async function saveOfflineCache(key, data, version) {
+  const entry = { data, version: version || null, savedAt: Date.now() };
+  try {
+    await idbRequest("readwrite", store => store.put(entry, key));
+    // Drop any pre-IndexedDB copy so it stops eating the localStorage quota.
+    try { localStorage.removeItem(`offline-cache:${key}`); } catch (e) { /* ignore */ }
+  } catch (e) {
+    try { localStorage.setItem(`offline-cache:${key}`, JSON.stringify(entry)); } catch (e2) { /* storage full/unavailable — skip caching */ }
+  }
+}
+
+async function loadOfflineCache(key) {
+  try {
+    const entry = await idbRequest("readonly", store => store.get(key));
+    if (entry) return entry;
+  } catch (e) { /* fall through to localStorage */ }
   try {
     const raw = localStorage.getItem(`offline-cache:${key}`);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : null;
   } catch (e) {
     return null;
   }
 }
 
-export async function fetchQuestionBank() {
+// One content_version() call shared by fetchQuestionBank and fetchStudyNotes,
+// which boot calls in parallel. Resolves to null when the function isn't
+// installed yet or the network fails — callers then just download as before.
+let contentVersionPromise = null;
+function fetchContentVersion() {
+  if (!contentVersionPromise) {
+    contentVersionPromise = supabase.rpc("content_version")
+      .then(({ data, error }) => (error || !data ? null : data), () => null)
+      .finally(() => { contentVersionPromise = null; });
+  }
+  return contentVersionPromise;
+}
+
+// Returns the saved copy if its fingerprint matches the server's, otherwise
+// downloads fresh data via `download()` and saves it with the new fingerprint.
+// On any download failure, falls back to whatever copy is saved (offline mode).
+async function cachedFetch(key, versionKey, download) {
+  const [versions, cached] = await Promise.all([fetchContentVersion(), loadOfflineCache(key)]);
+  const version = versions?.[versionKey] || null;
+  if (version && cached?.version === version && Array.isArray(cached.data) && cached.data.length) {
+    return cached.data;
+  }
   try {
+    const fresh = await download();
+    if (!fresh.length) throw new Error("empty response");
+    await saveOfflineCache(key, fresh, version);
+    return fresh;
+  } catch (e) {
+    return cached?.data || [];
+  }
+}
+
+export async function fetchQuestionBank() {
+  return cachedFetch("question-bank", "questions", async () => {
     const data = await fetchAllRows("questions", "id, topic, source, q, opts, ans_idx, exp, category, category_icon, is_legacy");
-    if (!data.length) throw new Error("empty response");
     // A malformed row (opts not exactly 4 options, or ans_idx out of range) used to
     // crash the whole quiz screen the moment it was drawn — and since progress
     // autosaves, resuming dropped the user right back on the same broken question
     // every time, making the exam permanently unfinishable. Drop bad rows here,
     // at the one place all question data enters the app, so every screen that
     // reads QUESTION_BANK only ever sees well-formed questions.
-    const bank = data
+    return data
       .filter(r => Array.isArray(r.opts) && r.opts.length === 4 && Number.isInteger(r.ans_idx) && r.ans_idx >= 0 && r.ans_idx <= 3)
       .map(r => ({
         id: r.id,
@@ -429,27 +505,14 @@ export async function fetchQuestionBank() {
         categoryIcon: r.category_icon,
         isLegacy: !!r.is_legacy,
       }));
-    saveOfflineCache("question-bank", bank);
-    return bank;
-  } catch (e) {
-    const cached = loadOfflineCache("question-bank");
-    if (cached) return cached.data;
-    return [];
-  }
+  });
 }
 
 export async function fetchStudyNotes() {
-  try {
+  return cachedFetch("study-notes", "notes", async () => {
     const data = await fetchAllRows("study_notes", "banner, bullets", "sort_order");
-    if (!data.length) throw new Error("empty response");
-    const notes = data.map(r => ({ banner: r.banner, bullets: r.bullets }));
-    saveOfflineCache("study-notes", notes);
-    return notes;
-  } catch (e) {
-    const cached = loadOfflineCache("study-notes");
-    if (cached) return cached.data;
-    return [];
-  }
+    return data.map(r => ({ banner: r.banner, bullets: r.bullets }));
+  });
 }
 
 // ---- subscription (latest active row, or null) ----
