@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { User, Search, Mail, ShieldCheck, Ban, RotateCcw, Trash2 } from "lucide-react";
+import { User, Search, Mail, ShieldCheck, Ban, RotateCcw, Trash2, Crown, XCircle } from "lucide-react";
 import { Card, SectionHeader, EmptyState, Button, useApp } from "../ui/kit.jsx";
 import { supabase } from "../lib/supabase.js";
 
@@ -10,6 +10,8 @@ export default function AdminUsersScreen() {
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [notice, setNotice] = useState("");
+  const [subs, setSubs] = useState({}); // user_id -> latest active expires_at
+  const [grantPlan, setGrantPlan] = useState({}); // user_id -> "6month" | "1year"
 
   async function load() {
     setLoading(true);
@@ -18,6 +20,16 @@ export default function AdminUsersScreen() {
       .select("id, name, email, role, disabled")
       .order("name");
     if (!error && data) setRows(data);
+    const { data: subRows } = await supabase
+      .from("subscriptions")
+      .select("user_id, expires_at")
+      .eq("status", "active")
+      .gt("expires_at", new Date().toISOString());
+    const latest = {};
+    for (const s of subRows || []) {
+      if (!latest[s.user_id] || s.expires_at > latest[s.user_id]) latest[s.user_id] = s.expires_at;
+    }
+    setSubs(latest);
     setLoading(false);
   }
 
@@ -41,8 +53,35 @@ export default function AdminUsersScreen() {
     setBusyId(row.id);
     const { error } = await supabase.auth.resetPasswordForEmail(row.email, { redirectTo: window.location.origin });
     setBusyId(null);
-    setNotice(error ? `Failed to email ${row.email}` : `Password reset email sent to ${row.email}`);
+    flash(error ? `Failed to email ${row.email}` : `Password reset email sent to ${row.email}`);
+  }
+
+  function flash(msg) {
+    setNotice(msg);
     setTimeout(() => setNotice(""), 3500);
+  }
+
+  async function grantSubscription(row) {
+    const plan = grantPlan[row.id] || "1year";
+    const label = plan === "1year" ? "1 year" : "6 months";
+    const who = row.name || row.email;
+    const extra = subs[row.id] ? ` It will be added on top of their current access (until ${new Date(subs[row.id]).toLocaleDateString()}).` : "";
+    if (!confirm(`Grant ${label} of paid access to ${who}?${extra}`)) return;
+    setBusyId(row.id);
+    const { data, error } = await supabase.rpc("admin_grant_subscription", { p_user_id: row.id, p_plan: plan });
+    setBusyId(null);
+    flash(error ? `Failed to grant subscription: ${error.message}` : `${who} now has paid access until ${new Date(data).toLocaleDateString()}`);
+    if (!error) load();
+  }
+
+  async function revokeSubscription(row) {
+    const who = row.name || row.email;
+    if (!confirm(`Remove paid access for ${who}? They will lose access to subscriber content immediately.`)) return;
+    setBusyId(row.id);
+    const { error } = await supabase.rpc("admin_revoke_subscription", { p_user_id: row.id });
+    setBusyId(null);
+    flash(error ? `Failed to revoke subscription: ${error.message}` : `Paid access removed for ${who}`);
+    if (!error) load();
   }
 
   async function wipeProgress(row) {
@@ -54,8 +93,7 @@ export default function AdminUsersScreen() {
       supabase.from("wrong_bank").delete().eq("user_id", row.id),
     ]);
     setBusyId(null);
-    setNotice(`Progress wiped for ${row.name || row.email}`);
-    setTimeout(() => setNotice(""), 3500);
+    flash(`Progress wiped for ${row.name || row.email}`);
   }
 
   const filtered = rows.filter(r =>
@@ -85,6 +123,7 @@ export default function AdminUsersScreen() {
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text, display: "flex", alignItems: "center", gap: 6 }}>
                     {row.name || "(no name)"}
                     {row.role === "admin" && <span style={{ fontSize: 10, fontWeight: 700, color: t.navy, background: t.navySoft, padding: "2px 6px", borderRadius: 6 }}>ADMIN</span>}
+                    {subs[row.id] && <span style={{ fontSize: 10, fontWeight: 700, color: t.emerald, background: t.emeraldSoft, padding: "2px 6px", borderRadius: 6 }}>PAID · until {new Date(subs[row.id]).toLocaleDateString()}</span>}
                     {row.disabled && <span style={{ fontSize: 10, fontWeight: 700, color: t.red, background: t.redSoft, padding: "2px 6px", borderRadius: 6 }}>DISABLED</span>}
                     {row.id === myId && <span style={{ fontSize: 10, fontWeight: 700, color: t.textFaint }}>(you)</span>}
                   </div>
@@ -99,6 +138,18 @@ export default function AdminUsersScreen() {
                     {row.disabled ? "Enable" : "Disable"}
                   </Button>
                   <Button size="sm" variant="ghost" icon={Trash2} disabled={busyId === row.id} onClick={() => wipeProgress(row)}>Wipe Progress</Button>
+                  <select value={grantPlan[row.id] || "1year"} disabled={busyId === row.id}
+                    onChange={e => setGrantPlan(p => ({ ...p, [row.id]: e.target.value }))}
+                    style={{ fontSize: 13, padding: "7px 8px", borderRadius: 12, border: `1px solid ${t.cardBorder}`, background: t.bgAlt, color: t.text }}>
+                    <option value="1year">1 year</option>
+                    <option value="6month">6 months</option>
+                  </select>
+                  <Button size="sm" variant="success" icon={Crown} disabled={busyId === row.id} onClick={() => grantSubscription(row)}>
+                    {subs[row.id] ? "Extend Subscription" : "Grant Subscription"}
+                  </Button>
+                  {subs[row.id] && (
+                    <Button size="sm" variant="ghost" icon={XCircle} disabled={busyId === row.id} onClick={() => revokeSubscription(row)}>Revoke Subscription</Button>
+                  )}
                 </div>
               </div>
             </Card>
