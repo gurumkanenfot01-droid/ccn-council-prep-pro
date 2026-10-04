@@ -1,9 +1,9 @@
 {
   "name": "AI Trainer Class",
   "short_name": "AI Trainer",
-  "description": "Day 1 AI Trainer class: Generalist AI Trainer and LLM Rater. Lessons, 360 practice tasks, tests, progress tracking and an AI reader.",
-  "theme_color": "#C8F560",
-  "background_color": "#FFF4DF",
+  "description": "AI Trainer class: day-by-day lessons, practice tasks, tests, progress tracking and an AI reader.",
+  "theme_color": "#0F4C3A",
+  "background_color": "#F3F6F4",
   "display": "standalone",
   "start_url": "/",
   "scope": "/",

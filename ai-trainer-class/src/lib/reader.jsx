@@ -281,7 +281,7 @@ export function ReaderDock({ inFocus }) {
               <div className="row" style={{ gap: 10, minWidth: 0 }}>
                 <span className={`on-air${r.status === "playing" ? "" : " paused"}`}>{r.status === "playing" ? "ON AIR" : "PAUSED"}</span>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title || "AI Reader"}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title || "AI Reader"}</div>
                   <div className="mono" style={{ fontSize: 11.5, opacity: .7 }}>sentence {r.index + 1} of {r.chunks.length}</div>
                 </div>
               </div>
@@ -306,7 +306,7 @@ export function ReaderDock({ inFocus }) {
           </div>
         ) : (
           <button className="orb" onClick={() => setOpen(true)} aria-label="AI Reader settings" title="AI Reader">
-            <Headphones size={22} /> AI Reader
+            <Headphones size={22} /> <span className="orb-label">AI Reader</span>
           </button>
         )}
       </div>

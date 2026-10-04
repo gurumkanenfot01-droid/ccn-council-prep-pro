@@ -36,7 +36,7 @@ export function NotesHome() {
               return (
                 <button key={doc.id} className={`card tap pad fill-${k.fill}`} onClick={() => go("doc", { day: d.day, id: doc.id })}
                   style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 16, minHeight: 170 }}>
-                  <div className="between"><div className="tile-icon" style={{ background: "#fff", borderColor: "var(--ink)", color: "var(--ink)" }}><k.icon size={22} /></div><span className="sticker">~{doc.minutes} min</span></div>
+                  <div className="between"><div className="tile-icon" ><k.icon size={22} /></div><span className="sticker">~{doc.minutes} min</span></div>
                   <div>
                     <div className="h2">{doc.label}</div>
                     <div style={{ fontSize: 14, marginTop: 4 }}>{k.blurb}</div>

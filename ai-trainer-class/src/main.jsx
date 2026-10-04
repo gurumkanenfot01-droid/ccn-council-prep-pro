@@ -1,5 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import '@fontsource/fraunces/600.css'
+import '@fontsource/fraunces/700.css'
+import '@fontsource/fraunces/600-italic.css'
+import '@fontsource/plus-jakarta-sans/400.css'
+import '@fontsource/plus-jakarta-sans/500.css'
+import '@fontsource/plus-jakarta-sans/600.css'
+import '@fontsource/plus-jakarta-sans/700.css'
 import './index.css'
 import App from './App.jsx'
 import ErrorBoundary from './ErrorBoundary.jsx'
@@ -17,7 +24,7 @@ const root = createRoot(document.getElementById('root'))
 root.render(
   <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', textAlign: 'center', padding: 24 }}>
     <div>
-      <div className="logo-mark" style={{ width: 64, height: 64, margin: '0 auto 16px', fontSize: 30 }}>🤖</div>
+      <div className="logo-mark" style={{ width: 64, height: 64, margin: '0 auto 16px', fontSize: 26 }}>✦</div>
       <div className="h2">Loading your class…</div>
     </div>
   </div>,

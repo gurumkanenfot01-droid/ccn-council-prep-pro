@@ -28,11 +28,11 @@ function Sparkline({ values }) {
   const passY = h - pad - 0.5 * (h - pad * 2);
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="140" preserveAspectRatio="none" role="img" aria-label="Test scores over time">
-      <defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#C8F560" stopOpacity=".9" /><stop offset="1" stopColor="#C8F560" stopOpacity=".15" /></linearGradient></defs>
-      <line x1={pad} x2={w - pad} y1={passY} y2={passY} stroke="var(--line)" opacity=".4" strokeDasharray="6 6" strokeWidth="2" />
+      <defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#D4A657" stopOpacity=".35" /><stop offset="1" stopColor="#D4A657" stopOpacity="0" /></linearGradient></defs>
+      <line x1={pad} x2={w - pad} y1={passY} y2={passY} stroke="var(--faint)" opacity=".5" strokeDasharray="6 6" strokeWidth="2" />
       <path d={area} fill="url(#sparkFill)" />
-      <path d={line} fill="none" stroke="var(--line)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-      {pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r="5" fill={values[i] >= 50 ? "#8CEFBA" : "#FF9FD2"} stroke="#121212" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />)}
+      <path d={line} fill="none" stroke="var(--brand-2)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      {pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r="5" fill={values[i] >= 50 ? "var(--brand-2)" : "var(--coral)"} stroke="var(--surface)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />)}
     </svg>
   );
 }
@@ -50,7 +50,7 @@ export function ProgressScreen() {
     <div>
       <PageHead eyebrow="Progress" title="How you are doing" sub={`${all.got} of ${all.total} tasks done · ${weekTotal} things studied this week`} />
 
-      <div className="hero fill-violet" style={{ marginBottom: 18 }}>
+      <div className="hero" style={{ marginBottom: 18 }}>
         <div className="between wrap" style={{ gap: 18 }}>
           <div>
             <div className="eyebrow">Level {level.index + 1} of {LEVELS.length}</div>
@@ -62,10 +62,10 @@ export function ProgressScreen() {
             <div style={{ opacity: .85, fontSize: 13 }}>total XP</div>
           </div>
         </div>
-        <div className="bar brand" style={{ marginTop: 18, borderColor: "var(--ink)", background: "#fff" }}><i style={{ width: `${level.pct}%` }} /></div>
+        <div className="bar brand" style={{ marginTop: 18 }}><i style={{ width: `${level.pct}%` }} /></div>
         <div className="row" style={{ marginTop: 14, gap: 6, flexWrap: "wrap" }}>
           {LEVELS.map((l, i) => (
-            <span key={l.name} className="sticker" style={{ background: i <= level.index ? "var(--ink)" : "#fff", color: i <= level.index ? "#fff" : "var(--ink)" }}>{l.icon} {l.name}</span>
+            <span key={l.name} className="sticker" style={i <= level.index ? { background: "var(--gold)", color: "#1F1605", borderColor: "transparent" } : undefined}>{l.icon} {l.name}</span>
           ))}
         </div>
       </div>
@@ -93,7 +93,7 @@ export function ProgressScreen() {
                 const strong = st.pct >= 55;
                 return (
                   <button key={s.id} className="heat-cell" onClick={() => go("skill", { id: s.id })} title={`${s.n}: ${st.got}/${st.total}`}
-                    style={{ background: st.pct ? `color-mix(in srgb, var(--mint) ${Math.max(10, st.pct)}%, var(--surface-2))` : "var(--surface-2)", color: strong ? "#fff" : "var(--text)" }}>
+                    style={{ background: st.pct ? `color-mix(in srgb, var(--brand-2) ${Math.max(10, st.pct)}%, var(--surface-2))` : "var(--surface-2)", color: strong ? "#fff" : "var(--text)" }}>
                     <span style={{ fontSize: 20 }}>{s.icon}</span>
                     <span>
                       <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, lineHeight: 1.2 }}>{s.n}</span>

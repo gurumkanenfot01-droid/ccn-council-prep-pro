@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Play, BookOpen, Target, Trophy, ChevronRight, ChevronLeft, X, CheckCircle2, Download, ArrowUpRight,
-  Lightbulb, ThumbsUp, ThumbsDown, XCircle, Check, RotateCcw, Headphones, Rows3, GalleryHorizontal, Sparkles, Clock, Zap,
+  Lightbulb, Flame, Layers, FileText, ThumbsUp, ThumbsDown, XCircle, Check, RotateCcw, Headphones, Rows3, GalleryHorizontal, Sparkles, Clock, Zap,
 } from "lucide-react";
 import { useApp, Ring, Bar, Picture, Confetti } from "../ui.jsx";
 import { ListenButton, useReader, Wave } from "../lib/reader.jsx";
@@ -14,9 +14,9 @@ export function skillNumber(skill) {
   return ROLES.find(r => r.key === skill.roleKey).skills.findIndex(s => s.id === skill.id) + 1;
 }
 
-// ================= Learn home: bento board + course index =================
+// ================= Learn home: continue card, stats, course index =================
 export function LearnHome() {
-  const { profile, taskProgress, lessonsDone, go, inProgress, resumeQuiz, level, xp, streak, canInstall, promptInstall } = useApp();
+  const { profile, taskProgress, lessonsDone, go, inProgress, resumeQuiz, level, xp, streak, todayCount, canInstall, promptInstall } = useApp();
   const reader = useReader();
   const next = nextSkill(taskProgress, lessonsDone);
   const all = overall(taskProgress, lessonsDone);
@@ -29,138 +29,159 @@ export function LearnHome() {
   const hour = new Date().getHours();
   const hello = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const first = profile.name ? profile.name.split(" ")[0] : "friend";
+  const goal = profile.dailyGoal || 10;
+  const nextStats = next ? skillStats(next, taskProgress) : null;
   const nextAction = !next ? null : !lessonsDone[next.id]
     ? { label: "Start the lesson", run: () => go("lesson", { id: next.id }) }
     : { label: "Continue practice", run: () => go("session", { id: next.id }) };
-  const ticker = SKILLS.map(s => s.s.toUpperCase()).join("  ✦  ");
+  const QUICK = [
+    ["Practice test", "Timed, by skill", Target, "lime", () => go("practice")],
+    ["Flashcards", "Key words", Layers, "yellow", () => go("flashcards")],
+    ["Class notes", "Read and listen", FileText, "blue", () => go("notes")],
+    ["Big picture", "How AI learns", Sparkles, "pink", () => go("bigpicture")],
+  ];
+  const quick = (
+    <>
+      <h2 className="h2" style={{ margin: "4px 0 12px" }}>Quick actions</h2>
+      <div className="quick-grid">
+        {QUICK.map(([t, sub, Icon, fill, run]) => (
+          <button key={t} className="card tap quick-tile" onClick={run}>
+            <span className={`tile-icon fill-${fill}`} style={{ width: 40, height: 40, borderRadius: 12 }}><Icon size={19} /></span>
+            <span className="h3" style={{ fontSize: 15.5, marginTop: 12 }}>{t}</span>
+            <span className="muted" style={{ fontSize: 12.5 }}>{sub}</span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
 
   return (
-    <div>
-      <div className="bento">
-        {/* Continue */}
-        <section className="hero s8 rise" style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 300px", minWidth: 0 }}>
-            <div className="eyebrow">{hello}{next ? ` · Day ${next.day}` : ""}</div>
-            <h1 className="h1" style={{ margin: "10px 0 14px" }}>
-              {next ? <>Ready to <span className="serif">train some AI,</span> {first}?</> : <>You are <span className="serif">all caught up!</span> 🎉</>}
-            </h1>
-            <div className="row wrap" style={{ gap: 10 }}>
-              {nextAction
-                ? <button className="btn inkfill lg" onClick={nextAction.run}><Play size={18} fill="currentColor" /> {nextAction.label}</button>
-                : <button className="btn inkfill lg" onClick={() => go("practice")}><Trophy size={18} /> Take a Role Test</button>}
-              {inProgress && <button className="btn white lg" onClick={resumeQuiz}><RotateCcw size={18} /> Finish your test</button>}
+    <div className="home">
+      <div className="home-main">
+        <div className="muted" style={{ fontWeight: 500, fontSize: 15 }}>{hello}, {first}</div>
+        <h1 className="title-xl">{next ? <>Continue your <em>journey</em></> : <>You are <em>all caught up</em></>}</h1>
+
+        {/* Up next */}
+        <section className="hero rise">
+          <div className="eyebrow">{next ? `Up next · Day ${next.day} · Skill ${skillNumber(next)}` : "Every skill done"}</div>
+          <div className="row" style={{ gap: 18, alignItems: "center", margin: "10px 0 18px" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="h2" style={{ fontSize: "clamp(22px, 3vw, 28px)", lineHeight: 1.2 }}>{next ? next.n : "Time for a Role Test"}</div>
+              <div className="muted" style={{ fontSize: 14, marginTop: 6 }}>
+                {next ? `${lessonsDone[next.id] ? "Lesson done" : "Lesson first"} · ${nextStats.got} of ${nextStats.total} tasks` : "Show what you know and earn a badge."}
+              </div>
             </div>
-            {next && <div style={{ marginTop: 14, fontSize: 14.5 }}>Up next: <b>{next.n}</b> · {skillStats(next, taskProgress).got}/{next.taskIds.length} tasks</div>}
+            <Ring pct={next ? nextStats.pct : 100} size={82} stroke={7} color="var(--gold)" track="rgba(255,255,255,.15)">
+              <b style={{ fontSize: 16 }}>{next ? nextStats.pct : 100}%</b>
+            </Ring>
           </div>
-          {next && (
-            <figure className="polaroid tilt-r" style={{ width: 210, margin: "0 6px 0 0", flexShrink: 0 }}>
-              <img src={next.image} alt="" />
-              <figcaption>{next.icon} {next.n}</figcaption>
-            </figure>
-          )}
+          <div className="row wrap" style={{ gap: 10 }}>
+            {nextAction
+              ? <button className="btn white lg" onClick={nextAction.run}><Play size={16} fill="currentColor" /> {nextAction.label}</button>
+              : <button className="btn white lg" onClick={() => go("practice")}><Trophy size={17} /> Take a Role Test</button>}
+            {next && <button className="btn lg hero-ghost" onClick={() => go("skill", { id: next.id })}><BookOpen size={17} /> Skill overview</button>}
+            {inProgress && <button className="btn lg hero-ghost" onClick={resumeQuiz}><RotateCcw size={17} /> Finish your test</button>}
+          </div>
         </section>
 
-        {/* Today */}
-        <div className="s4"><TodayCard /></div>
+        {/* Stats */}
+        <div className="stat-row" style={{ marginTop: 14 }}>
+          <button className="stat tap-stat" onClick={() => go("progress")}>
+            <div className="stat-ic" style={{ background: "var(--gold-soft)", color: "var(--gold-ink)" }}><Flame size={16} /></div>
+            <div className="v">{streak}</div><div className="l">Day streak</div>
+          </button>
+          <button className="stat tap-stat" onClick={() => go("progress")}>
+            <div className="stat-ic" style={{ background: "var(--brand-soft)", color: "var(--brand-ink)" }}><Zap size={16} /></div>
+            <div className="v">{xp}</div><div className="l">XP · {level.name}</div>
+          </button>
+          <button className="stat tap-stat" onClick={() => go("progress")}>
+            <div className="stat-ic" style={{ background: "var(--sky-soft)", color: "var(--sky)" }}><Target size={16} /></div>
+            <div className="v">{all.got}</div><div className="l">Tasks done</div>
+          </button>
+        </div>
 
-        {/* Level */}
-        <button className="card tap pad s4 fill-violet" onClick={() => go("progress")} style={{ textAlign: "left" }}>
-          <div className="between"><span className="eyebrow">Your level</span><ArrowUpRight size={20} /></div>
-          <div className="h2" style={{ margin: "10px 0 2px" }}>{level.icon} {level.name}</div>
-          <div className="mono" style={{ fontSize: 14, marginBottom: 12 }}>{xp} XP{level.next ? ` · ${level.toNext} to next` : ""}</div>
-          <Bar pct={level.pct} brand />
-        </button>
-
-        {/* Streak */}
-        <div className="card pad s4 fill-orange" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <span className="eyebrow">Day streak</span>
-          <div className="row" style={{ alignItems: "flex-end", gap: 8 }}>
-            <span className="mono" style={{ fontSize: 64, fontWeight: 700, lineHeight: .9 }}>{streak}</span>
-            <span className="serif" style={{ fontSize: 24, paddingBottom: 4 }}>{streak === 1 ? "day" : "days"} 🔥</span>
+        {/* Today's goal */}
+        <div className="card goal-card">
+          <div className="between" style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 10 }}>
+            <span>Today's goal</span>
+            <span className="muted" style={{ fontWeight: 600 }}>{todayCount >= goal ? "Done! 🎉" : `${todayCount} of ${goal}`}</span>
           </div>
-          <div style={{ fontSize: 14 }}>{streak ? "Keep it going: study a little every day." : "Study today to start a streak."}</div>
+          <Bar pct={(todayCount / goal) * 100} />
         </div>
 
-        {/* Daily challenge */}
-        <div className="card pad s4 fill-pink" style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "space-between" }}>
-          <div className="between"><span className="eyebrow">Daily challenge</span><Zap size={20} /></div>
-          <div className="h2">10 fresh tasks, <span className="serif">every day.</span></div>
-          <button className="btn white" onClick={() => go("practice")}>Go to Practice <ChevronRight size={16} /></button>
-        </div>
+        <div className="only-narrow" style={{ marginTop: 26 }}>{quick}</div>
 
-        {/* Big picture */}
-        <button className="card tap pad s6 fill-blue" onClick={() => go("bigpicture")} style={{ textAlign: "left", display: "flex", gap: 16, alignItems: "center" }}>
-          <div style={{ flex: 1 }}>
-            <span className="eyebrow">New here?</span>
-            <div className="h2" style={{ margin: "6px 0" }}>The big picture <span className="serif">in 5 drawings</span></div>
-            <div style={{ fontSize: 14.5 }}>How AI learns from people like you.</div>
+        {canInstall && (
+          <div className="card pad row" style={{ gap: 14, marginTop: 14 }}>
+            <div className="tile-icon"><Download size={22} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><div className="h3">Install the app</div><div className="muted" style={{ fontSize: 14 }}>On your home screen. Opens fast, works offline.</div></div>
+            <button className="btn primary sm" onClick={promptInstall}>Install</button>
           </div>
-          <div className="picture" style={{ width: 130, flexShrink: 0, transform: "rotate(-3deg)", borderColor: "var(--ink)" }}><img src={TEACHER_IMG} alt="" /></div>
-        </button>
+        )}
 
-        {/* AI Reader */}
-        <div className="card pad s6 fill-yellow" style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: "50%", border: "2.5px solid var(--ink)", background: "#fff", display: "grid", placeItems: "center", flexShrink: 0 }}>
-            <Headphones size={30} />
+        {/* Course index, one day at a time */}
+        <div className="section">
+          <div className="section-head" style={{ alignItems: "baseline" }}>
+            <h2 className="h2">Your course</h2>
+            <span className="muted" style={{ fontSize: 13.5, fontWeight: 600 }}>{all.got}/{all.total} tasks · {DAYS.length} {DAYS.length === 1 ? "day" : "days"}</span>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <span className="eyebrow">AI Reader</span>
-            <div className="h2" style={{ margin: "6px 0 10px" }}>Too tired to read? <span className="serif">Listen.</span></div>
-            {reader?.supported
-              ? <ListenButton text={`Hi ${first}! I am your AI Reader. Tap Listen on any card and I will read it to you. In lessons, turn on hands-free, and I will read every card and turn the pages for you.`} id="home-reader" label="Hear how it works" title="AI Reader" />
-              : <div style={{ fontSize: 14 }}>Open the app in Chrome or Safari to use it.</div>}
+          <div className="chips" style={{ marginBottom: 14 }} role="tablist" aria-label="Choose a day">
+            {DAYS.map(d => {
+              const ids = d.roles.flatMap(r => r.skills.flatMap(s => s.taskIds));
+              const got = ids.filter(id => taskProgress[id]?.s === "got").length;
+              return (
+                <button key={d.day} role="tab" aria-selected={courseDay === d.day} className={`chip${courseDay === d.day ? " on" : ""}`} onClick={() => pickDay(d.day)}>
+                  Day {d.day}{ids.length > 0 && got > 0 && <span style={{ fontSize: 12, opacity: .75 }}>{Math.round((got / ids.length) * 100)}%</span>}
+                </button>
+              );
+            })}
+            <span className="chip" style={{ borderStyle: "dashed", opacity: .7 }}>Day {(DAYS[DAYS.length - 1]?.day || 0) + 1} · soon</span>
           </div>
-        </div>
-      </div>
-
-      {canInstall && (
-        <div className="card pad row section" style={{ gap: 14 }}>
-          <div className="tile-icon fill-lime"><Download size={22} /></div>
-          <div style={{ flex: 1 }}><div className="h3">Install the app</div><div className="muted" style={{ fontSize: 14 }}>On your home screen. Opens fast, works offline.</div></div>
-          <button className="btn primary sm" onClick={promptInstall}>Install</button>
-        </div>
-      )}
-
-      <div className="marquee section" aria-hidden="true"><div>{ticker}  ✦  {ticker}</div></div>
-
-      {/* Course index, one day at a time */}
-      <div className="section">
-        <div className="section-head">
-          <div style={{ minWidth: 0 }}>
-            <div className="eyebrow">The course · {all.got}/{all.total} tasks done</div>
-            <h2 className="h1" style={{ fontSize: "clamp(28px, 4vw, 42px)" }}>{DAYS.length} {DAYS.length === 1 ? "day" : "days"}. {SKILLS.length} skills. <span className="serif">One step at a time.</span></h2>
-          </div>
-        </div>
-        <div className="chips" style={{ marginBottom: 18 }} role="tablist" aria-label="Choose a day">
-          {DAYS.map(d => {
-            const ids = d.roles.flatMap(r => r.skills.flatMap(s => s.taskIds));
-            const got = ids.filter(id => taskProgress[id]?.s === "got").length;
-            return (
-              <button key={d.day} role="tab" aria-selected={courseDay === d.day} className={`chip${courseDay === d.day ? " on" : ""}`} onClick={() => pickDay(d.day)} style={{ padding: "9px 16px", fontSize: 14.5 }}>
-                Day {d.day} <span className="mono" style={{ fontSize: 12, opacity: .75 }}>{ids.length ? `${Math.round((got / ids.length) * 100)}%` : ""}</span>
-              </button>
-            );
-          })}
-          <span className="chip" style={{ borderStyle: "dashed", opacity: .7 }}>Day {(DAYS[DAYS.length - 1]?.day || 0) + 1} · soon</span>
-        </div>
-        {dayInfo && (
-          <>
-            <div className="card pad between wrap" style={{ marginBottom: 18, gap: 14 }}>
-              <div style={{ minWidth: 0, flex: "1 1 280px" }}>
-                <div className="eyebrow">Day {dayInfo.day}</div>
-                <div className="h2" style={{ marginTop: 4 }}>{dayInfo.subtitle || dayInfo.title}</div>
-                <div className="muted" style={{ fontSize: 14, marginTop: 4 }}>{dayInfo.roles.length} roles · {dayInfo.roles.reduce((n, r) => n + r.skills.length, 0)} skills · {dayInfo.roles.reduce((n, r) => n + r.skills.reduce((m, s) => m + s.taskIds.length, 0), 0)} tasks</div>
-              </div>
+          {dayInfo && (
+            <>
               {dayInfo.docs?.length > 0 && (
-                <div className="row wrap" style={{ gap: 8 }}>
-                  {dayInfo.docs.map(doc => <button key={doc.id} className="btn sm" onClick={() => go("doc", { day: dayInfo.day, id: doc.id })}>{{ lecture: "📒", mustknow: "⭐", cvs: "📄", assignment: "✅" }[doc.kind] || "📝"} {doc.label}</button>)}
+                <div className="card pad" style={{ marginBottom: 14 }}>
+                  <div className="eyebrow">Day {dayInfo.day} · class notes</div>
+                  <div className="row wrap" style={{ gap: 8, marginTop: 10 }}>
+                    {dayInfo.docs.map(doc => <button key={doc.id} className="btn sm" onClick={() => go("doc", { day: dayInfo.day, id: doc.id })}>{{ lecture: "📒", mustknow: "⭐", cvs: "📄", assignment: "✅" }[doc.kind] || "📝"} {doc.label}</button>)}
+                  </div>
                 </div>
               )}
-            </div>
-            {dayInfo.roles.map(role => <RoleIndex key={role.id} role={role} current={next} />)}
-          </>
-        )}
+              {dayInfo.roles.map(role => <RoleIndex key={role.id} role={role} current={next} />)}
+            </>
+          )}
+        </div>
       </div>
+
+      <aside className="home-side">
+        <TodayCard />
+
+        <div className="only-wide">{quick}</div>
+
+        {/* AI Reader */}
+        <div className="card pad reader-card">
+          <div className="row" style={{ gap: 12 }}>
+            <div className="tile-icon" style={{ background: "var(--brand)", color: "var(--gold)" }}><Headphones size={22} /></div>
+            <div style={{ minWidth: 0 }}>
+              <div className="eyebrow">AI Reader</div>
+              <div className="h3" style={{ marginTop: 2 }}>Too tired to read? <span className="serif">Listen.</span></div>
+            </div>
+          </div>
+          <div className="muted" style={{ fontSize: 14, margin: "10px 0 12px" }}>Tap Listen on any card. In lessons, turn on hands-free and it reads every card for you.</div>
+          {reader?.supported
+            ? <ListenButton text={`Hi ${first}! I am your AI Reader. Tap Listen on any card and I will read it to you. In lessons, turn on hands-free, and I will read every card and turn the pages for you.`} id="home-reader" label="Hear how it works" title="AI Reader" />
+            : <div style={{ fontSize: 14 }}>Open the app in Chrome or Safari to use it.</div>}
+        </div>
+
+        <button className="card tap pad" onClick={() => go("bigpicture")} style={{ textAlign: "left", display: "flex", gap: 14, alignItems: "center" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="eyebrow">New here?</div>
+            <div className="h3" style={{ margin: "4px 0" }}>The big picture <span className="serif">in 5 drawings</span></div>
+            <div className="muted" style={{ fontSize: 13.5 }}>How AI learns from people like you.</div>
+          </div>
+          <div className="picture" style={{ width: 96, flexShrink: 0 }}><img src={TEACHER_IMG} alt="" /></div>
+        </button>
+      </aside>
     </div>
   );
 }
@@ -169,42 +190,37 @@ function RoleIndex({ role, current }) {
   const { taskProgress, lessonsDone, go } = useApp();
   const done = role.skills.filter(s => skillState(s, taskProgress, lessonsDone) === "done").length;
   return (
-    <div style={{ marginBottom: 30 }}>
-      <div className={`role-band fill-${role.fill}`}>
-        <div style={{ minWidth: 0, flex: "1 1 260px" }}>
+    <div className="card" style={{ marginBottom: 16, overflow: "hidden" }}>
+      <div className="dayhead">
+        <div style={{ minWidth: 0, flex: "1 1 220px" }}>
           <div className="eyebrow">Day {role.day} · Part {role.part}</div>
-          <div className="h2" style={{ margin: "4px 0" }}>{role.icon} {role.name}</div>
-          <div style={{ fontSize: 14.5, maxWidth: 560 }}>{role.intro}</div>
+          <div className="h2" style={{ margin: "4px 0" }}>{role.name}</div>
+          <div className="muted" style={{ fontSize: 14, maxWidth: 560 }}>{role.intro}</div>
         </div>
-        <div className="sticker" style={{ fontSize: 14 }}>{done}/{role.skills.length} done</div>
+        <span className="pill brand" style={{ fontSize: 12.5 }}>{done}/{role.skills.length} done</span>
       </div>
-      <div className="card" style={{ marginTop: 14, overflow: "hidden" }}>
-        {role.skills.map((s, i) => {
-          const st = skillStats(s, taskProgress);
-          const state = skillState(s, taskProgress, lessonsDone);
-          const isCurrent = current?.id === s.id;
-          return (
-            <div key={s.id}>
-              {i > 0 && <div style={{ height: 2, background: "var(--line)", opacity: .12 }} />}
-              <button className="index-row" onClick={() => go("skill", { id: s.id })} style={{ borderRadius: 0, background: isCurrent ? "var(--surface-2)" : undefined }} aria-label={`${s.n}: ${st.got} of ${st.total} tasks done`}>
-                <span className="index-num" style={{ color: state === "done" ? "var(--mint)" : undefined }}>{pad2(i + 1)}</span>
-                <span style={{ minWidth: 0 }}>
-                  <span className="h3" style={{ display: "block" }}>{s.icon} {s.n}</span>
-                  <span className="muted" style={{ display: "block", fontSize: 14 }}>{s.s}</span>
-                  <span style={{ display: "block", maxWidth: 260, marginTop: 8 }}><Bar pct={st.pct} /></span>
-                </span>
-                <span className="index-end row" style={{ gap: 8 }}>
-                  {state === "done" ? <span className="pill mint">✓ Done</span>
-                    : isCurrent ? <span className="pill sun">▶ You are here</span>
-                    : state === "started" ? <span className="pill sky">{st.got}/{st.total}</span>
-                    : <span className="pill">New</span>}
-                  <ChevronRight size={20} />
-                </span>
-              </button>
-            </div>
-          );
-        })}
-      </div>
+      {role.skills.map((s, i) => {
+        const st = skillStats(s, taskProgress);
+        const state = skillState(s, taskProgress, lessonsDone);
+        const isCurrent = current?.id === s.id;
+        return (
+          <button key={s.id} className="index-row" onClick={() => go("skill", { id: s.id })} aria-label={`${s.n}: ${st.got} of ${st.total} tasks done`}>
+            <span className={`index-num${state === "done" ? " done" : isCurrent ? " now" : ""}`}>{state === "done" ? <Check size={18} strokeWidth={3} /> : pad2(i + 1)}</span>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: "block", fontWeight: 700, fontSize: 15.5 }}>{s.n}</span>
+              <span className="muted" style={{ display: "block", fontSize: 13.5 }}>{s.s}</span>
+              <span style={{ display: "block", maxWidth: 240, marginTop: 8 }}><Bar pct={st.pct} style={{ height: 5 }} /></span>
+            </span>
+            <span className="row" style={{ gap: 6 }}>
+              {state === "done" ? <span className="pill mint">Done</span>
+                : isCurrent ? <span className="pill sun">Up next</span>
+                : state === "started" ? <span className="pill sky">{st.got}/{st.total}</span>
+                : <span className="pill">New</span>}
+              <ChevronRight size={18} className="faint" />
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -275,7 +291,7 @@ export function SkillOverview({ id }) {
           </div>
         </section>
         <div className="s5" style={{ display: "grid", placeItems: "center", padding: 10 }}>
-          <figure className="polaroid tilt-l" style={{ margin: 0, width: "100%", maxWidth: 380 }}>
+          <figure className="polaroid" style={{ margin: 0, width: "100%", maxWidth: 380 }}>
             <img src={skill.image} alt={skill.n} />
             <figcaption>{skill.n}</figcaption>
           </figure>
@@ -316,7 +332,7 @@ export function SkillOverview({ id }) {
       </div>}
 
       <div className="grid g2 section">
-        <div className="card pad fill-blue">
+        <div className="card pad">
           <div className="h2" style={{ marginBottom: 14 }}>Quick check</div>
           <div className="stack" style={{ gap: 10 }}>
             {skill.check.map(([q, a], i) => (
@@ -327,7 +343,7 @@ export function SkillOverview({ id }) {
             ))}
           </div>
         </div>
-        <div className="card pad fill-yellow">
+        <div className="card pad">
           <div className="between" style={{ marginBottom: 14 }}>
             <div className="h2">Key words</div>
             <ListenButton text={skill.words.map(([w, m]) => `${w}: ${m}`)} id={`kw-${skill.id}`} title={`${skill.n}: key words`} />
@@ -357,7 +373,7 @@ function StepCard({ n, fill, icon: Icon, title, sub, cta, onClick, done }) {
         <div className="h2">{title}</div>
         <div style={{ fontSize: 14.5, marginTop: 4 }}>{sub}</div>
       </div>
-      <span className="row" style={{ fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", gap: 4 }}>{cta} <ArrowUpRight size={18} /></span>
+      <span className="row" style={{ fontWeight: 700, gap: 4, color: "var(--brand-ink)" }}>{cta} <ArrowUpRight size={18} /></span>
     </button>
   );
 }
@@ -588,8 +604,8 @@ function CardView({ skill, card, simple }) {
           <div className="stack" style={{ gap: 10 }}>
             {skill.goodbad.map(([g, b], k) => (
               <div key={k} className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <div className="fill-green" style={{ borderRadius: 14, padding: 12, border: "2px solid var(--ink)" }}><div className="row mono" style={{ gap: 6, fontWeight: 700, fontSize: 12 }}><ThumbsUp size={14} /> DO</div>{g}</div>
-                <div className="fill-pink" style={{ borderRadius: 14, padding: 12, border: "2px solid var(--ink)" }}><div className="row mono" style={{ gap: 6, fontWeight: 700, fontSize: 12 }}><ThumbsDown size={14} /> DON'T</div>{b}</div>
+                <div className="fill-green" style={{ borderRadius: 14, padding: 12, }}><div className="row mono" style={{ gap: 6, fontWeight: 700, fontSize: 12 }}><ThumbsUp size={14} /> DO</div>{g}</div>
+                <div className="fill-pink" style={{ borderRadius: 14, padding: 12, }}><div className="row mono" style={{ gap: 6, fontWeight: 700, fontSize: 12 }}><ThumbsDown size={14} /> DON'T</div>{b}</div>
               </div>
             ))}
           </div>
@@ -617,7 +633,7 @@ function CardView({ skill, card, simple }) {
           {head}
           <div className="stack" style={{ gap: 10 }}>
             {[["🌱", "Beginner"], ["🌿", "Getting there"], ["🌳", "Expert"]].map(([e, name], k) => (
-              <div key={name} className="row" style={{ background: "#fff", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 14, padding: 14, gap: 14 }}>
+              <div key={name} className="row" style={{ background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: 14, padding: 14, gap: 14 }}>
                 <div style={{ fontSize: 26 }}>{e}</div>
                 <div><div className="mono" style={{ fontWeight: 700, fontSize: 12 }}>{`0${k + 1} · ${name.toUpperCase()}`}</div><div style={{ fontSize: 15.5 }}>{skill.levels[k]}</div></div>
               </div>
@@ -682,7 +698,7 @@ export function ExampleBody({ ex, simple }) {
   const [, sit, check, result, lesson] = ex;
   const FILL = { sky: "blue", brand: "yellow", coral: "pink" };
   const Row = ({ label, text, tone }) => (
-    <div className={`fill-${FILL[tone]}`} style={{ padding: "12px 14px", borderRadius: 14, border: "2px solid var(--ink)" }}>
+    <div className={`fill-${FILL[tone]}`} style={{ padding: "12px 14px", borderRadius: 14 }}>
       <div className="eyebrow" style={{ marginBottom: 2 }}>{label}</div>
       <div style={{ fontSize: 15.5 }}>{text}</div>
     </div>

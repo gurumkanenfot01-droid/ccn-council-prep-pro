@@ -60,8 +60,8 @@ function MenuOverlay({ onClose }) {
         </div>
         <div className="menu-grid">
           {MENU.map(([id, t, sub, fill], i) => (
-            <button key={id} className={`menu-tile fill-${fill}`} onClick={() => { onClose(); go(id); }}>
-              <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</span>
+            <button key={id} className={`menu-tile card`} onClick={() => { onClose(); go(id); }}>
+              <span className={`tile-icon fill-${fill}`} style={{ width: 36, height: 36, borderRadius: 11, fontSize: 13, fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</span>
               <span><span className="t" style={{ display: "block" }}>{t}</span><span style={{ fontSize: 14 }}>{sub}</span></span>
             </button>
           ))}
@@ -278,6 +278,7 @@ export default function App() {
   };
 
   const isFocus = FOCUS_VIEWS.includes(view);
+  const greetLine = streak > 0 ? `${streak}-day streak · keep going` : "Learn a little every day";
   const tab = TAB_OF[view];
 
   function renderMain() {
@@ -329,7 +330,7 @@ export default function App() {
               <div className="header-in">
                 <button className="logo" onClick={() => go("learn")} aria-label="AI Trainer Class home">
                   <span className="logo-mark"><LogoMark size={22} /></span>
-                  <span className="logo-word">AI Trainer <i className="long">class</i></span>
+                  <span className="logo-word">AI Trainer Class<small>{greetLine}</small></span>
                 </button>
                 <nav className="nav" aria-label="Main">
                   {TABS.map(t => (
@@ -339,24 +340,23 @@ export default function App() {
                   ))}
                 </nav>
                 <div className="header-tools">
-                  <span className="sticker fill-orange" title="Day streak" style={{ alignSelf: "center" }}>🔥 {streak}</span>
-                  <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search (press /)"><Search size={18} /></button>
+                                    <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search (press /)"><Search size={18} /></button>
                   <button className="icon-btn" onClick={toggleTheme} aria-label="Light or night mode">{theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}</button>
                   <button className="icon-btn menu-btn" onClick={() => setMenuOpen(true)} aria-label="Open menu"><LayoutGrid size={18} /></button>
                 </div>
               </div>
-              <nav className="nav-strip" aria-label="Sections">
-                {TABS.map(t => (
-                  <button key={t.id} className={tab === t.id ? "on" : ""} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}>
-                    <t.icon size={15} /> {t.label}
-                  </button>
-                ))}
-              </nav>
-            </header>
+                          </header>
 
             <main className={`page${NARROW.includes(view) ? " narrow" : ""}`}>
               <div className="fade" key={view + (params.id || "")}>{renderMain()}</div>
             </main>
+            <nav className="bottom-nav" aria-label="Sections">
+              {TABS.map(t => (
+                <button key={t.id} className={tab === t.id ? "on" : ""} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}>
+                  <t.icon size={21} strokeWidth={tab === t.id ? 2.3 : 1.8} /> {t.label}
+                </button>
+              ))}
+            </nav>
           </>
         )}
 
