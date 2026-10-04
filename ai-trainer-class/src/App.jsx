@@ -74,7 +74,7 @@ function MenuOverlay({ onClose }) {
 const defaultProfile = { name: "", email: "", city: "", goal: "", dailyGoal: 10, photo: null };
 
 export default function App() {
-  const [theme, setTheme] = useState(() => loadJSON("theme", window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+  const [theme, setTheme] = useState(() => loadJSON("theme", "light"));
   const [profile, setProfileState] = useState(() => ({ ...defaultProfile, ...loadJSON("profile", {}) }));
   const [view, setView] = useState(() => (loadJSON("profile", {}).name ? "learn" : "welcome"));
   const [params, setParams] = useState({});

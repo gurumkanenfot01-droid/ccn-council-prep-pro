@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { FileText, ListOrdered, ChevronRight, Lightbulb, BookOpen, Star, IdCard, StickyNote, ArrowUp } from "lucide-react";
+import { FileText, ClipboardCheck, ListOrdered, ChevronRight, Lightbulb, BookOpen, Star, IdCard, StickyNote, ArrowUp } from "lucide-react";
 import { useApp, PageHead, Picture, Empty, Sheet, SheetHead } from "../ui.jsx";
 import { ListenButton } from "../lib/reader.jsx";
 import { loadJSON, saveJSON } from "../lib/store.js";
@@ -9,6 +9,7 @@ const KIND = {
   lecture: { icon: BookOpen, fill: "lime", blurb: "The full lesson for the day, chapter by chapter." },
   mustknow: { icon: Star, fill: "yellow", blurb: "Short cards, rules, a cheat sheet and a quiz." },
   cvs: { icon: IdCard, fill: "blue", blurb: "Example CVs for the day's jobs, explained." },
+  assignment: { icon: ClipboardCheck, fill: "pink", blurb: "Answers for the day's assignment. Try it yourself first!" },
   other: { icon: StickyNote, fill: "violet", blurb: "Extra notes for the day." },
 };
 

@@ -295,10 +295,11 @@ function kindOf(file) {
   if (/lecture/.test(f)) return "lecture";
   if (/must.?know/.test(f)) return "mustknow";
   if (/cv/.test(f)) return "cvs";
+  if (/assignment|answer.?key/.test(f)) return "assignment";
   return "other";
 }
-const DOC_ORDER = { lecture: 1, mustknow: 2, cvs: 3, other: 4 };
-const DOC_LABEL = { lecture: "Lecture notes", mustknow: "Must-know notes", cvs: "Sample CVs", other: "Notes" };
+const DOC_ORDER = { lecture: 1, mustknow: 2, cvs: 3, assignment: 4, other: 5 };
+const DOC_LABEL = { lecture: "Lecture notes", mustknow: "Must-know notes", cvs: "Sample CVs", assignment: "Assignment answers", other: "Notes" };
 
 function buildDay(dir, dayNum) {
   const files = readdirSync(dir).filter(f => !f.startsWith(".") && !f.startsWith("~$"));
@@ -321,6 +322,9 @@ function buildDay(dir, dayNum) {
       try { bank = parseTaskBank(items); } catch (e) { warn(`Day ${dayNum}: tasks in "${f}" could not be read (${e.message}).`); }
       continue; // the tasks themselves are practised in the app, so no reading copy
     }
+    // Catch files put in the wrong day folder (e.g. Day 4 CVs inside day-3).
+    const named = /\bDay\s*(\d+)\b/i.exec(texts[0] || "") || /^day\s*[-_ ]?(\d+)/i.exec(f);
+    if (named && Number(named[1]) !== dayNum) warn(`Day ${dayNum}: "${f}" says it is for Day ${named[1]}. Is it in the right folder?`);
     const id = kind === "other" ? basename(f, extname(f)).toLowerCase().replace(/[^a-z0-9]+/g, "-") : kind;
     const blocks = toBlocks(items);
     const words = blocks.reduce((n, b) => n + JSON.stringify(b).split(/\s+/).length, 0);

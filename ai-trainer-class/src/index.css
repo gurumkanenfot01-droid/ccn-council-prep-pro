@@ -46,14 +46,14 @@
 
 :root[data-theme="dark"] {
   --bg: #131118;
-  --dot: rgba(247, 241, 227, .07);
+  --dot: rgba(247, 241, 227, .05);
   --surface: #1D1A23;
   --surface-2: #28242F;
   --text: #F7F1E3;
   --muted: #CDC6B6;
   --faint: #918A7C;
-  --line: #F7F1E3;
-  --shadow-c: #C8F560;
+  --line: #4B4658;
+  --shadow-c: rgba(0, 0, 0, .55);
   --brand: #C8F560;
   --on-brand: #121212;
   --brand-ink: #C8F560;
@@ -259,9 +259,10 @@ textarea.input { resize: vertical; line-height: 1.6; }
 .segments > i.done { background: var(--line); }
 .segments > i.now { background: var(--lime); }
 .focus-foot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 0 16px max(14px, env(safe-area-inset-bottom)); pointer-events: none; }
-.focus-foot-inner { max-width: 820px; margin: 0 auto; padding: 10px; display: flex; gap: 10px; background: var(--surface); border: var(--bw) solid var(--line); border-radius: 22px; box-shadow: var(--sh); pointer-events: auto; }
+.focus-foot { background: linear-gradient(to bottom, transparent, var(--bg) 40%); padding-top: 26px; }
+.focus-foot-inner { max-width: 820px; margin: 0 auto; padding: 0; display: flex; gap: 10px; pointer-events: auto; }
 
-.story-card { border-radius: 26px; border: var(--bw) solid var(--line); box-shadow: var(--sh-lg); padding: 28px; min-height: 400px; background: var(--surface); color: var(--text); }
+.story-card { border-radius: 26px; border: var(--bw) solid var(--line); box-shadow: var(--sh-lg); padding: 26px; min-height: 0; background: var(--surface); color: var(--text); }
 .story-card[class*="fill-"] { border-color: var(--ink); }
 .big-text { font-size: 19px; line-height: 1.6; }
 .short { display: flex; gap: 10px; align-items: flex-start; background: var(--surface); color: var(--text); border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px; font-weight: 700; margin-top: 14px; box-shadow: var(--sh-sm); }
@@ -378,3 +379,14 @@ textarea.input { resize: vertical; line-height: 1.6; }
 .doc-table th { background: var(--yellow); color: var(--ink); text-align: left; padding: 10px 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; border-bottom: 2px solid var(--line); }
 .doc-table td { padding: 10px 12px; border-top: 1.5px solid color-mix(in srgb, var(--line) 18%, transparent); vertical-align: top; line-height: 1.5; }
 .doc-table tr:nth-child(even) td { background: var(--surface-2); }
+
+/* Phones: a little tighter */
+@media (max-width: 560px) {
+  .story-card { padding: 20px; border-radius: 22px; }
+  .big-text { font-size: 17.5px; }
+  .focus-body { padding-top: 18px; }
+}
+/* Night mode: sticker colours keep their dark outline */
+:root[data-theme="dark"] [class*="fill-"], :root[data-theme="dark"] .hero, :root[data-theme="dark"] .situation, :root[data-theme="dark"] .option.sel,
+:root[data-theme="dark"] .option.right, :root[data-theme="dark"] .option.wrong { border-color: #121212; }
+:root[data-theme="dark"] .segments > i.done { background: var(--lime); }

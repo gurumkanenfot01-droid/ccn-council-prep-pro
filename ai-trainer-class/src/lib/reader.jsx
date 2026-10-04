@@ -65,6 +65,8 @@ export function ReaderProvider({ children }) {
   const indexRef = useRef(0);
   const tokenRef = useRef(0);
   const onDoneRef = useRef(null);
+  const startedRef = useRef(false);
+  const [problem, setProblem] = useState(null); // null | "novoice" | "blocked"
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -108,7 +110,9 @@ export function ReaderProvider({ children }) {
   function playFrom(i) {
     const synth = window.speechSynthesis;
     const token = ++tokenRef.current;
-    synth.cancel();
+    const wasBusy = synth.speaking || synth.pending;
+    // Android Chrome ignores speak() right after cancel(), so only cancel when needed.
+    if (wasBusy) synth.cancel();
     if (i < 0) i = 0;
     if (i >= chunksRef.current.length) { finish(); return; }
     indexRef.current = i;
@@ -116,15 +120,28 @@ export function ReaderProvider({ children }) {
     setStatus("playing");
     const u = new SpeechSynthesisUtterance(chunksRef.current[i]);
     const voice = pickVoice();
-    if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = "en-GB";
+    if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = "en-US";
     u.rate = settingsRef.current.rate;
+    u.onstart = () => { if (token === tokenRef.current) { startedRef.current = true; setProblem(null); } };
     u.onend = () => { if (token === tokenRef.current) playFrom(i + 1); };
     u.onerror = e => {
       if (token !== tokenRef.current || e.error === "interrupted" || e.error === "canceled") return;
+      if (!startedRef.current) { setProblem(e.error === "not-allowed" ? "blocked" : "novoice"); setStatus("paused"); return; }
       playFrom(i + 1);
     };
-    // A short gap after cancel() stops some Android/Chrome builds dropping the next utterance.
-    setTimeout(() => { if (token === tokenRef.current) synth.speak(u); }, 60);
+    const go = () => {
+      if (token !== tokenRef.current) return;
+      synth.resume(); // Chrome can get stuck "paused" after the phone sleeps
+      synth.speak(u);
+    };
+    // Speak straight away (inside the tap), so phones allow the sound.
+    if (wasBusy) setTimeout(go, 80); else go();
+    // If no sound starts at all, the phone probably has no reading voice.
+    if (!startedRef.current) {
+      setTimeout(() => {
+        if (token === tokenRef.current && !startedRef.current && !synth.speaking) { setProblem("novoice"); setStatus("paused"); }
+      }, 4000);
+    }
   }
 
   // speak(textOrParts, id, { title, onDone }): onDone runs only when reading
@@ -135,6 +152,8 @@ export function ReaderProvider({ children }) {
     if (!list.length) return;
     chunksRef.current = list;
     onDoneRef.current = opts.onDone || null;
+    startedRef.current = false;
+    setProblem(null);
     setChunks(list);
     setLabel(id || "reading");
     setTitle(opts.title || "");
@@ -148,6 +167,7 @@ export function ReaderProvider({ children }) {
     window.speechSynthesis.cancel();
     setStatus("idle");
     setLabel(null);
+    setProblem(null);
   }
 
   function pause() {
@@ -167,7 +187,7 @@ export function ReaderProvider({ children }) {
     else speak(parts, id, opts);
   }
 
-  const value = { supported, settings, updateSettings, voices, status, label, title, chunks, index, speak, stop, pause, resume, next, prev, toggle };
+  const value = { problem, setProblem, supported, settings, updateSettings, voices, status, label, title, chunks, index, speak, stop, pause, resume, next, prev, toggle };
   return <ReaderCtx.Provider value={value}>{children}</ReaderCtx.Provider>;
 }
 
@@ -222,6 +242,24 @@ export function ReaderSettings() {
   );
 }
 
+// Shown when the phone did not start speaking, with the usual fixes.
+function VoiceHelp({ problem }) {
+  const android = /android/i.test(navigator.userAgent);
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  return (
+    <div style={{ margin: "10px 2px 12px", fontSize: 14.5, lineHeight: 1.5 }}>
+      <div style={{ fontWeight: 800, marginBottom: 6 }}>{problem === "blocked" ? "Tap Play to start the voice." : "No sound? Try this:"}</div>
+      <ol style={{ margin: 0, paddingLeft: 20 }}>
+        <li>Turn up the <b>media volume</b> (press the volume button while the app is open).</li>
+        {android && <li>Install or update <a href="https://play.google.com/store/apps/details?id=com.google.android.tts" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", fontWeight: 800 }}>Speech Services by Google</a>, then open the app again.</li>}
+        {android && <li>Use <b>Google Chrome</b> to open the app.</li>}
+        {ios && <li>Turn off <b>Silent mode</b> (the switch on the side of the iPhone).</li>}
+        <li>Then tap <b>Play</b> ▶ below.</li>
+      </ol>
+    </div>
+  );
+}
+
 // Floating AI Reader: a round button when idle (opens settings), and a
 // player with a moving wave and live caption while reading.
 export function ReaderDock({ inFocus }) {
@@ -249,7 +287,9 @@ export function ReaderDock({ inFocus }) {
               </div>
               <button className="pbtn" onClick={r.stop} aria-label="Stop reading"><X size={17} /></button>
             </div>
-            <div className="row" style={{ alignItems: "flex-start", gap: 10 }}><Wave on={r.status === "playing"} /><div className="caption" style={{ flex: 1 }}>“{r.chunks[r.index]}”</div></div>
+            {r.problem
+              ? <VoiceHelp problem={r.problem} />
+              : <div className="row" style={{ alignItems: "flex-start", gap: 10 }}><Wave on={r.status === "playing"} /><div className="caption" style={{ flex: 1 }}>“{r.chunks[r.index]}”</div></div>}
             <div className="between">
               <button className="pbtn mono" style={{ width: "auto", padding: "0 12px", fontSize: 12.5, fontWeight: 700 }} onClick={() => r.updateSettings({ rate: SPEEDS[(speedIdx + 1) % SPEEDS.length] })} aria-label="Change speed">
                 {SPEED_NAMES[r.settings.rate] || `${r.settings.rate}x`}
