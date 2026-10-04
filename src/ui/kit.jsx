@@ -119,14 +119,19 @@ export function EmptyState({ icon: Icon, text, sub }) {
   );
 }
 
-export function Field({ label, value, onChange, icon: Icon, type = "text" }) {
+export function Field({ label, value, onChange, icon: Icon, type = "text", autoComplete }) {
+  // iPad/iPhone keyboards auto-capitalise and autocorrect by default, which
+  // silently turns "ada@gmail.com" into "Ada@gmail.com" and breaks logins.
+  const noAutoFix = type === "email" || type === "password"
+    ? { autoCapitalize: "none", autoCorrect: "off", spellCheck: false }
+    : {};
   const { t } = useApp();
   return (
     <div>
       <div style={{ fontSize: 11.5, fontWeight: 700, color: t.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>{label}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, border: `1px solid ${t.cardBorder}`, borderRadius: 10, padding: "9px 12px", background: t.bgAlt }}>
         <Icon size={14} color={t.textFaint} />
-        <input type={type} value={value || ""} onChange={e => onChange(e.target.value)} style={{ border: "none", outline: "none", background: "transparent", fontSize: 14, color: t.text, width: "100%" }} />
+        <input type={type} value={value || ""} onChange={e => onChange(e.target.value)} autoComplete={autoComplete} {...noAutoFix} style={{ border: "none", outline: "none", background: "transparent", fontSize: 14, color: t.text, width: "100%" }} />
       </div>
     </div>
   );

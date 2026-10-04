@@ -47,9 +47,12 @@ async function loadProfile(fallback) {
 // localStorage whether or not it resolves to a real referrer, so it's only
 // ever attempted once per link click.
 export async function applyPendingReferralCode() {
-  const code = window.localStorage.getItem("pending-referral-code");
+  let code = null;
+  try {
+    code = window.localStorage.getItem("pending-referral-code");
+    if (code) window.localStorage.removeItem("pending-referral-code");
+  } catch (e) { return; }
   if (!code) return;
-  window.localStorage.removeItem("pending-referral-code");
   try {
     const userId = requireUserId();
     const { data: referrer } = await supabase
