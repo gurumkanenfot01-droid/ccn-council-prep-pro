@@ -2,7 +2,7 @@
 // the device, so we cache the app shell on install and every same-origin file
 // (JS, CSS, pictures) the first time it loads. Pages use network-first so a
 // new version shows up when online; everything else is cache-first.
-const CACHE_NAME = "ai-trainer-class-v1";
+const CACHE_NAME = "ai-trainer-class-v2";
 const APP_SHELL = ["/", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {

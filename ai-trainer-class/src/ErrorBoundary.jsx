@@ -1,10 +1,7 @@
 import { Component } from "react";
 
-// Last-resort safety net: without this, any single uncaught render error
-// (e.g. a malformed question row slipping through) blanks the entire app with
-// no way back in, and since exam progress autosaves, resuming can drop a user
-// right back onto the same crash. This catches it, offers a way out, and never
-// leaves someone stuck on a dead white screen.
+// Safety net: if any screen crashes, show a friendly way back instead of a
+// blank page. Progress is saved on the device, so nothing is lost.
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -22,24 +19,13 @@ export default class ErrorBoundary extends Component {
   render() {
     if (!this.state.hasError) return this.props.children;
     return (
-      <div style={{
-        minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center",
-        justifyContent: "center", padding: 32, textAlign: "center", background: "#F7F4EC", fontFamily: "Georgia, serif",
-      }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
-        <div style={{ fontSize: 19, fontWeight: 700, color: "#1B2A3A", marginBottom: 8 }}>Something went wrong</div>
-        <div style={{ fontSize: 14, color: "#5B6472", maxWidth: 360, lineHeight: 1.5, marginBottom: 22 }}>
-          A screen had a problem. Your progress is safe. Tap the button to open the app again.
+      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 32, textAlign: "center" }}>
+        <div>
+          <div style={{ fontSize: 44, marginBottom: 10 }}>🛠️</div>
+          <div className="h2" style={{ marginBottom: 8 }}>Something went wrong</div>
+          <div className="muted" style={{ maxWidth: 360, margin: "0 auto 22px" }}>A screen had a problem. Your progress is safe. Tap the button to open the app again.</div>
+          <button className="btn primary" onClick={() => window.location.reload()}>Open the app again</button>
         </div>
-        <button
-          onClick={() => window.location.reload()}
-          style={{
-            background: "#1B2A3A", color: "#fff", border: "none", borderRadius: 10,
-            padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer",
-          }}
-        >
-          Open the app again
-        </button>
       </div>
     );
   }

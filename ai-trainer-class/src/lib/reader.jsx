@@ -1,18 +1,18 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Headphones, Volume2, Square, Pause, Play, SkipBack, SkipForward, X } from "lucide-react";
-import { useApp } from "../ui/kit.jsx";
+import { Headphones, Volume2, Square, Pause, Play, SkipBack, SkipForward, X, Settings2 } from "lucide-react";
 import { loadJSON, saveJSON } from "./store.js";
 
-// The AI Reader: reads any text out loud with the device's built-in voice
-// (Web Speech API), so it is free, needs no account and works offline on most
-// phones. Text is spoken one sentence at a time; that keeps Chrome from cutting
-// long speech off, lets us show the sentence being read, and makes pause /
-// back / next reliable on every browser (pause = stop and remember the place).
+// The AI Reader reads any text out loud with the device's own voice (Web
+// Speech API): free, no account, and it works offline on most phones. Text is
+// spoken one sentence at a time. That stops Chrome cutting long speech off,
+// lets the player show the sentence being read as a caption, and makes pause /
+// back / next work the same on every browser.
 
 const ReaderCtx = createContext(null);
 export function useReader() { return useContext(ReaderCtx); }
 
 export const SPEEDS = [0.75, 0.9, 1, 1.15, 1.3];
+export const SPEED_NAMES = { 0.75: "Slow", 0.9: "Calm", 1: "Normal", 1.15: "Quick", 1.3: "Fast" };
 
 function cleanForSpeech(text) {
   return String(text || "")
@@ -36,7 +36,7 @@ function splitChunks(parts) {
   (Array.isArray(parts) ? parts : [parts]).flat(Infinity).forEach(p => {
     const text = cleanForSpeech(p);
     if (!text) return;
-    text.split(/(?<=[.!?:])\s+(?=["“(A-Z0-9])/).forEach(sentence => {
+    text.split(/(?<=[.!?])\s+(?=["“(A-Z0-9])/).forEach(sentence => {
       let s = sentence.trim();
       while (s.length > 220) {
         const cut = Math.max(s.lastIndexOf(", ", 200), s.lastIndexOf("; ", 200));
@@ -44,7 +44,9 @@ function splitChunks(parts) {
         out.push(s.slice(0, at).trim());
         s = s.slice(at).trim();
       }
-      if (s) out.push(s);
+      if (!s) return;
+      if (out.length && /^(Step|Option|Example|Question|Task) [\w]+[.:]?$/.test(out[out.length - 1])) out[out.length - 1] += " " + s;
+      else out.push(s);
     });
   });
   return out;
@@ -56,11 +58,13 @@ export function ReaderProvider({ children }) {
   const [voices, setVoices] = useState([]);
   const [status, setStatus] = useState("idle"); // idle | playing | paused
   const [label, setLabel] = useState(null);
+  const [title, setTitle] = useState("");
   const [chunks, setChunks] = useState([]);
   const [index, setIndex] = useState(0);
   const chunksRef = useRef([]);
   const indexRef = useRef(0);
   const tokenRef = useRef(0);
+  const onDoneRef = useRef(null);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -93,12 +97,20 @@ export function ReaderProvider({ children }) {
       || null;
   }
 
+  function finish() {
+    setStatus("idle");
+    setLabel(null);
+    const done = onDoneRef.current;
+    onDoneRef.current = null;
+    if (done) done();
+  }
+
   function playFrom(i) {
     const synth = window.speechSynthesis;
     const token = ++tokenRef.current;
     synth.cancel();
     if (i < 0) i = 0;
-    if (i >= chunksRef.current.length) { setStatus("idle"); setLabel(null); return; }
+    if (i >= chunksRef.current.length) { finish(); return; }
     indexRef.current = i;
     setIndex(i);
     setStatus("playing");
@@ -111,23 +123,28 @@ export function ReaderProvider({ children }) {
       if (token !== tokenRef.current || e.error === "interrupted" || e.error === "canceled") return;
       playFrom(i + 1);
     };
-    // A short gap after cancel() stops some Android/Chrome builds from dropping the next utterance.
+    // A short gap after cancel() stops some Android/Chrome builds dropping the next utterance.
     setTimeout(() => { if (token === tokenRef.current) synth.speak(u); }, 60);
   }
 
-  function speak(parts, newLabel) {
+  // speak(textOrParts, id, { title, onDone }): onDone runs only when reading
+  // reaches the end by itself (not when the learner stops it).
+  function speak(parts, id, opts = {}) {
     if (!supported) return;
     const list = splitChunks(parts);
     if (!list.length) return;
     chunksRef.current = list;
+    onDoneRef.current = opts.onDone || null;
     setChunks(list);
-    setLabel(newLabel || "Reading");
+    setLabel(id || "reading");
+    setTitle(opts.title || "");
     playFrom(0);
   }
 
   function stop() {
     if (!supported) return;
     tokenRef.current++;
+    onDoneRef.current = null;
     window.speechSynthesis.cancel();
     setStatus("idle");
     setLabel(null);
@@ -145,69 +162,130 @@ export function ReaderProvider({ children }) {
   function prev() { playFrom(indexRef.current - 1); }
 
   // Tap once to read, tap the same button again to stop.
-  function toggle(parts, key) {
-    if (label === key && status !== "idle") stop();
-    else speak(parts, key);
+  function toggle(parts, id, opts) {
+    if (label === id && status !== "idle") stop();
+    else speak(parts, id, opts);
   }
 
-  const value = { supported, settings, updateSettings, voices, status, label, chunks, index, speak, stop, pause, resume, next, prev, toggle };
+  const value = { supported, settings, updateSettings, voices, status, label, title, chunks, index, speak, stop, pause, resume, next, prev, toggle };
   return <ReaderCtx.Provider value={value}>{children}</ReaderCtx.Provider>;
 }
 
-// Small "Listen" button that sits next to any text.
-export function ListenButton({ text, id, label = "Listen", size = "sm", light, style }) {
-  const { t } = useApp();
-  const reader = useReader();
-  if (!reader?.supported) return null;
-  const active = reader.label === id && reader.status !== "idle";
-  const color = light ? "#fff" : active ? "#fff" : t.navy;
-  const bg = light ? "rgba(255,255,255,0.15)" : active ? t.navy : t.navySoft;
+export function ListenButton({ text, id, label = "Listen", title, style }) {
+  const r = useReader();
+  if (!r?.supported) return null;
+  const active = r.label === id && r.status !== "idle";
   return (
-    <button onClick={e => { e.stopPropagation(); reader.toggle(text, id); }} className="press"
-      aria-label={active ? "Stop reading" : `${label}: read this out loud`}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0,
-        padding: size === "sm" ? "6px 11px" : "9px 15px", borderRadius: 999, border: "none",
-        background: bg, color, fontSize: size === "sm" ? 12 : 13.5, fontWeight: 700, cursor: "pointer", ...style,
-      }}>
-      {active ? <Square size={size === "sm" ? 12 : 14} fill={color} /> : <Volume2 size={size === "sm" ? 14 : 16} />}
-      {active ? "Stop" : label}
+    <button className={`listen${active ? " on" : ""}`} style={style}
+      onClick={e => { e.stopPropagation(); r.toggle(text, id, { title: title || label }); }}
+      aria-label={active ? "Stop reading" : `${label || "Listen"}: read out loud`}>
+      {active ? <Square size={12} fill="currentColor" /> : <Volume2 size={15} />}
+      {active ? (label ? "Stop" : null) : label}
     </button>
   );
 }
 
-// Floating player shown while the AI Reader is reading or paused.
-export function ReaderBar() {
-  const { t, isMobile } = useApp();
+export function Wave({ on }) {
+  return <div className={`wave${on ? " on" : ""}`} aria-hidden="true"><i /><i /><i /><i /><i /></div>;
+}
+
+// Reader settings, used in the dock sheet and on the Me screen.
+export function ReaderSettings() {
   const r = useReader();
-  if (!r?.supported || r.status === "idle") return null;
-  const speedIdx = Math.max(0, SPEEDS.indexOf(r.settings.rate));
-  const nextSpeed = SPEEDS[(speedIdx + 1) % SPEEDS.length];
-  const btn = { background: "rgba(255,255,255,0.14)", border: "none", borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", flexShrink: 0 };
+  if (!r?.supported) return <div className="soft muted">The AI Reader does not work in this browser. Try Chrome, Edge or Safari.</div>;
   return (
-    <div className="slide-up" role="region" aria-label="AI Reader"
-      style={{
-        position: "fixed", left: 12, right: 12, bottom: isMobile ? 70 : 18, zIndex: 35,
-        maxWidth: 640, margin: "0 auto", background: t.navyDark, color: "#fff", borderRadius: 16,
-        boxShadow: "0 10px 30px rgba(0,0,0,0.3)", padding: "10px 12px", display: "flex", alignItems: "center", gap: 10,
-      }}>
-      <div style={{ width: 36, height: 36, borderRadius: 10, background: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Headphones size={18} />
+    <div className="stack" style={{ gap: 16 }}>
+      <div>
+        <label className="label" htmlFor="voice">Voice</label>
+        <select id="voice" className="input" value={r.settings.voiceURI} onChange={e => r.updateSettings({ voiceURI: e.target.value })}>
+          <option value="">Best voice for me (automatic)</option>
+          {r.voices.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>)}
+        </select>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.7, textTransform: "uppercase", letterSpacing: 0.5 }}>
-          AI Reader · {r.index + 1}/{r.chunks.length}
+      <div>
+        <span className="label">Speed</span>
+        <div className="chips">
+          {SPEEDS.map(s => <button key={s} className={`chip${r.settings.rate === s ? " on" : ""}`} onClick={() => r.updateSettings({ rate: s })}>{SPEED_NAMES[s]}</button>)}
         </div>
-        <div style={{ fontSize: 12.5, lineHeight: 1.35, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.chunks[r.index]}</div>
       </div>
-      <button style={btn} onClick={r.prev} aria-label="Back one sentence"><SkipBack size={15} /></button>
-      {r.status === "playing"
-        ? <button style={btn} onClick={r.pause} aria-label="Pause"><Pause size={16} /></button>
-        : <button style={btn} onClick={r.resume} aria-label="Play"><Play size={16} /></button>}
-      {!isMobile && <button style={btn} onClick={r.next} aria-label="Next sentence"><SkipForward size={15} /></button>}
-      <button style={{ ...btn, width: "auto", padding: "0 10px", fontSize: 12, fontWeight: 800 }} className="f-mono"
-        onClick={() => r.updateSettings({ rate: nextSpeed })} aria-label="Change reading speed">{r.settings.rate}x</button>
-      <button style={btn} onClick={r.stop} aria-label="Stop reading"><X size={16} /></button>
+      <div className="between">
+        <div>
+          <div style={{ fontWeight: 700 }}>Read each task to me</div>
+          <div className="faint" style={{ fontSize: 13 }}>Starts reading by itself when a new task or question opens</div>
+        </div>
+        <button className={`switch${r.settings.autoRead ? " on" : ""}`} role="switch" aria-checked={r.settings.autoRead} aria-label="Read each task to me" onClick={() => r.updateSettings({ autoRead: !r.settings.autoRead })} />
+      </div>
+      <button className="btn soft" onClick={() => r.speak("Hello! I am your AI Reader. Tap Listen on any card, and I will read it to you.", "test-voice", { title: "Voice test" })}>
+        <Volume2 size={17} /> Test the voice
+      </button>
     </div>
+  );
+}
+
+// Floating AI Reader: a round button when idle (opens settings), and a
+// player with a moving wave and live caption while reading.
+export function ReaderDock({ inFocus }) {
+  const r = useReader();
+  const [open, setOpen] = useState(false);
+  if (!r?.supported) return null;
+  const busy = r.status !== "idle";
+  // In full-screen lessons, tasks and tests the cards have their own Listen
+  // buttons, so the round button only shows while something is being read.
+  if (inFocus && !busy && !open) return null;
+  const speedIdx = Math.max(0, SPEEDS.indexOf(r.settings.rate));
+
+  return (
+    <>
+      <div className={`dock${inFocus ? " in-focus" : ""}`}>
+        {busy ? (
+          <div className="player" role="region" aria-label="AI Reader">
+            <div className="between">
+              <div className="row" style={{ gap: 10, minWidth: 0 }}>
+                <Wave on={r.status === "playing"} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".08em", opacity: .6 }}>AI READER · {r.index + 1}/{r.chunks.length}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title || "Reading"}</div>
+                </div>
+              </div>
+              <button className="pbtn" onClick={r.stop} aria-label="Stop reading"><X size={17} /></button>
+            </div>
+            <div className="caption">“{r.chunks[r.index]}”</div>
+            <div className="between">
+              <button className="pbtn" style={{ width: "auto", padding: "0 12px", fontSize: 12.5, fontWeight: 800 }} onClick={() => r.updateSettings({ rate: SPEEDS[(speedIdx + 1) % SPEEDS.length] })} aria-label="Change speed">
+                {SPEED_NAMES[r.settings.rate] || `${r.settings.rate}x`}
+              </button>
+              <div className="row">
+                <button className="pbtn" onClick={r.prev} aria-label="Back one sentence"><SkipBack size={17} /></button>
+                {r.status === "playing"
+                  ? <button className="pbtn main" onClick={r.pause} aria-label="Pause"><Pause size={20} fill="currentColor" /></button>
+                  : <button className="pbtn main" onClick={r.resume} aria-label="Play"><Play size={20} fill="currentColor" /></button>}
+                <button className="pbtn" onClick={r.next} aria-label="Next sentence"><SkipForward size={17} /></button>
+              </div>
+              <button className="pbtn" onClick={() => setOpen(true)} aria-label="Reader settings"><Settings2 size={17} /></button>
+            </div>
+          </div>
+        ) : (
+          <button className="orb" onClick={() => setOpen(true)} aria-label="AI Reader settings" title="AI Reader">
+            <Headphones size={24} />
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="scrim" onClick={() => setOpen(false)}>
+          <div className="sheet" onClick={e => e.stopPropagation()}>
+            <div className="grabber" />
+            <div className="row" style={{ marginBottom: 6 }}>
+              <div className="tile-icon" style={{ background: "var(--grad)", color: "#fff" }}><Headphones size={22} /></div>
+              <div>
+                <div className="h2">AI Reader</div>
+                <div className="faint" style={{ fontSize: 13 }}>Tap <b>Listen</b> on any card to hear it. Uses your phone's voice, so it is free.</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 16 }}><ReaderSettings /></div>
+            <button className="btn ghost full" style={{ marginTop: 14 }} onClick={() => setOpen(false)}>Done</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

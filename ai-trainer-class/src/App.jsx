@@ -1,123 +1,91 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import {
-  Home, ClipboardList, Layers, BookOpen, Bookmark, BarChart3, Trophy, User,
-  Search, Sun, Moon, Menu, X, Award, Sparkles, Shuffle, XCircle, Grid3x3,
-  LifeBuoy, Info, WifiOff, CheckCircle2, Headphones, Bot, Lightbulb, BookA, Map,
-} from "lucide-react";
-import { AppCtx, useApp, Button, Modal } from "./ui/kit.jsx";
-import { THEME, GlobalStyle } from "./ui/extra.jsx";
+import { Route, Target, Library, BarChart3, UserRound, Search, Moon, Sun, Sparkles, WifiOff, Wifi } from "lucide-react";
+import { AppCtx } from "./ui.jsx";
+import { LogoMark } from "./logo.jsx";
 import { loadJSON, saveJSON, clearAll } from "./lib/store.js";
-import { ReaderProvider, ReaderBar, useReader } from "./lib/reader.jsx";
+import { ReaderProvider, ReaderDock } from "./lib/reader.jsx";
 import { buildQuizSet, computeStreak, dayKey } from "./lib/quiz.js";
+import { totalXp, levelFor, XP } from "./lib/gamify.js";
 import { TASK_BY_ID } from "./data/course.js";
-import HomeScreen from "./screens/HomeScreen.jsx";
-import { SetupScreen, PapersScreen, QuizScreen, ResultsScreen, DailyChallengeScreen, RandomQuestionScreen, WrongReviewScreen, BookmarksScreen } from "./screens/TestScreens.jsx";
-import { SkillsScreen, LessonsScreen, SkillScreen } from "./screens/SkillScreens.jsx";
-import { PerformanceScreen, LeaderboardScreen, ProfileScreen } from "./screens/ProgressScreens.jsx";
-import { FlashcardsScreen, SearchScreen, ExamplesScreen, KeyWordsScreen, BigPictureScreen } from "./screens/StudyScreens.jsx";
-import { SupportScreen, AboutScreen } from "./screens/InfoScreens.jsx";
+import { LearnHome, SkillOverview, LessonPlayer, Aside } from "./screens/Learn.jsx";
+import { PracticeHub, PracticeSession, TestBuilder, QuizScreen, ResultsScreen } from "./screens/Practice.jsx";
+import { LibraryHome, KeyWords, Examples, BigPicture, Bookmarks, WrongAnswers, Flashcards, Leaderboard } from "./screens/Library.jsx";
+import { ProgressScreen } from "./screens/Progress.jsx";
+import { MeScreen, Welcome, Help, About } from "./screens/Me.jsx";
+import { SearchSheet } from "./screens/Search.jsx";
 
-const NAV_MAIN = [
-  { id: "home", label: "Home", icon: Home },
-  { id: "setup", label: "Practice Test", icon: ClipboardList },
-  { id: "categories", label: "Skills", icon: Grid3x3 },
-  { id: "notes", label: "Lessons", icon: BookOpen },
-  { id: "performance", label: "My Progress", icon: BarChart3 },
-  { id: "papers", label: "Role Tests", icon: Award },
+const TABS = [
+  { id: "learn", label: "Learn", icon: Route },
+  { id: "practice", label: "Practice", icon: Target },
+  { id: "library", label: "Library", icon: Library },
+  { id: "progress", label: "Progress", icon: BarChart3 },
+  { id: "me", label: "Me", icon: UserRound },
 ];
-const NAV_MORE = [
-  { id: "bigpicture", label: "How AI Training Works", icon: Map },
-  { id: "examples", label: "Worked Examples", icon: Lightbulb },
-  { id: "keywords", label: "Key Words", icon: BookA },
-  { id: "bookmarks", label: "Bookmarks", icon: Bookmark },
-  { id: "wrongreview", label: "Wrong Answers", icon: XCircle },
-  { id: "flashcards", label: "Flashcards", icon: Layers },
-  { id: "daily", label: "Daily Challenge", icon: Sparkles },
-  { id: "random", label: "Random Task", icon: Shuffle },
-  { id: "leaderboard", label: "Leaderboard", icon: Trophy },
-  { id: "search", label: "Search", icon: Search },
-  { id: "profile", label: "Profile", icon: User },
-  { id: "support", label: "Customer Care", icon: LifeBuoy },
-  { id: "about", label: "About", icon: Info },
-];
+// Which tab is lit for each screen.
+const TAB_OF = {
+  learn: "learn", skill: "learn", practice: "practice", builder: "practice",
+  library: "library", words: "library", examples: "library", bigpicture: "library", bookmarks: "library", wrong: "library", flashcards: "library", leaderboard: "library",
+  progress: "progress", me: "me", help: "me", about: "me",
+};
+const FOCUS_VIEWS = ["lesson", "session", "quiz", "results", "welcome"];
+// Screens that use the full width (no side panel).
+const SINGLE = ["skill", "builder", "words", "examples", "bigpicture", "bookmarks", "wrong", "flashcards", "leaderboard", "help", "about", "me"];
 
-const defaultProfile = { name: "", email: "", city: "", goal: "", level: "", photo: null };
+const defaultProfile = { name: "", email: "", city: "", goal: "", dailyGoal: 10, photo: null };
 
 export default function App() {
-  const [themeMode, setThemeMode] = useState(() => loadJSON("theme-pref", "light"));
-  const [view, setView] = useState("home");
-  const [viewParams, setViewParams] = useState({});
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [winWidth, setWinWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
-  const isMobile = winWidth < 900;
-
+  const [theme, setTheme] = useState(() => loadJSON("theme", window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
   const [profile, setProfileState] = useState(() => ({ ...defaultProfile, ...loadJSON("profile", {}) }));
+  const [view, setView] = useState(() => (loadJSON("profile", {}).name ? "learn" : "welcome"));
+  const [params, setParams] = useState({});
   const [bookmarks, setBookmarks] = useState(() => loadJSON("bookmarks", []));
   const [wrongBank, setWrongBank] = useState(() => loadJSON("wrong-bank", {}));
   const [history, setHistory] = useState(() => loadJSON("exam-history", []));
   const [inProgress, setInProgress] = useState(() => loadJSON("in-progress", null));
   const [taskProgress, setTaskProgress] = useState(() => loadJSON("task-progress", {}));
   const [lessonsDone, setLessonsDone] = useState(() => loadJSON("lessons-done", {}));
-  const [activityDays, setActivityDays] = useState(() => loadJSON("activity-days", []));
+  const [activity, setActivity] = useState(() => loadJSON("activity", {}));
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [backOnline, setBackOnline] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true);
 
-  // active test runtime state
+  // active test
   const [quiz, setQuiz] = useState([]);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState({});
   const [flagged, setFlagged] = useState({});
   const [elapsed, setElapsed] = useState(0);
-  const [lastQuizMeta, setLastQuizMeta] = useState({ category: "Mixed", dailyKey: null });
-  const [leaderboardPrompt, setLeaderboardPrompt] = useState(false);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [showBackOnline, setShowBackOnline] = useState(false);
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const [isAppInstalled, setIsAppInstalled] = useState(
-    window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true
-  );
+  const [quizMeta, setQuizMeta] = useState({ category: "Mixed", mode: "exam" });
   const timerRef = useRef(null);
+  const toastRef = useRef(null);
+
+  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
 
   useEffect(() => {
-    function onResize() { setWinWidth(window.innerWidth); }
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  useEffect(() => {
-    function handleBeforeInstall(e) { e.preventDefault(); setInstallPrompt(e); }
-    function handleInstalled() { setIsAppInstalled(true); setInstallPrompt(null); }
-    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
-    window.addEventListener("appinstalled", handleInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-      window.removeEventListener("appinstalled", handleInstalled);
-    };
-  }, []);
-
-  async function promptInstall() {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    await installPrompt.userChoice;
-    setInstallPrompt(null);
-  }
-
-  // Everything is saved on this device, so the class keeps working offline.
-  useEffect(() => {
-    function handleOffline() { setIsOffline(true); }
-    function handleOnline() {
-      setIsOffline(false);
-      setShowBackOnline(true);
-      setTimeout(() => setShowBackOnline(false), 4000);
+    function onBefore(e) { e.preventDefault(); setInstallPrompt(e); }
+    function onInstalled() { setIsInstalled(true); setInstallPrompt(null); }
+    function onOffline() { setIsOffline(true); }
+    function onOnline() { setIsOffline(false); setBackOnline(true); setTimeout(() => setBackOnline(false), 3500); }
+    function onKey(e) {
+      const typing = /input|textarea|select/i.test(e.target.tagName);
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) { e.preventDefault(); setSearchOpen(true); }
     }
-    window.addEventListener("offline", handleOffline);
-    window.addEventListener("online", handleOnline);
+    window.addEventListener("beforeinstallprompt", onBefore);
+    window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener("offline", onOffline);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("beforeinstallprompt", onBefore);
+      window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("keydown", onKey);
     };
   }, []);
-
-  // First visit: ask for a name, like the CCN app does.
-  useEffect(() => { if (!profile.name) setView("profile"); }, []); // eslint-disable-line
 
   useEffect(() => {
     if (view === "quiz") {
@@ -126,78 +94,78 @@ export default function App() {
     }
   }, [view]);
 
-  // autosave an in-progress test whenever answers change
+  // autosave an unfinished test
   useEffect(() => {
-    if (view === "quiz" && quiz.length > 0) {
-      saveJSON("in-progress", { quiz, idx, answers, flagged, elapsed, meta: lastQuizMeta });
-    }
+    if (view === "quiz" && quiz.length) saveJSON("in-progress", { quiz, idx, answers, flagged, elapsed, meta: quizMeta });
   }, [answers, idx, flagged]); // eslint-disable-line
 
-  function go(v, params) { setView(v); setViewParams(params || {}); setDrawerOpen(false); window.scrollTo(0, 0); }
+  function go(v, p) { setView(v); setParams(p || {}); setSearchOpen(false); window.scrollTo(0, 0); }
 
-  function toggleTheme() { setThemeMode(m => { const nm = m === "light" ? "dark" : "light"; saveJSON("theme-pref", nm); return nm; }); }
+  function showToast(text) {
+    clearTimeout(toastRef.current);
+    setToast(text);
+    toastRef.current = setTimeout(() => setToast(null), 1800);
+  }
 
   function setProfile(p) { setProfileState(p); saveJSON("profile", p); }
 
-  function logActivity() {
+  function logActivity(n = 1) {
     const today = dayKey();
-    setActivityDays(days => {
-      if (days.includes(today)) return days;
-      const next = [...days, today].slice(-400);
-      saveJSON("activity-days", next);
-      return next;
-    });
+    setActivity(a => { const next = { ...a, [today]: (a[today] || 0) + n }; saveJSON("activity", next); return next; });
   }
 
-  function toggleBookmark(qid) {
-    setBookmarks(bm => { const nb = bm.includes(qid) ? bm.filter(x => x !== qid) : [...bm, qid]; saveJSON("bookmarks", nb); return nb; });
+  function toggleBookmark(id) {
+    const had = bookmarks.includes(id);
+    const nb = had ? bookmarks.filter(x => x !== id) : [...bookmarks, id];
+    setBookmarks(nb);
+    saveJSON("bookmarks", nb);
+    showToast(had ? "Removed from bookmarks" : "Saved to bookmarks ⭐");
   }
 
-  // Practice mode: "I got it" / "Practise again". "Again" also puts the task
-  // into Wrong Answers so it comes back for review; "got it" takes it out.
-  function setTaskStatus(taskId, status) {
+  // Practice: "got it" earns full XP and leaves Wrong Answers; "not yet" puts
+  // the task in Wrong Answers so it comes back.
+  function setTaskStatus(taskId, s) {
     setTaskProgress(tp => {
-      const prev = tp[taskId] || {};
-      const next = { ...tp, [taskId]: { s: status, d: new Date().toISOString(), tries: (prev.tries || 0) + 1 } };
+      const next = { ...tp, [taskId]: { s, d: new Date().toISOString(), tries: (tp[taskId]?.tries || 0) + 1 } };
       saveJSON("task-progress", next);
       return next;
     });
     setWrongBank(wb => {
       const next = { ...wb };
-      if (status === "got") delete next[taskId];
+      if (s === "got") delete next[taskId];
       else next[taskId] = { count: (wb[taskId]?.count || 0) + 1, date: new Date().toISOString() };
       saveJSON("wrong-bank", next);
       return next;
     });
     logActivity();
+    showToast(s === "got" ? `+${XP.taskGot} XP · Nice work!` : `+${XP.taskAgain} XP · Saved to practise again`);
   }
 
-  function markLessonDone(skillId, done = true) {
-    setLessonsDone(ld => {
-      const next = { ...ld };
-      if (done) next[skillId] = new Date().toISOString(); else delete next[skillId];
-      saveJSON("lessons-done", next);
-      return next;
-    });
-    if (done) logActivity();
+  function markLessonDone(skillId) {
+    if (lessonsDone[skillId]) return;
+    const next = { ...lessonsDone, [skillId]: new Date().toISOString() };
+    setLessonsDone(next);
+    saveJSON("lessons-done", next);
+    logActivity(3);
+    showToast(`+${XP.lesson} XP · Lesson finished 🎉`);
   }
 
-  function startQuiz({ count, category, idPool, seedOverride, dailyKey }) {
+  function startQuiz({ count, category, idPool, seedOverride, dailyKey, mode = "exam" }) {
     const seed = seedOverride || Math.floor(Math.random() * 1e9);
     const set = buildQuizSet(count, seed, idPool);
     if (!set.length) return;
     setQuiz(set); setAnswers({}); setFlagged({}); setIdx(0); setElapsed(0);
-    setLastQuizMeta({ category, dailyKey: dailyKey || null });
+    setQuizMeta({ category, dailyKey: dailyKey || null, mode });
     go("quiz");
   }
 
   function resumeQuiz() {
     if (!inProgress) return;
-    const validQuiz = (inProgress.quiz || []).filter(q => TASK_BY_ID[q.id] && Array.isArray(q.opts) && q.opts.length === 4 && Number.isInteger(q.ansIdx));
-    if (!validQuiz.length) { saveJSON("in-progress", null); setInProgress(null); go("home"); return; }
-    setQuiz(validQuiz); setAnswers(inProgress.answers || {}); setFlagged(inProgress.flagged || {});
-    setIdx(Math.min(inProgress.idx || 0, validQuiz.length - 1)); setElapsed(inProgress.elapsed || 0);
-    setLastQuizMeta(inProgress.meta || { category: "Mixed" });
+    const valid = (inProgress.quiz || []).filter(q => TASK_BY_ID[q.id] && Array.isArray(q.opts) && q.opts.length === 4);
+    if (!valid.length) { saveJSON("in-progress", null); setInProgress(null); return; }
+    setQuiz(valid); setAnswers(inProgress.answers || {}); setFlagged(inProgress.flagged || {});
+    setIdx(Math.min(inProgress.idx || 0, valid.length - 1)); setElapsed(inProgress.elapsed || 0);
+    setQuizMeta(inProgress.meta || { category: "Mixed", mode: "exam" });
     go("quiz");
   }
 
@@ -206,241 +174,158 @@ export default function App() {
 
   function submitExam() {
     clearInterval(timerRef.current);
-    const total = quiz.length;
     let correct = 0;
     const bySource = {};
     const newWrong = { ...wrongBank };
     quiz.forEach(q => {
-      const isCorrect = answers[q.id] === q.ansIdx;
-      if (isCorrect) { correct++; delete newWrong[q.id]; }
+      const ok = answers[q.id] === q.ansIdx;
+      if (ok) { correct++; delete newWrong[q.id]; }
       else newWrong[q.id] = { count: (newWrong[q.id]?.count || 0) + 1, date: new Date().toISOString() };
       if (!bySource[q.category]) bySource[q.category] = { correct: 0, total: 0 };
       bySource[q.category].total++;
-      if (isCorrect) bySource[q.category].correct++;
+      if (ok) bySource[q.category].correct++;
     });
-    const pct = total > 0 ? Math.round((correct / total) * 1000) / 10 : 0;
-    const attempt = { date: new Date().toISOString(), total, correct, pct, timeSec: elapsed, category: lastQuizMeta.category, bySource };
+    const total = quiz.length;
+    const pct = total ? Math.round((correct / total) * 1000) / 10 : 0;
+    const attempt = { date: new Date().toISOString(), total, correct, pct, timeSec: elapsed, category: quizMeta.category, bySource };
     const newHistory = [attempt, ...history].slice(0, 100);
     setHistory(newHistory); setWrongBank(newWrong);
     saveJSON("exam-history", newHistory); saveJSON("wrong-bank", newWrong);
     saveJSON("in-progress", null); setInProgress(null);
-    if (lastQuizMeta.dailyKey) saveJSON(lastQuizMeta.dailyKey, { pct, date: new Date().toISOString() });
-    logActivity();
+    if (quizMeta.dailyKey) saveJSON(quizMeta.dailyKey, { pct, date: new Date().toISOString() });
+    logActivity(total);
     go("results");
-    if (profile.name && pct >= 50) setLeaderboardPrompt(true);
   }
 
   function exitExam() {
     clearInterval(timerRef.current);
-    const snapshot = { quiz, idx, answers, flagged, elapsed, meta: lastQuizMeta };
-    saveJSON("in-progress", snapshot);
-    setInProgress(snapshot);
-    go("home");
+    const snap = { quiz, idx, answers, flagged, elapsed, meta: quizMeta };
+    saveJSON("in-progress", snap);
+    setInProgress(snap);
+    go("practice");
   }
 
-  function submitToLeaderboard() {
-    const total = quiz.length;
+  function addToLeaderboard() {
     const correct = quiz.filter(q => answers[q.id] === q.ansIdx).length;
-    const pct = Math.round((correct / total) * 1000) / 10;
     const entries = loadJSON("leaderboard-entries", []);
-    entries.push({ name: profile.name, pct, correct, total, category: lastQuizMeta.category, date: new Date().toISOString() });
+    entries.push({ name: profile.name, pct: Math.round((correct / quiz.length) * 1000) / 10, correct, total: quiz.length, category: quizMeta.category, date: new Date().toISOString() });
     saveJSON("leaderboard-entries", entries.slice(-500));
-    setLeaderboardPrompt(false);
+    showToast("Added to the Leaderboard 🏆");
   }
 
-  function resetAll() {
-    clearAll();
-    window.location.reload();
+  function toggleTheme() { setTheme(th => { const n = th === "dark" ? "light" : "dark"; saveJSON("theme", n); return n; }); }
+
+  function resetAll() { clearAll(); window.location.reload(); }
+
+  async function promptInstall() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
   }
 
-  const streak = useMemo(() => computeStreak(activityDays), [activityDays]);
-  const t = THEME[themeMode];
+  const streak = useMemo(() => computeStreak(Object.keys(activity)), [activity]);
+  const xp = useMemo(() => totalXp({ taskProgress, lessonsDone, history }), [taskProgress, lessonsDone, history]);
+  const level = levelFor(xp);
+  const todayCount = activity[dayKey()] || 0;
 
-  const ctxValue = {
-    t, theme: themeMode, profile, setProfile, bookmarks, toggleBookmark, wrongBank, history, inProgress, streak, isMobile,
-    taskProgress, setTaskStatus, lessonsDone, markLessonDone, logActivity, go, startQuiz, resetAll,
-    isOffline, canInstall: !!installPrompt && !isAppInstalled, isAppInstalled, promptInstall,
+  const ctx = {
+    theme, toggleTheme, profile, setProfile, bookmarks, toggleBookmark, wrongBank, history, inProgress, resumeQuiz,
+    taskProgress, setTaskStatus, lessonsDone, markLessonDone, activity, logActivity, streak, xp, level, todayCount,
+    go, view, params, startQuiz, showToast, resetAll, setSearchOpen, addToLeaderboard,
+    isOffline, canInstall: !!installPrompt && !isInstalled, isInstalled, promptInstall,
   };
 
+  const isFocus = FOCUS_VIEWS.includes(view);
+  const tab = TAB_OF[view];
+
+  function renderMain() {
+    switch (view) {
+      case "skill": return <SkillOverview key={params.id} id={params.id} />;
+      case "practice": return <PracticeHub />;
+      case "builder": return <TestBuilder preset={params} />;
+      case "library": return <LibraryHome />;
+      case "words": return <KeyWords />;
+      case "examples": return <Examples />;
+      case "bigpicture": return <BigPicture />;
+      case "bookmarks": return <Bookmarks />;
+      case "wrong": return <WrongAnswers />;
+      case "flashcards": return <Flashcards />;
+      case "leaderboard": return <Leaderboard />;
+      case "progress": return <ProgressScreen />;
+      case "me": return <MeScreen />;
+      case "help": return <Help />;
+      case "about": return <About />;
+      default: return <LearnHome />;
+    }
+  }
+
+  function renderFocus() {
+    switch (view) {
+      case "welcome": return <Welcome />;
+      case "lesson": return <LessonPlayer key={params.id} id={params.id} />;
+      case "session": return <PracticeSession key={`${params.id}-${params.task || ""}-${params.filter || ""}`} id={params.id} startTask={params.task} filter={params.filter} />;
+      case "quiz": return quiz.length ? <QuizScreen quiz={quiz} idx={idx} setIdx={setIdx} answers={answers} selectAnswer={selectAnswer} flagged={flagged} toggleFlag={toggleFlag} elapsed={elapsed} mode={quizMeta.mode} category={quizMeta.category} submitExam={submitExam} exitExam={exitExam} /> : null;
+      case "results": return <ResultsScreen quiz={quiz} answers={answers} flagged={flagged} elapsed={elapsed} category={quizMeta.category} />;
+      default: return null;
+    }
+  }
+
   return (
-    <AppCtx.Provider value={ctxValue}>
+    <AppCtx.Provider value={ctx}>
       <ReaderProvider>
-        <GlobalStyle t={t} />
-        {isOffline && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 60, background: t.amber, color: "#1a1400", padding: "8px 16px", textAlign: "center", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <WifiOff size={14} /> You are offline. Do not worry: lessons, tasks and your progress still work.
+        {isOffline && <div className="banner" style={{ background: "var(--sun)", color: "#241800" }}><WifiOff size={15} /> You are offline. Lessons, tasks and your progress still work.</div>}
+        {backOnline && <div className="banner" style={{ background: "var(--mint)", color: "#fff" }}><Wifi size={15} /> You are back online</div>}
+        {toast && <div className="toast" role="status"><Sparkles size={16} /> {toast}</div>}
+
+        {isFocus ? (
+          <div className="fade">{renderFocus()}</div>
+        ) : (
+          <div className="shell">
+            <nav className="rail" aria-label="Main">
+              <button className="rail-logo" onClick={() => go("learn")} aria-label="AI Trainer Class home"><LogoMark /></button>
+              {TABS.map(t => (
+                <button key={t.id} className={`rail-item${tab === t.id ? " on" : ""}`} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}>
+                  <t.icon size={22} /> {t.label}
+                </button>
+              ))}
+              <div className="rail-spacer" />
+              <button className="rail-item" onClick={() => setSearchOpen(true)} title="Search ( / )"><Search size={20} /> Search</button>
+              <button className="rail-item" onClick={toggleTheme}>{theme === "dark" ? <Sun size={20} /> : <Moon size={20} />} {theme === "dark" ? "Light" : "Dark"}</button>
+            </nav>
+
+            <div className="main">
+              <header className="topbar">
+                <button className="row" onClick={() => go("learn")} style={{ border: "none", background: "none", padding: 0, gap: 10 }} aria-label="Home">
+                  <span className="rail-logo" style={{ width: 38, height: 38, borderRadius: 12, margin: 0 }}><LogoMark size={20} /></span>
+                  <span className="display" style={{ fontWeight: 800, fontSize: 18 }}>AI Trainer</span>
+                </button>
+                <div className="row" style={{ gap: 8 }}>
+                  <span className="pill sun" title="Study streak">🔥 {streak}</span>
+                  <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search"><Search size={18} /></button>
+                  <button className="icon-btn" onClick={toggleTheme} aria-label="Light or dark mode">{theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}</button>
+                </div>
+              </header>
+
+              <main className={`content${SINGLE.includes(view) ? " single" : ""}`}>
+                <div className="fade" key={view + (params.id || "")} style={{ minWidth: 0 }}>{renderMain()}</div>
+                {!SINGLE.includes(view) && <aside className="aside"><Aside /></aside>}
+              </main>
+            </div>
+
+            <nav className="tabbar" aria-label="Main">
+              {TABS.map(t => (
+                <button key={t.id} className={`tab${tab === t.id ? " on" : ""}`} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}>
+                  <t.icon size={21} /> {t.label}
+                </button>
+              ))}
+            </nav>
           </div>
         )}
-        {showBackOnline && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 60, background: t.emerald, color: "#fff", padding: "8px 16px", textAlign: "center", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <CheckCircle2 size={14} /> You are back online
-          </div>
-        )}
-        <div className="f-sans" style={{ minHeight: "100vh", background: t.bg, color: t.text }}>
-          {view !== "quiz" && (
-            <>
-              {/* Top bar */}
-              <div style={{ position: "sticky", top: 0, zIndex: 20, background: t.bgAlt + "F2", backdropFilter: "blur(10px)", borderBottom: `1px solid ${t.cardBorder}`, padding: "13px 18px" }}>
-                <div style={{ maxWidth: 1160, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <button onClick={() => setDrawerOpen(true)} className="press" aria-label="Open menu" style={{ display: isMobile ? "flex" : "none", background: "none", border: "none", cursor: "pointer" }}>
-                      <Menu size={22} color={t.text} />
-                    </button>
-                    <div onClick={() => go("home")} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 9, background: t.navy, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Bot size={18} color="#fff" />
-                      </div>
-                      <div>
-                        <div className="f-serif" style={{ fontSize: 15, fontWeight: 700, color: t.text, lineHeight: 1.1, whiteSpace: "nowrap" }}>{isMobile ? "AI Trainer" : "AI Trainer Class"}</div>
-                        {!isMobile && <div style={{ fontSize: 10.5, color: t.textFaint }}>Day 1 · Generalist &amp; LLM Rater</div>}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <ReaderTopButton />
-                    <button onClick={() => go("search")} className="press" aria-label="Search" style={{ background: t.card, border: `1px solid ${t.cardBorder}`, borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <Search size={16} color={t.textMuted} />
-                    </button>
-                    <button onClick={toggleTheme} className="press" aria-label="Change light or dark mode" style={{ background: t.card, border: `1px solid ${t.cardBorder}`, borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      {themeMode === "light" ? <Moon size={16} color={t.textMuted} /> : <Sun size={16} color={t.textMuted} />}
-                    </button>
-                    <button onClick={() => go("profile")} className="press" aria-label="Profile" style={{ width: 36, height: 36, borderRadius: "50%", background: t.navySoft, border: `1.5px solid ${t.navy}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
-                      {profile.photo ? <img src={profile.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <User size={16} color={t.navy} />}
-                    </button>
-                  </div>
-                </div>
-              </div>
 
-              <div style={{ maxWidth: 1160, margin: "0 auto", display: "flex", gap: 26, padding: "22px 18px 150px" }}>
-                {/* Sidebar (desktop) */}
-                <div style={{ width: 220, flexShrink: 0, display: isMobile ? "none" : "block" }}>
-                  <NavList go={go} view={view} />
-                </div>
-
-                {/* Main content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {view === "home" && <HomeScreen go={go} />}
-                  {view === "setup" && <SetupScreen go={go} startQuiz={startQuiz} preset={viewParams} />}
-                  {view === "categories" && <SkillsScreen key={viewParams.role || "all"} go={go} role={viewParams.role} />}
-                  {view === "skill" && <SkillScreen key={viewParams.id} skillId={viewParams.id} initialTab={viewParams.tab} initialTask={viewParams.task} go={go} />}
-                  {view === "papers" && <PapersScreen startQuiz={startQuiz} />}
-                  {view === "notes" && <LessonsScreen go={go} />}
-                  {view === "performance" && <PerformanceScreen go={go} />}
-                  {view === "profile" && <ProfileScreen go={go} focus={viewParams.focus} />}
-                  {view === "bookmarks" && <BookmarksScreen startQuiz={startQuiz} go={go} />}
-                  {view === "leaderboard" && <LeaderboardScreen />}
-                  {view === "flashcards" && <FlashcardsScreen />}
-                  {view === "daily" && <DailyChallengeScreen startQuiz={startQuiz} />}
-                  {view === "random" && <RandomQuestionScreen />}
-                  {view === "wrongreview" && <WrongReviewScreen startQuiz={startQuiz} go={go} />}
-                  {view === "search" && <SearchScreen go={go} />}
-                  {view === "examples" && <ExamplesScreen go={go} />}
-                  {view === "keywords" && <KeyWordsScreen />}
-                  {view === "bigpicture" && <BigPictureScreen go={go} />}
-                  {view === "support" && <SupportScreen />}
-                  {view === "about" && <AboutScreen />}
-                  {view === "quiz-resume" && <ResumeOnMount resume={resumeQuiz} />}
-                  {view === "results" && (
-                    <>
-                      <ResultsScreen quiz={quiz} answers={answers} flagged={flagged} elapsed={elapsed} goHome={() => go("home")}
-                        retakeWrong={() => { const wrongIds = quiz.filter(q => answers[q.id] !== q.ansIdx).map(q => q.id); startQuiz({ count: wrongIds.length, category: "Retake", idPool: wrongIds }); }} />
-                      {leaderboardPrompt && (
-                        <Modal onClose={() => setLeaderboardPrompt(false)} width={340}>
-                          <div className="f-serif" style={{ fontSize: 17, fontWeight: 700, marginBottom: 8, color: t.text }}>Nice score! 🎉</div>
-                          <div style={{ fontSize: 13.5, color: t.textMuted, marginBottom: 18 }}>Add this score to the Leaderboard as <strong>{profile.name}</strong>? It is saved on this device, so friends who learn on this phone can see it.</div>
-                          <div style={{ display: "flex", gap: 10 }}>
-                            <Button full variant="ghost" onClick={() => setLeaderboardPrompt(false)}>Not now</Button>
-                            <Button full variant="primary" onClick={submitToLeaderboard}>Add it</Button>
-                          </div>
-                        </Modal>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Mobile bottom nav */}
-              <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: t.bgAlt + "F7", backdropFilter: "blur(10px)", borderTop: `1px solid ${t.cardBorder}`, display: isMobile ? "flex" : "none", justifyContent: "space-around", padding: "8px 4px", zIndex: 15 }}>
-                {NAV_MAIN.slice(0, 5).map(n => (
-                  <button key={n.id} onClick={() => go(n.id)} className="press" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: view === n.id ? t.navy : t.textFaint, padding: "4px 6px" }}>
-                    <n.icon size={19} />
-                    <span style={{ fontSize: 9.5, fontWeight: 700 }}>{n.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Mobile drawer */}
-              {drawerOpen && (
-                <div onClick={() => setDrawerOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(8,16,26,0.55)", zIndex: 40, display: "flex" }}>
-                  <div onClick={e => e.stopPropagation()} className="slide-up" style={{ width: 270, background: t.card, height: "100%", padding: 20, overflowY: "auto" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                      <div className="f-serif" style={{ fontWeight: 700, fontSize: 16, color: t.text }}>Menu</div>
-                      <button onClick={() => setDrawerOpen(false)} aria-label="Close menu" style={{ background: "none", border: "none", cursor: "pointer" }}><X size={20} color={t.textMuted} /></button>
-                    </div>
-                    <NavList go={go} view={view} showAll />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {view === "quiz" && quiz.length > 0 && (
-            <QuizScreen quiz={quiz} idx={idx} setIdx={setIdx} answers={answers} selectAnswer={selectAnswer}
-              flagged={flagged} toggleFlag={toggleFlag} elapsed={elapsed} submitExam={submitExam} exitExam={exitExam} />
-          )}
-          <ReaderBar />
-        </div>
+        {view !== "welcome" && <ReaderDock inFocus={isFocus} />}
+        {searchOpen && <SearchSheet onClose={() => setSearchOpen(false)} />}
       </ReaderProvider>
     </AppCtx.Provider>
-  );
-}
-
-function ResumeOnMount({ resume }) {
-  useEffect(() => { resume(); }, []); // eslint-disable-line
-  return null;
-}
-
-// Headphones button in the top bar: opens the AI Reader settings in Profile,
-// or stops reading if something is being read.
-function ReaderTopButton() {
-  const { t, go } = useApp();
-  const r = useReader();
-  if (!r?.supported) return null;
-  const active = r.status !== "idle";
-  return (
-    <button onClick={() => active ? r.stop() : go("profile", { focus: "reader" })} className="press"
-      aria-label={active ? "Stop the AI Reader" : "AI Reader settings"}
-      style={{ background: active ? t.navy : t.card, border: `1px solid ${active ? t.navy : t.cardBorder}`, borderRadius: 10, height: 36, padding: "0 10px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer", color: active ? "#fff" : t.textMuted, fontSize: 12, fontWeight: 700 }}>
-      <Headphones size={16} />
-    </button>
-  );
-}
-
-function NavButton({ n, go, view, t }) {
-  return (
-    <button onClick={() => go(n.id)} className="press"
-      style={{
-        display: "flex", alignItems: "center", gap: 11, padding: "10px 12px", borderRadius: 10, border: "none",
-        background: view === n.id ? t.navySoft : "transparent", color: view === n.id ? t.navy : t.textMuted,
-        fontWeight: view === n.id ? 700 : 600, fontSize: 13.5, cursor: "pointer", textAlign: "left", width: "100%",
-      }}>
-      <n.icon size={17} /> {n.label}
-    </button>
-  );
-}
-
-function NavList({ go, view, showAll }) {
-  const { t } = useApp();
-  const items = showAll ? [...NAV_MAIN, ...NAV_MORE] : NAV_MAIN;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {items.map(n => <NavButton key={n.id} n={n} go={go} view={view} t={t} />)}
-      {!showAll && (
-        <>
-          <div style={{ height: 1, background: t.cardBorder, margin: "10px 0" }} />
-          {NAV_MORE.map(n => <NavButton key={n.id} n={n} go={go} view={view} t={t} />)}
-        </>
-      )}
-    </div>
   );
 }
