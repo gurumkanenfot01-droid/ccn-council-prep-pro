@@ -404,8 +404,22 @@ async function fetchAllRows(table, columns, orderBy) {
 const IDB_NAME = "ccn-offline-cache";
 const IDB_STORE = "kv";
 let idbPromise = null;
+// Some Safari/iPadOS versions occasionally never fire success or error on
+// indexedDB.open() or a request. Without a timeout that hung the boot screen
+// forever, so give up after a few seconds and use localStorage for the rest of
+// the session instead.
+const IDB_TIMEOUT_MS = 4000;
+let idbBroken = false;
+
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { idbBroken = true; reject(new Error("indexedDB timed out")); }, ms);
+    promise.then(v => { clearTimeout(timer); resolve(v); }, e => { clearTimeout(timer); reject(e); });
+  });
+}
 
 function openIdb() {
+  if (idbBroken) return Promise.reject(new Error("indexedDB unavailable"));
   if (!idbPromise) {
     idbPromise = new Promise((resolve, reject) => {
       if (typeof indexedDB === "undefined") return reject(new Error("no indexedDB"));
@@ -419,11 +433,11 @@ function openIdb() {
 }
 
 function idbRequest(mode, fn) {
-  return openIdb().then(db => new Promise((resolve, reject) => {
+  return withTimeout(openIdb().then(db => new Promise((resolve, reject) => {
     const req = fn(db.transaction(IDB_STORE, mode).objectStore(IDB_STORE));
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
-  }));
+  })), IDB_TIMEOUT_MS);
 }
 
 async function saveOfflineCache(key, data, version) {
