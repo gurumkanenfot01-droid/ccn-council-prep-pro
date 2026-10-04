@@ -388,6 +388,20 @@ function buildCards(skill) {
     { kind: "check", emoji: "❓", title: "Quick check", speech: skill.check.map(([q]) => q) },
     { kind: "done", emoji: "🏁", title: "Lesson complete", speech: [`Well done! You finished the lesson: ${skill.n}.${skill.taskIds.length ? ` Now try the ${skill.taskIds.length} practice tasks.` : ""}`] },
   ];
+  // What the AI Reader says in "Extra simple" mode: only the easy lines.
+  const easy = {
+    intro: [`Lesson: ${skill.n}.`, skill.s],
+    analogy: [skill.analogy[1] || skill.analogy[0]],
+    why: ["Where it fits.", skill.fits[1] || skill.fits[0], "Why it matters.", skill.why[1] || skill.why[0]],
+    steps: skill.steps.map(([a, b], i) => `Step ${i + 1}. ${b || a}`),
+    tested: [skill.tested?.[1] || skill.tested?.[0] || ""],
+    cv: ["For your CV:", skill.cv[1] || skill.cv[0], "Practise at home.", ...skill.prac],
+  };
+  cards.forEach(c => {
+    if (easy[c.kind]) c.simpleSpeech = easy[c.kind];
+    else if (c.kind === "example") c.simpleSpeech = [`Example ${c.n}: ${c.ex[0]}.`, c.ex[1], c.ex[4]];
+    else c.simpleSpeech = c.speech;
+  });
   return cards;
 }
 
@@ -410,7 +424,7 @@ export function LessonPlayer({ id }) {
   // Hands-free: read the card, then turn to the next one by itself.
   useEffect(() => {
     if (!auto || mode !== "story") return;
-    reader.speak(cards[i].speech, `story-${id}-${i}`, { title: `${skill.n} · ${cards[i].title}`, onDone: () => { if (i < cards.length - 1) setI(n => n + 1); else setAuto(false); } });
+    reader.speak(simple ? cards[i].simpleSpeech : cards[i].speech, `story-${id}-${i}`, { title: `${skill.n} · ${cards[i].title}`, onDone: () => { if (i < cards.length - 1) setI(n => n + 1); else setAuto(false); } });
   }, [i, auto, mode]); // eslint-disable-line
 
   useEffect(() => {
@@ -441,9 +455,13 @@ export function LessonPlayer({ id }) {
       <div className="focus-top">
         <div className="focus-top-inner">
           <button className="icon-btn" onClick={() => go("skill", { id })} aria-label="Close lesson"><X size={18} /></button>
-          {mode === "story"
-            ? <div className="segments" aria-label={`Card ${i + 1} of ${cards.length}`}>{cards.map((_, k) => <i key={k} className={k < i ? "done" : k === i ? "now" : ""} />)}</div>
-            : <div className="h3" style={{ flex: 1 }}>{skill.icon} {skill.n}</div>}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="between" style={{ marginBottom: 6, gap: 8 }}>
+              <span style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{skill.icon} {skill.n}</span>
+              {mode === "story" && <span className="mono" style={{ fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{i + 1}/{cards.length}</span>}
+            </div>
+            <div className="bar brand" style={{ height: 10 }} aria-label={`Card ${i + 1} of ${cards.length}`}><i style={{ width: `${mode === "story" ? ((i + 1) / cards.length) * 100 : 100}%` }} /></div>
+          </div>
           <div className="seg" role="group" aria-label="Lesson view">
             <button className={mode === "story" ? "on" : ""} onClick={() => setModeSaved("story")} aria-label="Story cards"><GalleryHorizontal size={16} /></button>
             <button className={mode === "page" ? "on" : ""} onClick={() => setModeSaved("page")} aria-label="One page"><Rows3 size={16} /></button>
@@ -452,19 +470,20 @@ export function LessonPlayer({ id }) {
       </div>
 
       <div className="focus-body">
-        <div className="between wrap" style={{ marginBottom: 14, gap: 10 }}>
+        <div className="row wrap" style={{ marginBottom: 16, gap: 8 }}>
+          <button className={`chip${simple ? " on" : ""}`} onClick={toggleSimple} aria-pressed={simple} style={{ padding: "8px 14px" }}>
+            {simple ? "✓" : "🟢"} Extra simple {simple ? "on" : "off"}
+          </button>
           <div className="row" style={{ gap: 8 }}>
             {mode === "story" && reader.supported && (
-              <button className={`btn sm ${auto ? "primary" : "soft"}`} onClick={toggleAuto}>
-                {auto ? <Wave on={reader.status === "playing"} /> : <Headphones size={15} />} {auto ? "Hands-free on" : "Hands-free: read and turn pages"}
+              <button className={`chip${auto ? " on" : ""}`} onClick={toggleAuto} aria-pressed={auto} style={{ padding: "8px 14px" }}>
+                {auto ? <Wave on={reader.status === "playing"} /> : <Headphones size={15} />} Hands-free {auto ? "on" : "off"}
               </button>
             )}
-            {mode === "page" && <ListenButton text={cards.slice(0, -1).flatMap(c => c.speech)} id={`lesson-all-${id}`} label="Listen to the whole lesson" title={skill.n} />}
+            {mode === "page" && <ListenButton text={cards.slice(0, -1).flatMap(c => (simple ? c.simpleSpeech : c.speech))} id={`lesson-all-${id}`} label="Listen to the whole lesson" title={skill.n} />}
           </div>
-          <button className="row" onClick={toggleSimple} style={{ border: "none", background: "none", gap: 8, fontSize: 13.5, fontWeight: 700, color: "var(--muted)" }}>
-            Extra simple <span className={`switch${simple ? " on" : ""}`} role="switch" aria-checked={simple} />
-          </button>
         </div>
+        {simple && <div className="faint" style={{ fontSize: 13.5, margin: "-6px 0 14px" }}>Showing only the easy words. The AI Reader reads the easy words too.</div>}
 
         {mode === "story" ? (
           <div key={i} className={`story-card rise${fillOf(card.kind)}`}
@@ -511,7 +530,7 @@ function CardView({ skill, card, simple }) {
         <div style={{ fontSize: 30, lineHeight: 1 }}>{card.emoji}</div>
         <h2 className="h2" style={{ paddingTop: 2 }}>{card.title}</h2>
       </div>
-      {card.kind !== "done" && <ListenButton text={card.speech} id={`card-${skill.id}-${card.kind}-${card.n || ""}`} title={`${skill.n} · ${card.title}`} />}
+      {card.kind !== "done" && <ListenButton text={simple ? card.simpleSpeech : card.speech} id={`card-${skill.id}-${card.kind}-${card.n || ""}`} title={`${skill.n} · ${card.title}`} />}
     </div>
   );
 
@@ -577,7 +596,7 @@ function CardView({ skill, card, simple }) {
         </>
       );
     case "example":
-      return (<>{head}<ExampleBody ex={card.ex} /></>);
+      return (<>{head}<ExampleBody ex={card.ex} simple={simple} /></>);
     case "mistakes":
       return (
         <>
@@ -656,10 +675,10 @@ function CardView({ skill, card, simple }) {
 }
 
 function Short({ children }) {
-  return <div className="short"><Lightbulb size={18} style={{ flexShrink: 0, marginTop: 2 }} /><span>In short: {children}</span></div>;
+  return <div className="short"><Lightbulb size={18} style={{ flexShrink: 0, marginTop: 2 }} /><span><span style={{ fontWeight: 800 }}>In simple words:</span> {children}</span></div>;
 }
 
-export function ExampleBody({ ex }) {
+export function ExampleBody({ ex, simple }) {
   const [, sit, check, result, lesson] = ex;
   const FILL = { sky: "blue", brand: "yellow", coral: "pink" };
   const Row = ({ label, text, tone }) => (
@@ -671,9 +690,9 @@ export function ExampleBody({ ex }) {
   return (
     <div className="stack" style={{ gap: 8 }}>
       <Row label="Situation" text={sit} tone="sky" />
-      <Row label="What to check" text={check} tone="brand" />
-      <Row label="Result" text={result} tone="coral" />
-      <div className="short" style={{ marginTop: 4 }}><Lightbulb size={18} style={{ flexShrink: 0, marginTop: 2 }} /><span>{lesson}</span></div>
+      {!simple && <Row label="What to check" text={check} tone="brand" />}
+      {!simple && <Row label="Result" text={result} tone="coral" />}
+      <div className="short" style={{ marginTop: 4 }}><Lightbulb size={18} style={{ flexShrink: 0, marginTop: 2 }} /><span><span style={{ fontWeight: 800 }}>In simple words:</span> {lesson}</span></div>
     </div>
   );
 }

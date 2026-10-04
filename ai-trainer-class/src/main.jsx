@@ -8,7 +8,7 @@ import { loadCourse } from './data/course.js'
 // Match the saved light/night choice before anything is drawn.
 try {
   const saved = JSON.parse(localStorage.getItem('aitc-theme') || 'null')
-  const theme = saved || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  const theme = saved || 'light'
   document.documentElement.dataset.theme = theme
 } catch { /* ignore */ }
 
