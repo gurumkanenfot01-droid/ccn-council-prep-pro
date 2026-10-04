@@ -7,6 +7,7 @@ import { ReaderProvider, ReaderDock } from "./lib/reader.jsx";
 import { buildQuizSet, computeStreak, dayKey } from "./lib/quiz.js";
 import { totalXp, levelFor, XP } from "./lib/gamify.js";
 import { TASK_BY_ID } from "./data/course.js";
+import { supabase, cloudOn, localSnapshot, mergeProgress, pullProgress, pushProgress, pullProfile, pushProfile, checkTeacher, fetchAnnouncements } from "./lib/cloud.js";
 import { LearnHome, SkillOverview, LessonPlayer } from "./screens/Learn.jsx";
 import { PracticeHub, PracticeSession, TestBuilder, QuizScreen, ResultsScreen } from "./screens/Practice.jsx";
 import { LibraryHome, KeyWords, Examples, BigPicture, Bookmarks, WrongAnswers, Flashcards, Leaderboard } from "./screens/Library.jsx";
@@ -14,6 +15,9 @@ import { ProgressScreen } from "./screens/Progress.jsx";
 import { MeScreen, Welcome, Help, About } from "./screens/Me.jsx";
 import { SearchSheet } from "./screens/Search.jsx";
 import { NotesHome, DocReader } from "./screens/Notes.jsx";
+import { AccountScreen } from "./screens/Account.jsx";
+import { NewsScreen, AssignmentsScreen, CertificatesScreen } from "./screens/Class.jsx";
+import { TeacherScreen } from "./screens/Teacher.jsx";
 
 const TABS = [
   { id: "learn", label: "Learn", icon: Route },
@@ -26,11 +30,12 @@ const TABS = [
 const TAB_OF = {
   learn: "learn", skill: "learn", practice: "practice", builder: "practice",
   library: "library", notes: "library", doc: "library", words: "library", examples: "library", bigpicture: "library", bookmarks: "library", wrong: "library", flashcards: "library", leaderboard: "library",
-  progress: "progress", me: "me", help: "me", about: "me",
+  progress: "progress", certificates: "progress", me: "me", help: "me", about: "me", account: "me", teacher: "me",
+  news: "library", assignments: "library",
 };
 const FOCUS_VIEWS = ["lesson", "session", "quiz", "results", "welcome"];
 // Reading-heavy screens use a narrower column.
-const NARROW = ["doc", "notes", "builder", "examples", "bigpicture", "bookmarks", "wrong", "flashcards", "leaderboard", "help", "about"];
+const NARROW = ["account", "news", "assignments", "doc", "notes", "builder", "examples", "bigpicture", "bookmarks", "wrong", "flashcards", "leaderboard", "help", "about"];
 
 // Everything in the app, as big colourful tiles (full-screen menu).
 const MENU = [
@@ -41,11 +46,14 @@ const MENU = [
   ["examples", "Examples", "Learn from experts", "green"], ["flashcards", "Flashcards", "Flip and remember", "pink"],
   ["bookmarks", "Bookmarks", "Saved tasks", "yellow"], ["wrong", "Wrong answers", "Fix weak spots", "orange"],
   ["leaderboard", "Leaderboard", "Top scores", "blue"], ["me", "Me", "Profile and AI Reader", "lime"],
+  ["assignments", "Assignments", "Hand in work, see marks", "blue"], ["news", "Messages", "News from your teacher", "yellow"],
+  ["certificates", "Certificates", "One for each day you finish", "green"], ["account", "Account", "Save progress online", "lime"],
   ["help", "Help", "WhatsApp and email", "violet"], ["about", "About", "This class", "green"],
 ];
 
 function MenuOverlay({ onClose }) {
-  const { go } = useApp();
+  const { go, isTeacher } = useApp();
+  const items = isTeacher ? [["teacher", "Teacher", "Class, marking, messages, new days", "orange"], ...MENU] : MENU;
   useEffect(() => {
     function onKey(e) { if (e.key === "Escape") onClose(); }
     window.addEventListener("keydown", onKey);
@@ -59,7 +67,7 @@ function MenuOverlay({ onClose }) {
           <button className="icon-btn" onClick={onClose} aria-label="Close menu"><X size={20} /></button>
         </div>
         <div className="menu-grid">
-          {MENU.map(([id, t, sub, fill], i) => (
+          {items.map(([id, t, sub, fill], i) => (
             <button key={id} className={`menu-tile card`} onClick={() => { onClose(); go(id); }}>
               <span className={`tile-icon fill-${fill}`} style={{ width: 36, height: 36, borderRadius: 11, fontSize: 13, fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</span>
               <span><span className="t" style={{ display: "block" }}>{t}</span><span style={{ fontSize: 14 }}>{sub}</span></span>
@@ -91,6 +99,14 @@ export default function App() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [backOnline, setBackOnline] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
+  // online account (Supabase)
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(!cloudOn);
+  const [recovery, setRecovery] = useState(false);
+  const [isTeacher, setIsTeacher] = useState(false);
+  const [sync, setSync] = useState({ state: "idle", at: loadJSON("last-sync", null) });
+  const [announcements, setAnnouncements] = useState(() => loadJSON("announcements", []));
+  const syncedFor = useRef(null);
   const [isInstalled, setIsInstalled] = useState(window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true);
 
   // active test
@@ -127,6 +143,95 @@ export default function App() {
       window.removeEventListener("keydown", onKey);
     };
   }, []);
+
+  // Sign-in state.
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user || null); setAuthReady(true); });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+      setAuthReady(true);
+      if (event === "PASSWORD_RECOVERY") { setRecovery(true); setView("account"); }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // Announcements from the teacher (kept on the phone for offline use).
+  useEffect(() => {
+    if (!supabase) return;
+    fetchAnnouncements().then(setAnnouncements).catch(() => {});
+  }, [user?.id]);
+
+  function applyProgress(p) {
+    setTaskProgress(p.taskProgress); saveJSON("task-progress", p.taskProgress);
+    setLessonsDone(p.lessonsDone); saveJSON("lessons-done", p.lessonsDone);
+    setActivity(p.activity); saveJSON("activity", p.activity);
+    setHistory(p.history); saveJSON("exam-history", p.history);
+    setBookmarks(p.bookmarks); saveJSON("bookmarks", p.bookmarks);
+    setWrongBank(p.wrongBank); saveJSON("wrong-bank", p.wrongBank);
+  }
+
+  // On sign-in: join this phone's progress with the online copy, then save both ways.
+  useEffect(() => {
+    if (!user) { syncedFor.current = null; setIsTeacher(false); return; }
+    if (syncedFor.current === user.id) return;
+    syncedFor.current = user.id;
+    let gone = false;
+    (async () => {
+      setSync(s => ({ ...s, state: "syncing" }));
+      try {
+        checkTeacher().then(t => { if (!gone) setIsTeacher(t); }).catch(() => {});
+        const [remote, remoteProfile] = await Promise.all([pullProgress(user.id), pullProfile(user.id)]);
+        if (gone) return;
+        const merged = mergeProgress(localSnapshot(), remote || {});
+        applyProgress(merged);
+        const local = { ...defaultProfile, ...loadJSON("profile", {}) };
+        const prof = {
+          ...local,
+          name: local.name || remoteProfile?.name || user.user_metadata?.name || "",
+          city: local.city || remoteProfile?.city || "",
+          goal: local.goal || remoteProfile?.goal || "",
+          dailyGoal: loadJSON("profile", {}).dailyGoal || remoteProfile?.daily_goal || 10,
+          email: user.email,
+        };
+        setProfileState(prof); saveJSON("profile", prof);
+        if (view === "welcome" && prof.name) setView("learn");
+        await Promise.all([pushProgress(user.id, merged), pushProfile(user.id, user.email, prof)]);
+        if (!gone) setSync({ state: "saved", at: new Date().toISOString() });
+      } catch {
+        if (!gone) setSync(s => ({ ...s, state: "error" }));
+      }
+    })();
+    return () => { gone = true; };
+  }, [user?.id]); // eslint-disable-line
+
+  // After that, every change is saved online a few seconds later.
+  useEffect(() => {
+    if (!user || syncedFor.current !== user.id || sync.state === "syncing") return;
+    const t = setTimeout(async () => {
+      try {
+        setSync(s => ({ ...s, state: "saving" }));
+        await pushProgress(user.id, { taskProgress, lessonsDone, activity, history, bookmarks, wrongBank });
+        setSync({ state: "saved", at: new Date().toISOString() });
+      } catch { setSync(s => ({ ...s, state: "error" })); }
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [taskProgress, lessonsDone, activity, history, bookmarks, wrongBank]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!user || syncedFor.current !== user.id) return;
+    const t = setTimeout(() => { pushProfile(user.id, user.email, profile).catch(() => {}); }, 2500);
+    return () => clearTimeout(t);
+  }, [profile]); // eslint-disable-line
+
+  async function signOut() {
+    try { await pushProgress(user.id, { taskProgress, lessonsDone, activity, history, bookmarks, wrongBank }); } catch { /* keep going */ }
+    await supabase.auth.signOut();
+    const keepTheme = loadJSON("theme", "light");
+    clearAll();
+    saveJSON("theme", keepTheme);
+    window.location.reload();
+  }
 
   useEffect(() => {
     if (view === "quiz") {
@@ -256,7 +361,10 @@ export default function App() {
 
   function toggleTheme() { setTheme(th => { const n = th === "dark" ? "light" : "dark"; saveJSON("theme", n); return n; }); }
 
-  function resetAll() { clearAll(); window.location.reload(); }
+  async function resetAll() {
+    if (user) { try { await pushProgress(user.id, mergeProgress({}, {})); await supabase.auth.signOut(); } catch { /* offline: only this phone is cleared */ } }
+    clearAll(); window.location.reload();
+  }
 
   async function promptInstall() {
     if (!installPrompt) return;
@@ -275,6 +383,7 @@ export default function App() {
     taskProgress, setTaskStatus, lessonsDone, markLessonDone, activity, logActivity, streak, xp, level, todayCount,
     go, view, params, startQuiz, showToast, resetAll, setSearchOpen, addToLeaderboard,
     isOffline, canInstall: !!installPrompt && !isInstalled, isInstalled, promptInstall,
+    cloudOn, user, authReady, isTeacher, sync, signOut, recovery, setRecovery, announcements, setAnnouncements,
   };
 
   const isFocus = FOCUS_VIEWS.includes(view);
@@ -300,6 +409,11 @@ export default function App() {
       case "me": return <MeScreen />;
       case "help": return <Help />;
       case "about": return <About />;
+      case "account": return <AccountScreen />;
+      case "news": return <NewsScreen />;
+      case "assignments": return <AssignmentsScreen />;
+      case "certificates": return <CertificatesScreen />;
+      case "teacher": return <TeacherScreen key={params.tab || ""} />;
       default: return <LearnHome />;
     }
   }

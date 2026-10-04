@@ -1,11 +1,13 @@
 import { useState, useRef } from "react";
 import {
   Camera, UserRound, Headphones, Target, Palette, LifeBuoy, Info, Trash2, ChevronRight, MessageCircle, Mail, Clock,
-  HelpCircle, Download, ArrowRight, ShieldCheck, Sun, Moon, BookOpenCheck, Play,
+  HelpCircle, Download, ArrowRight, ShieldCheck, Sun, Moon, BookOpenCheck, Play, Cloud, Award, GraduationCap, LogIn,
 } from "lucide-react";
 import { useApp, PageHead, Sheet, Picture } from "../ui.jsx";
 import { ReaderSettings, ListenButton } from "../lib/reader.jsx";
 import { LogoMark } from "../logo.jsx";
+import { SyncLine } from "./Account.jsx";
+import { ReminderCard } from "./Class.jsx";
 import { DAYS, ROLES, SKILLS, TASKS, GLOSSARY, TEACHER_IMG } from "../data/course.js";
 
 const WHATSAPP_NUMBER = "2349031853995";
@@ -95,7 +97,7 @@ export function Welcome() {
 
 // ================= Me =================
 export function MeScreen() {
-  const { profile, setProfile, theme, toggleTheme, go, resetAll, level, canInstall, promptInstall, showToast } = useApp();
+  const { profile, setProfile, theme, toggleTheme, go, resetAll, level, canInstall, promptInstall, showToast, cloudOn, user, isTeacher } = useApp();
   const [form, setForm] = useState(profile);
   const [confirm, setConfirm] = useState(false);
   const fileRef = useRef(null);
@@ -128,12 +130,27 @@ export function MeScreen() {
         </div>
       </div>
 
+      {cloudOn && (
+        <button className="card tap pad row" onClick={() => go("account")} style={{ width: "100%", textAlign: "left", gap: 14, marginBottom: 14 }}>
+          <div className="tile-icon" style={{ background: "var(--brand)", color: "var(--gold)" }}>{user ? <Cloud size={22} /> : <LogIn size={22} />}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="h3">{user ? "Account" : "Save your progress online"}</div>
+            <div className="muted" style={{ fontSize: 13.5, overflow: "hidden", textOverflow: "ellipsis" }}>{user ? user.email : "Free account: never lose your work, use any phone"}</div>
+            <div style={{ marginTop: 6 }}><SyncLine /></div>
+          </div>
+          <ChevronRight size={18} color="var(--faint)" />
+        </button>
+      )}
+      {isTeacher && (
+        <button className="btn primary lg full" style={{ marginBottom: 14 }} onClick={() => go("teacher")}><GraduationCap size={18} /> Teacher dashboard</button>
+      )}
+
       <div className="grid g2">
         <div className="card pad">
           <div className="row" style={{ marginBottom: 14 }}><UserRound size={19} color="var(--brand-ink)" /><div className="h3">About me</div></div>
           <div className="stack" style={{ gap: 12 }}>
             <div><label className="label" htmlFor="nm">Name</label><input id="nm" className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
-            <div><label className="label" htmlFor="em">Email (optional)</label><input id="em" className="input" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
+            {!user && <div><label className="label" htmlFor="em">Email (optional)</label><input id="em" className="input" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>}
             <div><label className="label" htmlFor="ct">City / Country</label><input id="ct" className="input" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} /></div>
             <div>
               <label className="label" htmlFor="gl">Job I want</label>
@@ -167,12 +184,15 @@ export function MeScreen() {
         </div>
       </div>
 
+      <div className="section"><ReminderCard /></div>
+
       <div className="card pad section">
         <div className="row" style={{ marginBottom: 14 }}><Headphones size={19} color="var(--brand-ink)" /><div className="h3">AI Reader</div></div>
         <ReaderSettings />
       </div>
 
       <div className="card section" style={{ padding: 6 }}>
+        <button className="list-row" onClick={() => go("certificates")}><Award size={20} color="var(--gold-ink)" /><span style={{ flex: 1, fontWeight: 600 }}>My certificates</span><ChevronRight size={18} color="var(--faint)" /></button>
         <button className="list-row" onClick={() => go("help")}><LifeBuoy size={20} color="var(--sky)" /><span style={{ flex: 1, fontWeight: 600 }}>Help & Customer Care</span><ChevronRight size={18} color="var(--faint)" /></button>
         <button className="list-row" onClick={() => go("about")}><Info size={20} color="var(--brand-ink)" /><span style={{ flex: 1, fontWeight: 600 }}>About this class</span><ChevronRight size={18} color="var(--faint)" /></button>
         <button className="list-row" onClick={() => setConfirm(true)}><Trash2 size={20} color="var(--coral)" /><span style={{ flex: 1, fontWeight: 600, color: "var(--coral)" }}>Start again (delete my progress)</span></button>
@@ -181,7 +201,7 @@ export function MeScreen() {
       {confirm && (
         <Sheet onClose={() => setConfirm(false)}>
           <div className="h2" style={{ marginBottom: 8 }}>Delete everything?</div>
-          <div className="muted" style={{ marginBottom: 20 }}>Your tasks, tests, XP, badges, bookmarks and profile on this device will be deleted. You cannot undo this.</div>
+          <div className="muted" style={{ marginBottom: 20 }}>Your tasks, tests, XP, badges, bookmarks and profile {user ? "on this phone and in your online account" : "on this device"} will be deleted. You cannot undo this.</div>
           <div className="row"><button className="btn ghost lg full" onClick={() => setConfirm(false)}>Keep it</button><button className="btn lg full" style={{ background: "var(--coral)", color: "#fff" }} onClick={resetAll}>Delete</button></div>
         </Sheet>
       )}
@@ -191,7 +211,9 @@ export function MeScreen() {
 
 // ================= Help =================
 const FAQS = [
-  ["Where is my progress saved?", "On this phone or computer. You do not need an account. If you clear your browser data or change phones, your progress will not move with you."],
+  ["Where is my progress saved?", "On this phone. If you make a free account (Me → Save your progress online), it is also saved online, so you can sign in on any phone or laptop and continue."],
+  ["I forgot my password", "Go to Me → Account → Sign in → \"I forgot my password\". We email you a link to choose a new one."],
+  ["How do I get a certificate?", "Finish a day: read every lesson of that day and get at least 80% of its practice tasks right. Then open Me → My certificates."],
   ["The AI Reader does not talk", "Turn up the volume and check silent mode. Tap the round headphones button, then \"Test the voice\". If there is still no sound, try Chrome (Android) or Safari (iPhone)."],
   ["Can I use it with no internet?", "Yes. Open the app once with internet. After that, lessons, tasks, tests and the AI Reader work offline on most phones."],
   ["What is XP?", "Points for learning. You get 10 XP for a task you got right, 50 XP for a finished lesson, and 5 XP for each right test answer. XP moves you up the levels."],
