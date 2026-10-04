@@ -3,7 +3,7 @@
 //  - Pages and lesson data (/content/*.json): network first, so a new day you
 //    upload shows up straight away; the saved copy is used when offline.
 //  - Everything else (app code, pictures, fonts): cache first, fast.
-const CACHE_NAME = "ai-trainer-class-v4";
+const CACHE_NAME = "ai-trainer-class-v5";
 const APP_SHELL = ["/", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {

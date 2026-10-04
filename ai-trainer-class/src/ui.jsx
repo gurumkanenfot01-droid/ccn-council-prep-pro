@@ -7,18 +7,16 @@ export const AppCtx = createContext(null);
 export function useApp() { return useContext(AppCtx); }
 
 // Chunky progress ring: ink outline, flat colour fill.
-export function Ring({ pct, size = 120, stroke = 14, color = "var(--lime)", track = "var(--surface)", outline = "var(--line)", children }) {
-  const r = (size - stroke) / 2 - 2;
+export function Ring({ pct, size = 120, stroke = 12, color = "var(--brand-2)", track = "var(--surface-2)", children }) {
+  const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const off = c - (Math.min(100, Math.max(0, pct)) / 100) * c;
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }} aria-hidden="true">
-        <circle cx={size / 2} cy={size / 2} r={r + stroke / 2} fill="none" stroke={outline} strokeWidth="2.5" />
-        <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="none" stroke={outline} strokeWidth="2.5" />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke - 2.5} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke - 2.5}
-          strokeDasharray={c} strokeDashoffset={off} style={{ transition: "stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)" }} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={pct > 0 ? off : c} style={{ transition: "stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center" }}>{children}</div>
     </div>
@@ -127,7 +125,7 @@ export function Explanation({ q, showAnswer = true }) {
 
 export function Confetti() {
   const pieces = useMemo(() => Array.from({ length: 60 }, (_, i) => ({
-    left: (i * 37) % 100, delay: ((i * 13) % 20) / 20, color: ["#C8F560", "#FF9FD2", "#9FD8FF", "#FFDD55", "#C5B3FF", "#FFAB6E"][i % 6],
+    left: (i * 37) % 100, delay: ((i * 13) % 20) / 20, color: ["#D4A657", "#1B6B53", "#E9C98B", "#0F4C3A", "#F7EEDC", "#7FB8A0"][i % 6],
   })), []);
   return (
     <div className="confetti" aria-hidden="true">

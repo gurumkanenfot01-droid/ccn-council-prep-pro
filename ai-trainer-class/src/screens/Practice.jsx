@@ -127,9 +127,9 @@ export function PracticeHub() {
 
 function ModeTile({ icon: Icon, tone, title, sub, onClick, disabled }) {
   return (
-    <button className={`card tap pad fill-${{ brand: "lime", sky: "blue", coral: "pink", mint: "green" }[tone]}`} onClick={onClick} disabled={disabled} style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 22, opacity: disabled ? .55 : 1, minHeight: 170 }}>
-      <div className="tile-icon" style={{ background: "#fff", color: "var(--ink)", borderColor: "var(--ink)" }}><Icon size={22} /></div>
-      <div><div className="h2">{title}</div><div style={{ fontSize: 14 }}>{sub}</div></div>
+    <button className="card tap pad" onClick={onClick} disabled={disabled} style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 22, opacity: disabled ? .55 : 1, minHeight: 170 }}>
+      <div className={`tile-icon fill-${{ brand: "lime", sky: "blue", coral: "pink", mint: "green" }[tone]}`}><Icon size={22} /></div>
+      <div><div className="h2">{title}</div><div className="muted" style={{ fontSize: 14 }}>{sub}</div></div>
     </button>
   );
 }
@@ -500,9 +500,9 @@ export function ResultsScreen({ quiz, answers, flagged, elapsed, category }) {
         <div className="h3" style={{ flex: 1 }}>Results · {category}</div>
       </div></div>
       <div className="focus-body">
-        <div className={`hero rise ${passed ? "fill-green" : "fill-pink"}`} style={{ textAlign: "center" }}>
+        <div className={`hero rise${passed ? "" : " fill-pink"}`} style={{ textAlign: "center" }}>
           <div style={{ display: "grid", placeItems: "center" }}>
-            <Ring pct={pct} size={160} stroke={20} color="var(--ink)" track="#fff" outline="var(--ink)">
+            <Ring pct={pct} size={160} stroke={20} color="var(--gold)" track="rgba(255,255,255,.15)">
               <div><div className="mono" style={{ fontSize: 34, fontWeight: 700, lineHeight: 1 }}>{pct}%</div><div style={{ fontSize: 12, opacity: .85 }}>{correct}/{total} right</div></div>
             </Ring>
           </div>
