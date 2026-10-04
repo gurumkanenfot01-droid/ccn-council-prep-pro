@@ -153,7 +153,7 @@ export function LearnHome() {
               </div>
               {dayInfo.docs?.length > 0 && (
                 <div className="row wrap" style={{ gap: 8 }}>
-                  {dayInfo.docs.map(doc => <button key={doc.id} className="btn sm" onClick={() => go("doc", { day: dayInfo.day, id: doc.id })}>{{ lecture: "📒", mustknow: "⭐", cvs: "📄" }[doc.kind] || "📝"} {doc.label}</button>)}
+                  {dayInfo.docs.map(doc => <button key={doc.id} className="btn sm" onClick={() => go("doc", { day: dayInfo.day, id: doc.id })}>{{ lecture: "📒", mustknow: "⭐", cvs: "📄", assignment: "✅" }[doc.kind] || "📝"} {doc.label}</button>)}
                 </div>
               )}
             </div>
