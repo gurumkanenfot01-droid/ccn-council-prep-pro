@@ -34,7 +34,7 @@ export function PracticeHub() {
 
       {inProgress && (
         <div className="card pad row" style={{ marginBottom: 16, gap: 14, borderColor: "var(--brand)" }}>
-          <div className="tile-icon" style={{ background: "var(--brand-soft)", color: "var(--brand-ink)" }}><RotateCcw size={21} /></div>
+          <div className="tile-icon fill-violet"><RotateCcw size={21} /></div>
           <div style={{ flex: 1 }}>
             <div className="h3">You have a test to finish</div>
             <div className="muted" style={{ fontSize: 14 }}>{inProgress.meta?.category} · question {(inProgress.idx || 0) + 1} of {inProgress.quiz?.length}</div>
@@ -43,11 +43,11 @@ export function PracticeHub() {
         </div>
       )}
 
-      <div className="hero" style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 55%, #EC4899 120%)", marginBottom: 18 }}>
+      <div className="hero fill-orange" style={{ marginBottom: 18 }}>
         <div className="between wrap" style={{ gap: 16 }}>
           <div>
-            <div className="eyebrow" style={{ color: "rgba(255,255,255,.8)" }}>{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</div>
-            <div className="h2" style={{ fontSize: 26, margin: "4px 0" }}>⚡ Daily Challenge</div>
+            <div className="eyebrow">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</div>
+            <div className="h1" style={{ fontSize: "clamp(28px,4vw,40px)", margin: "6px 0" }}>⚡ Daily <span className="serif">Challenge</span></div>
             <div style={{ opacity: .9 }}>{daily ? `Done! You scored ${daily.pct}%. New tasks tomorrow.` : "10 fresh tasks from all skills. Same for everyone today."}</div>
           </div>
           {!daily && <button className="btn white lg" onClick={() => startQuiz({ count: 10, category: "Daily Challenge", seedOverride: dailySeed(), dailyKey, mode: "learn" })}><Play size={18} fill="currentColor" /> Start</button>}
@@ -94,7 +94,7 @@ export function PracticeHub() {
           <div className="card" style={{ padding: 6 }}>
             {history.slice(0, 5).map((h, i) => (
               <div key={i} className="list-row" style={{ cursor: "default" }}>
-                <div className="tile-icon" style={{ width: 38, height: 38, background: h.pct >= 50 ? "var(--mint-soft)" : "var(--coral-soft)", color: h.pct >= 50 ? "var(--mint)" : "var(--coral)" }}>{h.pct >= 50 ? <CheckCircle2 size={18} /> : <XCircle size={18} />}</div>
+                <div className={`tile-icon ${h.pct >= 50 ? "fill-green" : "fill-pink"}`} style={{ width: 38, height: 38 }}>{h.pct >= 50 ? <CheckCircle2 size={18} /> : <XCircle size={18} />}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700 }}>{h.category}</div>
                   <div className="faint" style={{ fontSize: 13 }}>{h.correct}/{h.total} right · {new Date(h.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</div>
@@ -111,9 +111,9 @@ export function PracticeHub() {
 
 function ModeTile({ icon: Icon, tone, title, sub, onClick, disabled }) {
   return (
-    <button className="card tap pad" onClick={onClick} disabled={disabled} style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 12, opacity: disabled ? .55 : 1 }}>
-      <div className="tile-icon" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone === "brand" ? "brand-ink" : tone})` }}><Icon size={22} /></div>
-      <div><div className="h3">{title}</div><div className="muted" style={{ fontSize: 13.5 }}>{sub}</div></div>
+    <button className={`card tap pad fill-${{ brand: "lime", sky: "blue", coral: "pink", mint: "green" }[tone]}`} onClick={onClick} disabled={disabled} style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 22, opacity: disabled ? .55 : 1, minHeight: 170 }}>
+      <div className="tile-icon" style={{ background: "#fff", color: "var(--ink)", borderColor: "var(--ink)" }}><Icon size={22} /></div>
+      <div><div className="h2">{title}</div><div style={{ fontSize: 14 }}>{sub}</div></div>
     </button>
   );
 }
@@ -281,7 +281,7 @@ export function PracticeSession({ id, startTask, filter }) {
           <div className="muted" style={{ margin: "18px 0 4px", fontSize: 14.5 }}>💭 {q.ask}</div>
           <h2 className="h2" style={{ fontSize: 23, marginBottom: 16 }}>{q.task}</h2>
 
-          <textarea className="input" rows={3} value={drafts[q.id] || ""} onChange={e => saveDraft(e.target.value)}
+          <textarea className="input worksheet" rows={3} value={drafts[q.id] || ""} onChange={e => saveDraft(e.target.value)}
             placeholder="Write your answer here (you can skip this)…" aria-label="Your answer" />
 
           {revealed && (
@@ -477,10 +477,10 @@ export function ResultsScreen({ quiz, answers, flagged, elapsed, category }) {
         <div className="h3" style={{ flex: 1 }}>Results · {category}</div>
       </div></div>
       <div className="focus-body">
-        <div className="hero rise" style={{ textAlign: "center", background: passed ? "linear-gradient(135deg, #0E9F7E 0%, #1E95EA 100%)" : "var(--grad)" }}>
+        <div className={`hero rise ${passed ? "fill-green" : "fill-pink"}`} style={{ textAlign: "center" }}>
           <div style={{ display: "grid", placeItems: "center" }}>
-            <Ring pct={pct} size={150} stroke={14} color="#fff" track="rgba(255,255,255,.22)">
-              <div><div className="display mono" style={{ fontSize: 36, fontWeight: 800, lineHeight: 1 }}>{pct}%</div><div style={{ fontSize: 12, opacity: .85 }}>{correct}/{total} right</div></div>
+            <Ring pct={pct} size={160} stroke={20} color="var(--ink)" track="#fff" outline="var(--ink)">
+              <div><div className="mono" style={{ fontSize: 34, fontWeight: 700, lineHeight: 1 }}>{pct}%</div><div style={{ fontSize: 12, opacity: .85 }}>{correct}/{total} right</div></div>
             </Ring>
           </div>
           <h1 className="h1" style={{ margin: "16px 0 4px" }}>{pct >= 90 ? "Outstanding! 🌟" : passed ? "You passed! 🎉" : "Not yet. Keep going! 💪"}</h1>
@@ -508,7 +508,7 @@ export function ResultsScreen({ quiz, answers, flagged, elapsed, category }) {
                     <span style={{ fontWeight: 600 }}>{s.skill.icon} {s.skill.n}</span>
                     <span className="mono" style={{ fontWeight: 700, color: s.pct >= 50 ? "var(--mint)" : "var(--coral)" }}>{s.correct}/{s.total}</span>
                   </div>
-                  <div className="bar"><i style={{ width: `${s.pct}%`, background: s.pct >= 50 ? "var(--grad-mint)" : "var(--coral)" }} /></div>
+                  <div className="bar"><i style={{ width: `${s.pct}%`, background: s.pct >= 50 ? "var(--green)" : "var(--coral)" }} /></div>
                 </div>
               ))}
             </div>
@@ -544,7 +544,7 @@ export function ReviewCard({ q, given }) {
   const { bookmarks, toggleBookmark } = useApp();
   const ok = given === q.ansIdx;
   return (
-    <div className="card pad" style={{ borderColor: ok ? "color-mix(in srgb, var(--mint) 40%, var(--border))" : "color-mix(in srgb, var(--coral) 40%, var(--border))" }}>
+    <div className="card pad" style={{ borderColor: ok ? "var(--line)" : "var(--line)" }}>
       <div className="between" style={{ marginBottom: 12 }}>
         <span className={`pill ${ok ? "mint" : "coral"}`}>{ok ? "✓ Right" : given === undefined ? "Skipped" : "✗ Wrong"}</span>
         <div className="row" style={{ gap: 8 }}>

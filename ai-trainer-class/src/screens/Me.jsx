@@ -36,10 +36,10 @@ export function Welcome() {
         {step === 0 && (
           <div className="rise">
             <div className="hero" style={{ padding: 32 }}>
-              <div className="rail-logo" style={{ background: "rgba(255,255,255,.2)", boxShadow: "none", width: 60, height: 60, borderRadius: 20 }}><LogoMark size={32} /></div>
-              <h1 className="h1" style={{ fontSize: 38, margin: "8px 0 10px" }}>Become an AI Trainer.</h1>
-              <div style={{ fontSize: 17, opacity: .92, maxWidth: 480 }}>AI companies pay people to check and mark AI answers. Learn how, in very simple English.</div>
-              <div style={{ marginTop: 18 }}><ListenButton text={intro} id="welcome" label="Listen" title="Welcome" style={{ background: "rgba(255,255,255,.2)", color: "#fff" }} /></div>
+              <div className="logo-mark" style={{ width: 64, height: 64, borderRadius: 18, background: "#fff" }}><LogoMark size={34} /></div>
+              <h1 className="h1" style={{ fontSize: "clamp(36px, 7vw, 64px)", margin: "18px 0 12px" }}>Become an <span className="serif">AI Trainer.</span></h1>
+              <div style={{ fontSize: 17.5, maxWidth: 520 }}>AI companies pay people to check and mark AI answers. Learn how, in very simple English.</div>
+              <div style={{ marginTop: 18 }}><ListenButton text={intro} id="welcome" label="Listen" title="Welcome" /></div>
             </div>
             <div className="grid g3" style={{ marginTop: 16 }}>
               {[["📚", "18 short lessons", "With pictures and examples"], ["🎯", "360 practice tasks", "Each one explained simply"], ["🎧", "AI Reader", "Listen instead of reading"]].map(([e, t, s]) => (
@@ -114,12 +114,12 @@ export function MeScreen() {
 
   return (
     <div>
-      <div className="hero" style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
+      <div className="hero fill-blue" style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
         <div style={{ position: "relative" }}>
-          <div style={{ width: 88, height: 88, borderRadius: 28, background: "rgba(255,255,255,.2)", overflow: "hidden", display: "grid", placeItems: "center", border: "3px solid rgba(255,255,255,.5)" }}>
+          <div style={{ width: 88, height: 88, borderRadius: 28, background: "#fff", overflow: "hidden", display: "grid", placeItems: "center", border: "2.5px solid var(--ink)", transform: "rotate(-4deg)" }}>
             {form.photo ? <img src={form.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={40} />}
           </div>
-          <button onClick={() => fileRef.current.click()} aria-label="Change photo" style={{ position: "absolute", right: -6, bottom: -6, width: 34, height: 34, borderRadius: 12, border: "none", background: "#fff", color: "#3B2FB8", display: "grid", placeItems: "center" }}><Camera size={16} /></button>
+          <button onClick={() => fileRef.current.click()} aria-label="Change photo" style={{ position: "absolute", right: -6, bottom: -6, width: 34, height: 34, borderRadius: 12, border: "2px solid var(--ink)", background: "var(--yellow)", color: "var(--ink)", display: "grid", placeItems: "center" }}><Camera size={16} /></button>
           <input ref={fileRef} type="file" accept="image/*" onChange={photo} style={{ display: "none" }} />
         </div>
         <div>

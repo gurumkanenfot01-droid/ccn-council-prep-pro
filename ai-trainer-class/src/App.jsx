@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Route, Target, Library, BarChart3, UserRound, Search, Moon, Sun, Sparkles, WifiOff, Wifi } from "lucide-react";
-import { AppCtx } from "./ui.jsx";
+import { Route, Target, Library, BarChart3, UserRound, Search, Moon, Sun, Sparkles, WifiOff, Wifi, LayoutGrid, X } from "lucide-react";
+import { AppCtx, useApp } from "./ui.jsx";
 import { LogoMark } from "./logo.jsx";
 import { loadJSON, saveJSON, clearAll } from "./lib/store.js";
 import { ReaderProvider, ReaderDock } from "./lib/reader.jsx";
 import { buildQuizSet, computeStreak, dayKey } from "./lib/quiz.js";
 import { totalXp, levelFor, XP } from "./lib/gamify.js";
 import { TASK_BY_ID } from "./data/course.js";
-import { LearnHome, SkillOverview, LessonPlayer, Aside } from "./screens/Learn.jsx";
+import { LearnHome, SkillOverview, LessonPlayer } from "./screens/Learn.jsx";
 import { PracticeHub, PracticeSession, TestBuilder, QuizScreen, ResultsScreen } from "./screens/Practice.jsx";
 import { LibraryHome, KeyWords, Examples, BigPicture, Bookmarks, WrongAnswers, Flashcards, Leaderboard } from "./screens/Library.jsx";
 import { ProgressScreen } from "./screens/Progress.jsx";
@@ -28,8 +28,46 @@ const TAB_OF = {
   progress: "progress", me: "me", help: "me", about: "me",
 };
 const FOCUS_VIEWS = ["lesson", "session", "quiz", "results", "welcome"];
-// Screens that use the full width (no side panel).
-const SINGLE = ["skill", "builder", "words", "examples", "bigpicture", "bookmarks", "wrong", "flashcards", "leaderboard", "help", "about", "me"];
+// Reading-heavy screens use a narrower column.
+const NARROW = ["builder", "examples", "bigpicture", "bookmarks", "wrong", "flashcards", "leaderboard", "help", "about"];
+
+// Everything in the app, as big colourful tiles (full-screen menu).
+const MENU = [
+  ["learn", "Course", "18 skills, step by step", "lime"], ["practice", "Practice", "Drills and tests", "pink"],
+  ["builder", "Build a test", "Your mix, your size", "blue"], ["progress", "Progress", "XP, levels, badges", "yellow"],
+  ["bigpicture", "Big picture", "How AI training works", "violet"], ["words", "Key words", "Simple meanings", "orange"],
+  ["examples", "Examples", "Learn from experts", "green"], ["flashcards", "Flashcards", "Flip and remember", "pink"],
+  ["bookmarks", "Bookmarks", "Saved tasks", "yellow"], ["wrong", "Wrong answers", "Fix weak spots", "orange"],
+  ["leaderboard", "Leaderboard", "Top scores", "blue"], ["me", "Me", "Profile and AI Reader", "lime"],
+  ["help", "Help", "WhatsApp and email", "violet"], ["about", "About", "This class", "green"],
+];
+
+function MenuOverlay({ onClose }) {
+  const { go } = useApp();
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onClose(); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="menu" role="dialog" aria-label="Menu">
+      <div className="menu-in">
+        <div className="between">
+          <div className="h1">Where to <span className="serif">next?</span></div>
+          <button className="icon-btn" onClick={onClose} aria-label="Close menu"><X size={20} /></button>
+        </div>
+        <div className="menu-grid">
+          {MENU.map(([id, t, sub, fill], i) => (
+            <button key={id} className={`menu-tile fill-${fill}`} onClick={() => { onClose(); go(id); }}>
+              <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</span>
+              <span><span className="t" style={{ display: "block" }}>{t}</span><span style={{ fontSize: 14 }}>{sub}</span></span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const defaultProfile = { name: "", email: "", city: "", goal: "", dailyGoal: 10, photo: null };
 
@@ -46,6 +84,7 @@ export default function App() {
   const [lessonsDone, setLessonsDone] = useState(() => loadJSON("lessons-done", {}));
   const [activity, setActivity] = useState(() => loadJSON("activity", {}));
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [backOnline, setBackOnline] = useState(false);
@@ -99,7 +138,7 @@ export default function App() {
     if (view === "quiz" && quiz.length) saveJSON("in-progress", { quiz, idx, answers, flagged, elapsed, meta: quizMeta });
   }, [answers, idx, flagged]); // eslint-disable-line
 
-  function go(v, p) { setView(v); setParams(p || {}); setSearchOpen(false); window.scrollTo(0, 0); }
+  function go(v, p) { setView(v); setParams(p || {}); setSearchOpen(false); setMenuOpen(false); window.scrollTo(0, 0); }
 
   function showToast(text) {
     clearTimeout(toastRef.current);
@@ -274,55 +313,50 @@ export default function App() {
   return (
     <AppCtx.Provider value={ctx}>
       <ReaderProvider>
-        {isOffline && <div className="banner" style={{ background: "var(--sun)", color: "#241800" }}><WifiOff size={15} /> You are offline. Lessons, tasks and your progress still work.</div>}
-        {backOnline && <div className="banner" style={{ background: "var(--mint)", color: "#fff" }}><Wifi size={15} /> You are back online</div>}
+        {isOffline && <div className="banner fill-yellow"><WifiOff size={15} /> You are offline. Lessons, tasks and your progress still work.</div>}
+        {backOnline && <div className="banner fill-green"><Wifi size={15} /> You are back online</div>}
         {toast && <div className="toast" role="status"><Sparkles size={16} /> {toast}</div>}
 
         {isFocus ? (
           <div className="fade">{renderFocus()}</div>
         ) : (
-          <div className="shell">
-            <nav className="rail" aria-label="Main">
-              <button className="rail-logo" onClick={() => go("learn")} aria-label="AI Trainer Class home"><LogoMark /></button>
-              {TABS.map(t => (
-                <button key={t.id} className={`rail-item${tab === t.id ? " on" : ""}`} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}>
-                  <t.icon size={22} /> {t.label}
+          <>
+            <header className="header">
+              <div className="header-in">
+                <button className="logo" onClick={() => go("learn")} aria-label="AI Trainer Class home">
+                  <span className="logo-mark"><LogoMark size={22} /></span>
+                  <span className="logo-word">AI Trainer <i className="long">class</i></span>
                 </button>
-              ))}
-              <div className="rail-spacer" />
-              <button className="rail-item" onClick={() => setSearchOpen(true)} title="Search ( / )"><Search size={20} /> Search</button>
-              <button className="rail-item" onClick={toggleTheme}>{theme === "dark" ? <Sun size={20} /> : <Moon size={20} />} {theme === "dark" ? "Light" : "Dark"}</button>
-            </nav>
-
-            <div className="main">
-              <header className="topbar">
-                <button className="row" onClick={() => go("learn")} style={{ border: "none", background: "none", padding: 0, gap: 10 }} aria-label="Home">
-                  <span className="rail-logo" style={{ width: 38, height: 38, borderRadius: 12, margin: 0 }}><LogoMark size={20} /></span>
-                  <span className="display" style={{ fontWeight: 800, fontSize: 18 }}>AI Trainer</span>
-                </button>
-                <div className="row" style={{ gap: 8 }}>
-                  <span className="pill sun" title="Study streak">🔥 {streak}</span>
-                  <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search"><Search size={18} /></button>
-                  <button className="icon-btn" onClick={toggleTheme} aria-label="Light or dark mode">{theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}</button>
+                <nav className="nav" aria-label="Main">
+                  {TABS.map(t => (
+                    <button key={t.id} className={tab === t.id ? "on" : ""} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}>
+                      <t.icon size={17} /> {t.label}
+                    </button>
+                  ))}
+                </nav>
+                <div className="header-tools">
+                  <span className="sticker fill-orange" title="Day streak" style={{ alignSelf: "center" }}>🔥 {streak}</span>
+                  <button className="icon-btn" onClick={() => setSearchOpen(true)} aria-label="Search (press /)"><Search size={18} /></button>
+                  <button className="icon-btn" onClick={toggleTheme} aria-label="Light or night mode">{theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}</button>
+                  <button className="icon-btn menu-btn" onClick={() => setMenuOpen(true)} aria-label="Open menu"><LayoutGrid size={18} /></button>
                 </div>
-              </header>
+              </div>
+              <nav className="nav-strip" aria-label="Sections">
+                {TABS.map(t => (
+                  <button key={t.id} className={tab === t.id ? "on" : ""} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}>
+                    <t.icon size={15} /> {t.label}
+                  </button>
+                ))}
+              </nav>
+            </header>
 
-              <main className={`content${SINGLE.includes(view) ? " single" : ""}`}>
-                <div className="fade" key={view + (params.id || "")} style={{ minWidth: 0 }}>{renderMain()}</div>
-                {!SINGLE.includes(view) && <aside className="aside"><Aside /></aside>}
-              </main>
-            </div>
-
-            <nav className="tabbar" aria-label="Main">
-              {TABS.map(t => (
-                <button key={t.id} className={`tab${tab === t.id ? " on" : ""}`} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}>
-                  <t.icon size={21} /> {t.label}
-                </button>
-              ))}
-            </nav>
-          </div>
+            <main className={`page${NARROW.includes(view) ? " narrow" : ""}`}>
+              <div className="fade" key={view + (params.id || "")}>{renderMain()}</div>
+            </main>
+          </>
         )}
 
+        {menuOpen && <MenuOverlay onClose={() => setMenuOpen(false)} />}
         {view !== "welcome" && <ReaderDock inFocus={isFocus} />}
         {searchOpen && <SearchSheet onClose={() => setSearchOpen(false)} />}
       </ReaderProvider>

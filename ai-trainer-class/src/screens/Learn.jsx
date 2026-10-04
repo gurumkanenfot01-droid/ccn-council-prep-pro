@@ -1,132 +1,178 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Play, BookOpen, Target, Trophy, ChevronRight, ChevronLeft, X, CheckCircle2, Flame, Zap, Download,
-  Lightbulb, ThumbsUp, ThumbsDown, XCircle, Check, Map, RotateCcw, Headphones, Rows3, GalleryHorizontal, Sparkles, Clock,
+  Play, BookOpen, Target, Trophy, ChevronRight, ChevronLeft, X, CheckCircle2, Download, ArrowUpRight,
+  Lightbulb, ThumbsUp, ThumbsDown, XCircle, Check, RotateCcw, Headphones, Rows3, GalleryHorizontal, Sparkles, Clock, Zap,
 } from "lucide-react";
-import { useApp, Ring, Bar, Picture, Confetti, PageHead } from "../ui.jsx";
+import { useApp, Ring, Bar, Picture, Confetti } from "../ui.jsx";
 import { ListenButton, useReader, Wave } from "../lib/reader.jsx";
 import { loadJSON, saveJSON } from "../lib/store.js";
-import { skillStats, skillState, nextSkill, overall, lastWeek, LEVELS } from "../lib/gamify.js";
+import { skillStats, skillState, nextSkill, overall, lastWeek } from "../lib/gamify.js";
 import { COURSE, ROLES, SKILLS, SKILL_BY_ID } from "../data/course.js";
 
-const ROLE_GRAD = { g: "var(--grad)", l: "linear-gradient(135deg, #0E9F7E 0%, #1E95EA 100%)" };
+// Each role has its own sticker colour.
+export const ROLE_FILL = { g: "lime", l: "pink" };
+const pad2 = n => String(n).padStart(2, "0");
+export function skillNumber(skill) {
+  return ROLES.find(r => r.key === skill.roleKey).skills.findIndex(s => s.id === skill.id) + 1;
+}
 
-// ================= Learn home: hero + learning path =================
+// ================= Learn home: bento board + course index =================
 export function LearnHome() {
   const { profile, taskProgress, lessonsDone, go, inProgress, resumeQuiz, level, xp, streak, canInstall, promptInstall } = useApp();
+  const reader = useReader();
   const next = nextSkill(taskProgress, lessonsDone);
   const all = overall(taskProgress, lessonsDone);
+  const [roleFilter, setRoleFilter] = useState("all");
   const hour = new Date().getHours();
   const hello = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const nextAction = !next ? null : !lessonsDone[next.id] ? { label: "Start the lesson", run: () => go("lesson", { id: next.id }) } : { label: "Continue practice", run: () => go("session", { id: next.id }) };
+  const first = profile.name ? profile.name.split(" ")[0] : "friend";
+  const nextAction = !next ? null : !lessonsDone[next.id]
+    ? { label: "Start the lesson", run: () => go("lesson", { id: next.id }) }
+    : { label: "Continue practice", run: () => go("session", { id: next.id }) };
+  const ticker = SKILLS.map(s => s.s.toUpperCase()).join("  ✦  ");
 
   return (
     <div>
-      <section className="hero rise">
-        <div className="eyebrow" style={{ color: "rgba(255,255,255,.75)" }}>{hello}{profile.name ? `, ${profile.name.split(" ")[0]}` : ""} 👋</div>
-        <h1 className="h1" style={{ margin: "8px 0 6px", maxWidth: 520 }}>{next ? "Let's keep learning." : "You finished Day 1! 🎉"}</h1>
-        <div style={{ opacity: .85, marginBottom: 20 }}>{COURSE.title}</div>
-
-        {next && (
-          <div className="glass" style={{ padding: 14, display: "flex", gap: 14, alignItems: "center", marginBottom: 18, maxWidth: 560 }}>
-            <div style={{ width: 64, height: 64, borderRadius: 14, background: "#fff", overflow: "hidden", flexShrink: 0, display: "grid", placeItems: "center" }}>
-              <img src={next.image} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+      <div className="bento">
+        {/* Continue */}
+        <section className="hero s8 rise" style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 300px", minWidth: 0 }}>
+            <div className="eyebrow">{hello} · Day {COURSE.day}</div>
+            <h1 className="h1" style={{ margin: "10px 0 14px" }}>
+              {next ? <>Ready to <span className="serif">train some AI,</span> {first}?</> : <>You finished <span className="serif">Day 1!</span> 🎉</>}
+            </h1>
+            <div className="row wrap" style={{ gap: 10 }}>
+              {nextAction
+                ? <button className="btn inkfill lg" onClick={nextAction.run}><Play size={18} fill="currentColor" /> {nextAction.label}</button>
+                : <button className="btn inkfill lg" onClick={() => go("practice")}><Trophy size={18} /> Take a Role Test</button>}
+              {inProgress && <button className="btn white lg" onClick={resumeQuiz}><RotateCcw size={18} /> Finish your test</button>}
             </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, opacity: .8 }}>UP NEXT · {next.roleShort.toUpperCase()}</div>
-              <div className="display" style={{ fontWeight: 800, fontSize: 19, lineHeight: 1.2 }}>{next.icon} {next.n}</div>
-              <div style={{ fontSize: 13, opacity: .85 }}>{skillStats(next, taskProgress).got}/20 tasks · {lessonsDone[next.id] ? "lesson done ✓" : "lesson not started"}</div>
-            </div>
+            {next && <div style={{ marginTop: 14, fontSize: 14.5 }}>Up next: <b>{next.n}</b> · {skillStats(next, taskProgress).got}/20 tasks</div>}
           </div>
-        )}
+          {next && (
+            <figure className="polaroid tilt-r" style={{ width: 210, margin: "0 6px 0 0", flexShrink: 0 }}>
+              <img src={next.image} alt="" />
+              <figcaption>{next.icon} {next.n}</figcaption>
+            </figure>
+          )}
+        </section>
 
-        <div className="row wrap">
-          {nextAction
-            ? <button className="btn white lg" onClick={nextAction.run}><Play size={18} fill="currentColor" /> {nextAction.label}</button>
-            : <button className="btn white lg" onClick={() => go("practice")}><Trophy size={18} /> Take a Role Test</button>}
-          {inProgress && <button className="btn lg" style={{ background: "rgba(255,255,255,.16)", color: "#fff" }} onClick={resumeQuiz}><RotateCcw size={18} /> Finish your test</button>}
-        </div>
+        {/* Today */}
+        <div className="s4"><TodayCard /></div>
 
-        <div className="row wrap" style={{ marginTop: 20, gap: 8 }}>
-          <span className="glass" style={{ padding: "6px 12px", fontSize: 13, fontWeight: 700 }}>{level.icon} {level.name}</span>
-          <span className="glass" style={{ padding: "6px 12px", fontSize: 13, fontWeight: 700 }}>⚡ {xp} XP</span>
-          <span className="glass" style={{ padding: "6px 12px", fontSize: 13, fontWeight: 700 }}>🔥 {streak}-day streak</span>
-          <span className="glass" style={{ padding: "6px 12px", fontSize: 13, fontWeight: 700 }}>✅ {all.pct}% done</span>
-        </div>
-      </section>
-
-      <div className="mobile-only" style={{ marginTop: 16 }}><TodayCard compact /></div>
-
-      {all.lessons === 0 && (
-        <button className="card tap pad rise" onClick={() => go("bigpicture")} style={{ width: "100%", textAlign: "left", marginTop: 16, display: "flex", gap: 14, alignItems: "center" }}>
-          <div className="tile-icon" style={{ background: "var(--sky-soft)", color: "var(--sky)" }}><Map size={22} /></div>
-          <div style={{ flex: 1 }}>
-            <div className="h3">New here? See the big picture first</div>
-            <div className="muted" style={{ fontSize: 14 }}>How AI training works, in 5 simple pictures. 3 minutes.</div>
-          </div>
-          <ChevronRight size={20} color="var(--faint)" />
+        {/* Level */}
+        <button className="card tap pad s4 fill-violet" onClick={() => go("progress")} style={{ textAlign: "left" }}>
+          <div className="between"><span className="eyebrow">Your level</span><ArrowUpRight size={20} /></div>
+          <div className="h2" style={{ margin: "10px 0 2px" }}>{level.icon} {level.name}</div>
+          <div className="mono" style={{ fontSize: 14, marginBottom: 12 }}>{xp} XP{level.next ? ` · ${level.toNext} to next` : ""}</div>
+          <Bar pct={level.pct} brand />
         </button>
-      )}
+
+        {/* Streak */}
+        <div className="card pad s4 fill-orange" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <span className="eyebrow">Day streak</span>
+          <div className="row" style={{ alignItems: "flex-end", gap: 8 }}>
+            <span className="mono" style={{ fontSize: 64, fontWeight: 700, lineHeight: .9 }}>{streak}</span>
+            <span className="serif" style={{ fontSize: 24, paddingBottom: 4 }}>{streak === 1 ? "day" : "days"} 🔥</span>
+          </div>
+          <div style={{ fontSize: 14 }}>{streak ? "Keep it going: study a little every day." : "Study today to start a streak."}</div>
+        </div>
+
+        {/* Daily challenge */}
+        <div className="card pad s4 fill-pink" style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "space-between" }}>
+          <div className="between"><span className="eyebrow">Daily challenge</span><Zap size={20} /></div>
+          <div className="h2">10 fresh tasks, <span className="serif">every day.</span></div>
+          <button className="btn white" onClick={() => go("practice")}>Go to Practice <ChevronRight size={16} /></button>
+        </div>
+
+        {/* Big picture */}
+        <button className="card tap pad s6 fill-blue" onClick={() => go("bigpicture")} style={{ textAlign: "left", display: "flex", gap: 16, alignItems: "center" }}>
+          <div style={{ flex: 1 }}>
+            <span className="eyebrow">New here?</span>
+            <div className="h2" style={{ margin: "6px 0" }}>The big picture <span className="serif">in 5 drawings</span></div>
+            <div style={{ fontSize: 14.5 }}>How AI learns from people like you.</div>
+          </div>
+          <div className="picture" style={{ width: 130, flexShrink: 0, transform: "rotate(-3deg)", borderColor: "var(--ink)" }}><img src="/img/v_teacher.jpg" alt="" /></div>
+        </button>
+
+        {/* AI Reader */}
+        <div className="card pad s6 fill-yellow" style={{ display: "flex", gap: 16, alignItems: "center" }}>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", border: "2.5px solid var(--ink)", background: "#fff", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Headphones size={30} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span className="eyebrow">AI Reader</span>
+            <div className="h2" style={{ margin: "6px 0 10px" }}>Too tired to read? <span className="serif">Listen.</span></div>
+            {reader?.supported
+              ? <ListenButton text={`Hi ${first}! I am your AI Reader. Tap Listen on any card and I will read it to you. In lessons, turn on hands-free, and I will read every card and turn the pages for you.`} id="home-reader" label="Hear how it works" title="AI Reader" />
+              : <div style={{ fontSize: 14 }}>Open the app in Chrome or Safari to use it.</div>}
+          </div>
+        </div>
+      </div>
 
       {canInstall && (
-        <div className="card pad row" style={{ marginTop: 16, gap: 14 }}>
-          <div className="tile-icon" style={{ background: "var(--brand-soft)", color: "var(--brand-ink)" }}><Download size={22} /></div>
-          <div style={{ flex: 1 }}>
-            <div className="h3">Install the app</div>
-            <div className="muted" style={{ fontSize: 14 }}>Put it on your home screen. It opens fast and works offline.</div>
-          </div>
-          <button className="btn soft sm" onClick={promptInstall}>Install</button>
+        <div className="card pad row section" style={{ gap: 14 }}>
+          <div className="tile-icon fill-lime"><Download size={22} /></div>
+          <div style={{ flex: 1 }}><div className="h3">Install the app</div><div className="muted" style={{ fontSize: 14 }}>On your home screen. Opens fast, works offline.</div></div>
+          <button className="btn primary sm" onClick={promptInstall}>Install</button>
         </div>
       )}
 
+      <div className="marquee section" aria-hidden="true"><div>{ticker}  ✦  {ticker}</div></div>
+
+      {/* Course index */}
       <div className="section">
         <div className="section-head">
           <div>
-            <div className="eyebrow">Your learning path</div>
-            <h2 className="h2">18 skills, one step at a time</h2>
+            <div className="eyebrow">The course · {all.got}/{all.total} tasks done</div>
+            <h2 className="h1" style={{ fontSize: "clamp(28px, 4vw, 42px)" }}>18 skills. Two roles. <span className="serif">One day.</span></h2>
+          </div>
+          <div className="seg">
+            <button className={roleFilter === "all" ? "on" : ""} onClick={() => setRoleFilter("all")}>All</button>
+            {ROLES.map(r => <button key={r.key} className={roleFilter === r.key ? "on" : ""} onClick={() => setRoleFilter(r.key)}>{r.short}</button>)}
           </div>
         </div>
-        {ROLES.map(role => <RolePath key={role.key} role={role} current={next} />)}
+        {ROLES.filter(r => roleFilter === "all" || r.key === roleFilter).map((role, ri) => <RoleIndex key={role.key} role={role} part={ri + 1} current={next} />)}
       </div>
     </div>
   );
 }
 
-function RolePath({ role, current }) {
+function RoleIndex({ role, current }) {
   const { taskProgress, lessonsDone, go } = useApp();
   const done = role.skills.filter(s => skillState(s, taskProgress, lessonsDone) === "done").length;
   return (
-    <div style={{ marginBottom: 26 }}>
-      <div className="unit" style={{ background: ROLE_GRAD[role.key] }}>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 700, opacity: .8, letterSpacing: ".06em" }}>{role.key === "g" ? "PART 1" : "PART 2"}</div>
-          <div className="display" style={{ fontWeight: 800, fontSize: 20 }}>{role.icon} {role.name}</div>
-          <div style={{ fontSize: 13, opacity: .9, maxWidth: 460 }}>{role.intro}</div>
+    <div style={{ marginBottom: 30 }}>
+      <div className={`role-band fill-${ROLE_FILL[role.key]}`}>
+        <div style={{ minWidth: 0, flex: "1 1 260px" }}>
+          <div className="eyebrow">Part {role.key === "g" ? 1 : 2}</div>
+          <div className="h2" style={{ margin: "4px 0" }}>{role.icon} {role.name}</div>
+          <div style={{ fontSize: 14.5, maxWidth: 560 }}>{role.intro}</div>
         </div>
-        <div style={{ textAlign: "center", flexShrink: 0 }}>
-          <div className="display" style={{ fontSize: 26, fontWeight: 800 }}>{done}/{role.skills.length}</div>
-          <div style={{ fontSize: 11, opacity: .85 }}>skills done</div>
-        </div>
+        <div className="sticker" style={{ fontSize: 14 }}>{done}/{role.skills.length} done</div>
       </div>
-      <div className="path">
+      <div className="card" style={{ marginTop: 14, overflow: "hidden" }}>
         {role.skills.map((s, i) => {
           const st = skillStats(s, taskProgress);
           const state = skillState(s, taskProgress, lessonsDone);
           const isCurrent = current?.id === s.id;
           return (
-            <div className="path-node" key={s.id}>
-              <button className={`node-btn${state === "done" ? " done" : ""}${isCurrent ? " current pulse" : ""}`} onClick={() => go("skill", { id: s.id })} aria-label={`${s.n}: ${st.got} of 20 tasks done`}>
-                {state !== "done" && st.pct > 0 && !isCurrent && (
-                  <svg className="ring" width="88" height="88" viewBox="0 0 88 88" aria-hidden="true">
-                    <circle cx="44" cy="44" r="41" fill="none" stroke="var(--mint)" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(st.pct / 100) * 257.6} 300`} transform="rotate(-90 44 44)" />
-                  </svg>
-                )}
-                <span>{state === "done" ? "✓" : s.icon}</span>
-              </button>
-              <button className="node-label" onClick={() => go("skill", { id: s.id })} style={{ border: "none", background: "none", textAlign: "left", padding: 0 }}>
-                <div className="eyebrow" style={{ color: isCurrent ? "var(--brand-ink)" : undefined }}>{isCurrent ? "You are here" : `Skill ${i + 1}`}</div>
-                <div className="h3">{s.n}</div>
-                <div className="faint" style={{ fontSize: 13 }}>{st.got}/20 tasks{lessonsDone[s.id] ? " · lesson ✓" : ""}</div>
+            <div key={s.id}>
+              {i > 0 && <div style={{ height: 2, background: "var(--line)", opacity: .12 }} />}
+              <button className="index-row" onClick={() => go("skill", { id: s.id })} style={{ borderRadius: 0, background: isCurrent ? "var(--surface-2)" : undefined }} aria-label={`${s.n}: ${st.got} of 20 tasks done`}>
+                <span className="index-num" style={{ color: state === "done" ? "var(--mint)" : undefined }}>{pad2(i + 1)}</span>
+                <span style={{ minWidth: 0 }}>
+                  <span className="h3" style={{ display: "block" }}>{s.icon} {s.n}</span>
+                  <span className="muted" style={{ display: "block", fontSize: 14 }}>{s.s}</span>
+                  <span style={{ display: "block", maxWidth: 260, marginTop: 8 }}><Bar pct={st.pct} /></span>
+                </span>
+                <span className="index-end row" style={{ gap: 8 }}>
+                  {state === "done" ? <span className="pill mint">✓ Done</span>
+                    : isCurrent ? <span className="pill sun">▶ You are here</span>
+                    : state === "started" ? <span className="pill sky">{st.got}/20</span>
+                    : <span className="pill">New</span>}
+                  <ChevronRight size={20} />
+                </span>
               </button>
             </div>
           );
@@ -136,76 +182,36 @@ function RolePath({ role, current }) {
   );
 }
 
-// ================= Right-hand panel (desktop) / today card =================
-export function TodayCard({ compact }) {
-  const { todayCount, profile, streak, activity } = useApp();
+// Daily goal ring with this week's study bars.
+export function TodayCard() {
+  const { todayCount, profile, activity } = useApp();
   const goal = profile.dailyGoal || 10;
   const pct = Math.min(100, Math.round((todayCount / goal) * 100));
   const week = lastWeek(activity);
   const max = Math.max(goal, ...week.map(d => d.count));
   return (
-    <div className="card pad">
+    <div className="card pad" style={{ height: "100%" }}>
       <div className="row" style={{ gap: 16 }}>
-        <Ring pct={pct} size={compact ? 74 : 92} stroke={compact ? 9 : 11} color={pct >= 100 ? "url(#ringMint)" : "url(#ringGrad)"}>
-          <div>
-            <div className="display mono" style={{ fontWeight: 800, fontSize: compact ? 18 : 22, lineHeight: 1 }}>{todayCount}</div>
-            <div className="faint" style={{ fontSize: 11 }}>of {goal}</div>
-          </div>
+        <Ring pct={pct} size={96} stroke={16} color={pct >= 100 ? "var(--green)" : "var(--lime)"}>
+          <div><div className="mono" style={{ fontWeight: 700, fontSize: 22, lineHeight: 1 }}>{todayCount}</div><div className="faint" style={{ fontSize: 11 }}>/ {goal}</div></div>
         </Ring>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ minWidth: 0 }}>
           <div className="eyebrow">Today's goal</div>
-          <div className="h3" style={{ margin: "2px 0" }}>{pct >= 100 ? "Goal reached! 🎉" : `${goal - todayCount} more to go`}</div>
-          <div className="row" style={{ gap: 6, fontSize: 13 }}><Flame size={15} color="var(--sun)" /> <b>{streak}</b> <span className="faint">day streak</span></div>
+          <div className="h3" style={{ marginTop: 4 }}>{pct >= 100 ? "Done! 🎉" : `${goal - todayCount} more to go`}</div>
+          <div className="faint" style={{ fontSize: 13 }}>Tasks, cards and test questions</div>
         </div>
       </div>
-      {!compact && (
-        <div style={{ display: "flex", gap: 6, alignItems: "flex-end", height: 70, marginTop: 18 }}>
-          {week.map(d => (
-            <div key={d.key} style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ height: 50, display: "flex", alignItems: "flex-end" }}>
-                <div style={{ width: "100%", borderRadius: 6, height: `${Math.max(6, (d.count / max) * 100)}%`, background: d.count >= goal ? "var(--mint)" : d.count ? "var(--brand)" : "var(--surface-2)", opacity: d.today ? 1 : .75 }} />
-              </div>
-              <div className="faint" style={{ fontSize: 11, fontWeight: d.today ? 800 : 500, marginTop: 4 }}>{d.label}</div>
+      <div style={{ display: "flex", gap: 6, alignItems: "flex-end", height: 76, marginTop: 16 }}>
+        {week.map(d => (
+          <div key={d.key} style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ height: 54, display: "flex", alignItems: "flex-end" }}>
+              <div style={{ width: "100%", borderRadius: 6, border: "2px solid var(--line)", height: `${Math.max(14, (d.count / max) * 100)}%`, background: d.count >= goal ? "var(--green)" : d.count ? "var(--lime)" : "var(--surface-2)" }} />
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function Aside() {
-  const { level, xp, go } = useApp();
-  return (
-    <>
-      <TodayCard />
-      <div className="card pad">
-        <div className="between" style={{ marginBottom: 10 }}>
-          <div>
-            <div className="eyebrow">Your level</div>
-            <div className="h3">{level.icon} {level.name}</div>
+            <div className="mono" style={{ fontSize: 11, fontWeight: 700, marginTop: 4, opacity: d.today ? 1 : .6 }}>{d.label}</div>
           </div>
-          <span className="pill brand">⚡ {xp} XP</span>
-        </div>
-        <Bar pct={level.pct} brand />
-        <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{level.next ? `${level.toNext} XP to ${level.next.icon} ${level.next.name}` : "Top level reached!"}</div>
-        <div className="row" style={{ gap: 4, marginTop: 12 }}>
-          {LEVELS.map((l, i) => <div key={l.name} title={l.name} style={{ flex: 1, height: 6, borderRadius: 9, background: i <= level.index ? "var(--brand)" : "var(--surface-2)" }} />)}
-        </div>
+        ))}
       </div>
-      <button className="card tap pad" onClick={() => go("practice")} style={{ textAlign: "left", display: "flex", gap: 12, alignItems: "center" }}>
-        <div className="tile-icon" style={{ background: "var(--sun-soft)", color: "var(--sun)" }}><Zap size={20} /></div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700 }}>Daily Challenge</div>
-          <div className="faint" style={{ fontSize: 13 }}>10 new tasks every day</div>
-        </div>
-        <ChevronRight size={18} color="var(--faint)" />
-      </button>
-      <div className="soft row" style={{ gap: 12 }}>
-        <Headphones size={20} color="var(--brand-ink)" />
-        <div style={{ fontSize: 13 }}><b>Tip:</b> tap <b>Listen</b> on any card, or the round button, and the AI Reader reads to you.</div>
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -221,35 +227,47 @@ export function SkillOverview({ id }) {
   const nextS = SKILLS[pos + 1];
   const lessonCards = buildCards(skill).length;
   const left = st.total - st.got;
+  const role = ROLES.find(r => r.key === skill.roleKey);
+  const n = skillNumber(skill);
 
   return (
     <div>
-      <PageHead back={{ label: "Learning path", onClick: () => go("learn") }} eyebrow={`${skill.roleName} · Skill ${skill.roleKey === "g" ? pos + 1 : pos - 9}`} title={<>{skill.icon} {skill.n}</>} sub={skill.s} />
+      <button className="btn sm" style={{ marginBottom: 18 }} onClick={() => go("learn")}><ChevronLeft size={16} /> The course</button>
 
-      <div className="card" style={{ overflow: "hidden", display: "grid", gridTemplateColumns: "minmax(0,1fr)", marginBottom: 18 }}>
-        <Picture src={skill.image} alt={skill.n} style={{ borderRadius: 0, border: "none" }} />
-        <div style={{ padding: 18 }} className="between wrap">
-          <div style={{ flex: 1, minWidth: 220 }}>
-            <Bar pct={st.pct} />
-            <div className="faint" style={{ fontSize: 13, marginTop: 6 }}>{st.got}/20 tasks done{st.again ? ` · ${st.again} to practise again` : ""}</div>
+      <div className="bento">
+        <section className={`hero s7 fill-${ROLE_FILL[skill.roleKey]}`}>
+          <div className="row wrap" style={{ gap: 8 }}>
+            <span className="sticker">{role.short} · Skill {pad2(n)}/{pad2(role.skills.length)}</span>
+            {lessonsDone[skill.id] ? <span className="sticker" style={{ background: "var(--green)" }}>✓ Lesson done</span> : <span className="sticker" style={{ background: "var(--yellow)" }}>Lesson to do</span>}
           </div>
-          {lessonsDone[skill.id] ? <span className="pill mint"><CheckCircle2 size={14} /> Lesson done</span> : <span className="pill sun">Lesson not done yet</span>}
+          <h1 className="h1" style={{ margin: "16px 0 10px" }}>{skill.icon} {skill.n}</h1>
+          <div className="serif" style={{ fontSize: 26, lineHeight: 1.2 }}>“{skill.s}”</div>
+          <div style={{ marginTop: 20, maxWidth: 420 }}>
+            <Bar pct={st.pct} />
+            <div className="mono" style={{ fontSize: 13, marginTop: 6 }}>{st.got}/20 tasks done{st.again ? ` · ${st.again} to redo` : ""}</div>
+          </div>
+        </section>
+        <div className="s5" style={{ display: "grid", placeItems: "center", padding: 10 }}>
+          <figure className="polaroid tilt-l" style={{ margin: 0, width: "100%", maxWidth: 380 }}>
+            <img src={skill.image} alt={skill.n} />
+            <figcaption>{skill.n}</figcaption>
+          </figure>
         </div>
       </div>
 
-      <div className="grid g3">
-        <ActionCard step="1" tone="brand" icon={BookOpen} title="Lesson" sub={`${lessonCards} short cards · about ${Math.round(lessonCards * 0.6)} min`}
+      <div className="grid g3 section">
+        <StepCard n="1" fill="violet" icon={BookOpen} title="Read the lesson" sub={`${lessonCards} short slides · about ${Math.round(lessonCards * 0.6)} min`}
           cta={lessonsDone[skill.id] ? "Read again" : "Start lesson"} done={!!lessonsDone[skill.id]} onClick={() => go("lesson", { id: skill.id })} />
-        <ActionCard step="2" tone="mint" icon={Target} title="Practice tasks" sub={left ? `${left} of 20 tasks left` : "All 20 done!"}
+        <StepCard n="2" fill="green" icon={Target} title="Do the tasks" sub={left ? `${left} of 20 tasks left` : "All 20 done!"}
           cta={st.tried ? "Continue" : "Start practice"} done={st.got === 20} onClick={() => go("session", { id: skill.id })} />
-        <ActionCard step="3" tone="sun" icon={Trophy} title="Skill test" sub="20 questions · answers shown as you go"
-          cta="Take the test" onClick={() => startQuiz({ count: 20, category: skill.n, idPool: skill.taskIds, mode: "learn" })} />
+        <StepCard n="3" fill="yellow" icon={Trophy} title="Take the test" sub="20 questions, answers as you go"
+          cta="Start test" onClick={() => startQuiz({ count: 20, category: skill.n, idPool: skill.taskIds, mode: "learn" })} />
       </div>
 
-      <div className="section card pad">
-        <div className="between" style={{ marginBottom: 12 }}>
-          <div className="h3">All 20 tasks</div>
-          {st.again > 0 && <button className="btn sm danger" onClick={() => go("session", { id: skill.id, filter: "again" })}><RotateCcw size={14} /> Practise the {st.again} again</button>}
+      <div className="card pad section">
+        <div className="between wrap" style={{ marginBottom: 14 }}>
+          <div className="h2">All 20 tasks</div>
+          {st.again > 0 && <button className="btn sm danger" onClick={() => go("session", { id: skill.id, filter: "again" })}><RotateCcw size={14} /> Redo the {st.again} I missed</button>}
         </div>
         <div className="dots">
           {skill.taskIds.map((tid, i) => {
@@ -257,61 +275,63 @@ export function SkillOverview({ id }) {
             return <button key={tid} className={`dot${s ? ` ${s}` : ""}`} onClick={() => go("session", { id: skill.id, task: tid })} aria-label={`Task ${i + 1}`}>{i + 1}</button>;
           })}
         </div>
-        <div className="row faint wrap" style={{ fontSize: 12.5, marginTop: 12, gap: 14 }}>
-          <span className="row" style={{ gap: 6 }}><i style={{ width: 10, height: 10, borderRadius: 3, background: "var(--mint)" }} /> Got it</span>
-          <span className="row" style={{ gap: 6 }}><i style={{ width: 10, height: 10, borderRadius: 3, background: "var(--coral-soft)", border: "1.5px solid var(--coral)" }} /> Practise again</span>
-          <span className="row" style={{ gap: 6 }}><i style={{ width: 10, height: 10, borderRadius: 3, border: "1.5px solid var(--border)" }} /> Not tried</span>
+        <div className="row wrap" style={{ fontSize: 13, marginTop: 14, gap: 8 }}>
+          <span className="pill mint">Got it</span><span className="pill coral">Redo</span><span className="pill">Not tried</span>
         </div>
       </div>
 
       <div className="grid g2 section">
-        <div className="card pad">
-          <div className="h3" style={{ marginBottom: 12 }}>Quick check</div>
-          <div className="stack" style={{ gap: 8 }}>
+        <div className="card pad fill-blue">
+          <div className="h2" style={{ marginBottom: 14 }}>Quick check</div>
+          <div className="stack" style={{ gap: 10 }}>
             {skill.check.map(([q, a], i) => (
-              <button key={i} className="soft" onClick={() => setOpen(o => ({ ...o, [i]: !o[i] }))} style={{ border: "none", textAlign: "left" }}>
+              <button key={i} className="soft" onClick={() => setOpen(o => ({ ...o, [i]: !o[i] }))} style={{ textAlign: "left", cursor: "pointer" }}>
                 <div style={{ fontWeight: 700 }}>{q}</div>
-                {open[i] ? <div className="fade" style={{ color: "var(--mint)", fontWeight: 700, marginTop: 4 }}>✓ {a}</div> : <div className="faint" style={{ fontSize: 13, marginTop: 2 }}>Think, then tap to check</div>}
+                {open[i] ? <div className="fade" style={{ fontWeight: 700, marginTop: 6 }}>✅ {a}</div> : <div className="faint" style={{ fontSize: 13, marginTop: 2 }}>Think, then tap</div>}
               </button>
             ))}
           </div>
         </div>
-        <div className="card pad">
-          <div className="between" style={{ marginBottom: 12 }}>
-            <div className="h3">Key words</div>
+        <div className="card pad fill-yellow">
+          <div className="between" style={{ marginBottom: 14 }}>
+            <div className="h2">Key words</div>
             <ListenButton text={skill.words.map(([w, m]) => `${w}: ${m}`)} id={`kw-${skill.id}`} title={`${skill.n}: key words`} />
           </div>
-          <div className="stack" style={{ gap: 8 }}>
+          <div className="stack" style={{ gap: 10 }}>
             {skill.words.map(([w, m]) => <div key={w} className="word"><b>{w}</b><span>{m}</span></div>)}
           </div>
         </div>
       </div>
 
-      <div className="between section">
-        {prev ? <button className="btn ghost" style={{ flex: 1, justifyContent: "flex-start", textAlign: "left" }} onClick={() => go("skill", { id: prev.id })}><ChevronLeft size={17} style={{ flexShrink: 0 }} /> {prev.n}</button> : <span style={{ flex: 1 }} />}
-        {nextS ? <button className="btn ghost" style={{ flex: 1, justifyContent: "flex-end", textAlign: "right" }} onClick={() => go("skill", { id: nextS.id })}>{nextS.n} <ChevronRight size={17} style={{ flexShrink: 0 }} /></button> : <span style={{ flex: 1 }} />}
+      <div className="between section" style={{ gap: 12 }}>
+        {prev ? <button className="btn" style={{ flex: 1, justifyContent: "flex-start", textAlign: "left" }} onClick={() => go("skill", { id: prev.id })}><ChevronLeft size={17} style={{ flexShrink: 0 }} /> {prev.n}</button> : <span style={{ flex: 1 }} />}
+        {nextS ? <button className="btn primary" style={{ flex: 1, justifyContent: "flex-end", textAlign: "right" }} onClick={() => go("skill", { id: nextS.id })}>{nextS.n} <ChevronRight size={17} style={{ flexShrink: 0 }} /></button> : <span style={{ flex: 1 }} />}
       </div>
     </div>
   );
 }
 
-function ActionCard({ step, tone, icon: Icon, title, sub, cta, onClick, done }) {
+function StepCard({ n, fill, icon: Icon, title, sub, cta, onClick, done }) {
   return (
-    <button className="card tap pad" onClick={onClick} style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 14 }}>
+    <button className={`card tap pad fill-${fill}`} onClick={onClick} style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 16, minHeight: 200 }}>
       <div className="between">
-        <div className="tile-icon" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone === "brand" ? "brand-ink" : tone})` }}><Icon size={22} /></div>
-        {done ? <CheckCircle2 size={22} color="var(--mint)" /> : <span className="eyebrow">Step {step}</span>}
+        <span className="mono" style={{ fontSize: 48, fontWeight: 700, lineHeight: .9 }}>{n}</span>
+        {done ? <span className="stamp" style={{ color: "#0B6B3C" }}>Done</span> : <Icon size={26} />}
       </div>
-      <div>
-        <div className="h3">{title}</div>
-        <div className="muted" style={{ fontSize: 14 }}>{sub}</div>
+      <div style={{ flex: 1 }}>
+        <div className="h2">{title}</div>
+        <div style={{ fontSize: 14.5, marginTop: 4 }}>{sub}</div>
       </div>
-      <span className="row" style={{ color: `var(--${tone === "brand" ? "brand-ink" : tone})`, fontWeight: 700, fontSize: 14, gap: 4 }}>{cta} <ChevronRight size={16} /></span>
+      <span className="row" style={{ fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", gap: 4 }}>{cta} <ArrowUpRight size={18} /></span>
     </button>
   );
 }
 
-// ================= Lesson player (story cards) =================
+// ================= Lesson player (deck of slides) =================
+// Slide colours: every kind of slide has its own sticker colour.
+const CARD_FILL = { intro: "lime", analogy: "pink", words: "yellow", why: "blue", example: "violet", mistakes: "orange", levels: "green", check: "blue", done: "lime" };
+const fillOf = kind => (CARD_FILL[kind] ? ` fill-${CARD_FILL[kind]}` : "");
+
 function exampleSpeech([title, sit, check, result, lesson], n) {
   return [`Example ${n}: ${title}.`, sit, `Check: ${check}`, `Result: ${result}`, `Lesson: ${lesson}`];
 }
@@ -411,14 +431,14 @@ export function LessonPlayer({ id }) {
         </div>
 
         {mode === "story" ? (
-          <div key={i} className="story-card rise"
+          <div key={i} className={`story-card rise${fillOf(card.kind)}`}
             onTouchStart={e => { touch.current = e.touches[0].clientX; }}
             onTouchEnd={e => { if (touch.current == null) return; const dx = e.changedTouches[0].clientX - touch.current; if (Math.abs(dx) > 70) goTo(i + (dx < 0 ? 1 : -1)); touch.current = null; }}>
             <CardView skill={skill} card={card} simple={simple} />
           </div>
         ) : (
           <div className="stack" style={{ gap: 14 }}>
-            {cards.slice(0, -1).map((c, k) => <div key={k} className="story-card" style={{ minHeight: 0 }}><CardView skill={skill} card={c} simple={simple} /></div>)}
+            {cards.slice(0, -1).map((c, k) => <div key={k} className={`story-card${fillOf(c.kind)}`} style={{ minHeight: 0 }}><CardView skill={skill} card={c} simple={simple} /></div>)}
             <div className="story-card" style={{ minHeight: 0, textAlign: "center" }}>
               <div className="h2" style={{ marginBottom: 8 }}>Finished reading?</div>
               <button className="btn grad lg" onClick={() => { markLessonDone(id); go("session", { id }); }}><CheckCircle2 size={18} /> Done. Start practice tasks</button>
@@ -463,7 +483,7 @@ function CardView({ skill, card, simple }) {
         <>
           {head}
           <Picture src={skill.image} alt={skill.n} style={{ marginBottom: 18 }} />
-          <div className="display grad-text" style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.25, marginBottom: 10 }}>{skill.s}</div>
+          <div className="serif" style={{ fontSize: 34, lineHeight: 1.12, marginBottom: 12 }}>“{skill.s}”</div>
           {!simple && <p className="big-text" style={{ margin: 0 }}>{skill.def}</p>}
         </>
       );
@@ -508,8 +528,8 @@ function CardView({ skill, card, simple }) {
           <div className="stack" style={{ gap: 10 }}>
             {skill.goodbad.map(([g, b], k) => (
               <div key={k} className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <div style={{ background: "var(--mint-soft)", borderRadius: 16, padding: 12 }}><div className="row" style={{ gap: 6, color: "var(--mint)", fontWeight: 800, fontSize: 12 }}><ThumbsUp size={14} /> DO</div>{g}</div>
-                <div style={{ background: "var(--coral-soft)", borderRadius: 16, padding: 12 }}><div className="row" style={{ gap: 6, color: "var(--coral)", fontWeight: 800, fontSize: 12 }}><ThumbsDown size={14} /> DON'T</div>{b}</div>
+                <div className="fill-green" style={{ borderRadius: 14, padding: 12, border: "2px solid var(--ink)" }}><div className="row mono" style={{ gap: 6, fontWeight: 700, fontSize: 12 }}><ThumbsUp size={14} /> DO</div>{g}</div>
+                <div className="fill-pink" style={{ borderRadius: 14, padding: 12, border: "2px solid var(--ink)" }}><div className="row mono" style={{ gap: 6, fontWeight: 700, fontSize: 12 }}><ThumbsDown size={14} /> DON'T</div>{b}</div>
               </div>
             ))}
           </div>
@@ -536,10 +556,10 @@ function CardView({ skill, card, simple }) {
         <>
           {head}
           <div className="stack" style={{ gap: 10 }}>
-            {[["🌱", "Beginner", "coral"], ["🌿", "Getting there", "sun"], ["🌳", "Expert", "mint"]].map(([e, name, tone], k) => (
-              <div key={name} className="row" style={{ background: `var(--${tone}-soft)`, borderRadius: 16, padding: 14, gap: 14 }}>
+            {[["🌱", "Beginner"], ["🌿", "Getting there"], ["🌳", "Expert"]].map(([e, name], k) => (
+              <div key={name} className="row" style={{ background: "#fff", color: "var(--ink)", border: "2px solid var(--ink)", borderRadius: 14, padding: 14, gap: 14 }}>
                 <div style={{ fontSize: 26 }}>{e}</div>
-                <div><div style={{ fontWeight: 800, color: `var(--${tone})`, fontSize: 13 }}>{name.toUpperCase()}</div><div style={{ fontSize: 15.5 }}>{skill.levels[k]}</div></div>
+                <div><div className="mono" style={{ fontWeight: 700, fontSize: 12 }}>{`0${k + 1} · ${name.toUpperCase()}`}</div><div style={{ fontSize: 15.5 }}>{skill.levels[k]}</div></div>
               </div>
             ))}
           </div>
@@ -551,7 +571,7 @@ function CardView({ skill, card, simple }) {
         <>
           {head}
           <div className="eyebrow" style={{ marginBottom: 6 }}>Put this on your CV</div>
-          <div className="display" style={{ fontSize: 19, fontStyle: "italic", lineHeight: 1.45, padding: 16, borderRadius: 16, border: "2px dashed var(--border)" }}>{skill.cv[0]}</div>
+          <div className="serif" style={{ fontSize: 24, lineHeight: 1.3, padding: 18, borderRadius: 14, border: "2.5px dashed var(--line)" }}>{skill.cv[0]}</div>
           <Short>{skill.cv[1]}</Short>
           <div className="eyebrow" style={{ margin: "20px 0 8px" }}>Practise at home</div>
           <div className="stack" style={{ gap: 8 }}>
@@ -600,9 +620,10 @@ function Short({ children }) {
 
 export function ExampleBody({ ex }) {
   const [, sit, check, result, lesson] = ex;
+  const FILL = { sky: "blue", brand: "yellow", coral: "pink" };
   const Row = ({ label, text, tone }) => (
-    <div style={{ padding: "12px 14px", borderRadius: 16, background: `var(--${tone}-soft)` }}>
-      <div className="eyebrow" style={{ color: `var(--${tone === "brand" ? "brand-ink" : tone})`, marginBottom: 2 }}>{label}</div>
+    <div className={`fill-${FILL[tone]}`} style={{ padding: "12px 14px", borderRadius: 14, border: "2px solid var(--ink)" }}>
+      <div className="eyebrow" style={{ marginBottom: 2 }}>{label}</div>
       <div style={{ fontSize: 15.5 }}>{text}</div>
     </div>
   );

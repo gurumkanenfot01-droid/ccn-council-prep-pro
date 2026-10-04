@@ -29,7 +29,7 @@ export function LibraryHome() {
       <div className="grid g3">
         {items.map(it => (
           <button key={it.id} className="card tap pad" onClick={() => go(it.id)} style={{ textAlign: "left", display: "flex", gap: 14, alignItems: "center" }}>
-            <div className="tile-icon" style={{ background: `var(--${it.tone}-soft)`, color: `var(--${it.tone === "brand" ? "brand-ink" : it.tone})` }}><it.icon size={22} /></div>
+            <div className={`tile-icon fill-${{ brand: "violet", sky: "blue", sun: "yellow", mint: "green", coral: "pink" }[it.tone]}`}><it.icon size={22} /></div>
             <div style={{ flex: 1, minWidth: 0 }}><div className="h3">{it.title}</div><div className="muted" style={{ fontSize: 13.5 }}>{it.sub}</div></div>
             <ChevronRight size={18} color="var(--faint)" />
           </button>
@@ -148,7 +148,7 @@ export function BigPicture() {
           <div key={p.img} className="card pad rise">
             <div className="between" style={{ alignItems: "flex-start", marginBottom: 14 }}>
               <div className="row" style={{ alignItems: "flex-start" }}>
-                <span className="num" style={{ background: "var(--grad)" }}>{i + 1}</span>
+                <span className="num">{i + 1}</span>
                 <h2 className="h2">{p.title}</h2>
               </div>
               <ListenButton text={`${p.title}. ${p.text}`} id={`bp-${i}`} title={p.title} />

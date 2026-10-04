@@ -6,19 +6,18 @@ import { explainSpeech } from "./lib/quiz.js";
 export const AppCtx = createContext(null);
 export function useApp() { return useContext(AppCtx); }
 
-export function Ring({ pct, size = 120, stroke = 12, color = "url(#ringGrad)", track = "var(--surface-2)", children }) {
-  const r = (size - stroke) / 2;
+// Chunky progress ring: ink outline, flat colour fill.
+export function Ring({ pct, size = 120, stroke = 14, color = "var(--lime)", track = "var(--surface)", outline = "var(--line)", children }) {
+  const r = (size - stroke) / 2 - 2;
   const c = 2 * Math.PI * r;
   const off = c - (Math.min(100, Math.max(0, pct)) / 100) * c;
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }} aria-hidden="true">
-        <defs>
-          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#5B4BFF" /><stop offset="1" stopColor="#D946EF" /></linearGradient>
-          <linearGradient id="ringMint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#0FA97A" /><stop offset="1" stopColor="#22C3A6" /></linearGradient>
-        </defs>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
+        <circle cx={size / 2} cy={size / 2} r={r + stroke / 2} fill="none" stroke={outline} strokeWidth="2.5" />
+        <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="none" stroke={outline} strokeWidth="2.5" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke - 2.5} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke - 2.5}
           strokeDasharray={c} strokeDashoffset={off} style={{ transition: "stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center" }}>{children}</div>
@@ -33,17 +32,14 @@ export function Bar({ pct, brand, style }) {
 export function Sheet({ onClose, children, wide }) {
   return (
     <div className="scrim" onClick={onClose}>
-      <div className={`sheet${wide ? " wide" : ""}`} onClick={e => e.stopPropagation()} role="dialog">
-        <div className="grabber" />
-        {children}
-      </div>
+      <div className={`sheet${wide ? " wide" : ""}`} onClick={e => e.stopPropagation()} role="dialog">{children}</div>
     </div>
   );
 }
 
 export function SheetHead({ title, onClose }) {
   return (
-    <div className="between" style={{ marginBottom: 14 }}>
+    <div className="between" style={{ marginBottom: 16 }}>
       <div className="h2">{title}</div>
       <button className="icon-btn" onClick={onClose} aria-label="Close"><X size={18} /></button>
     </div>
@@ -53,27 +49,28 @@ export function SheetHead({ title, onClose }) {
 export function Empty({ icon: Icon, title, sub, children }) {
   return (
     <div className="empty">
-      {Icon && <div className="tile-icon" style={{ background: "var(--brand-soft)", color: "var(--brand-ink)" }}><Icon size={26} /></div>}
-      <div className="h3" style={{ color: "var(--text)" }}>{title}</div>
-      {sub && <div style={{ fontSize: 14, marginTop: 4 }}>{sub}</div>}
-      {children && <div style={{ marginTop: 16 }}>{children}</div>}
+      {Icon && <div className="tile-icon"><Icon size={28} /></div>}
+      <div className="h2" style={{ color: "var(--text)" }}>{title}</div>
+      {sub && <div style={{ fontSize: 15, marginTop: 6 }}>{sub}</div>}
+      {children && <div style={{ marginTop: 18 }}>{children}</div>}
     </div>
   );
 }
 
+// Page title: mono eyebrow, big grotesk headline with an optional italic serif word.
 export function PageHead({ eyebrow, title, sub, action, back }) {
   return (
-    <div style={{ marginBottom: 22 }}>
+    <div style={{ marginBottom: 26 }}>
       {back && (
-        <button onClick={back.onClick} className="row" style={{ border: "none", background: "none", padding: 0, color: "var(--brand-ink)", fontWeight: 700, fontSize: 14, marginBottom: 14, gap: 4 }}>
-          <ChevronLeft size={18} /> {back.label}
+        <button onClick={back.onClick} className="btn sm" style={{ marginBottom: 18 }}>
+          <ChevronLeft size={16} /> {back.label}
         </button>
       )}
-      <div className="between" style={{ alignItems: "flex-end" }}>
+      <div className="between" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
         <div style={{ minWidth: 0 }}>
-          {eyebrow && <div className="eyebrow" style={{ marginBottom: 6 }}>{eyebrow}</div>}
+          {eyebrow && <div className="eyebrow" style={{ marginBottom: 8 }}>{eyebrow}</div>}
           <h1 className="h1">{title}</h1>
-          {sub && <div className="muted" style={{ marginTop: 6 }}>{sub}</div>}
+          {sub && <div className="muted" style={{ marginTop: 10, fontSize: 16.5, maxWidth: 640 }}>{sub}</div>}
         </div>
         {action}
       </div>
@@ -89,7 +86,7 @@ export function Picture({ src, alt, style }) {
 export function Situation({ q, size = 15.5 }) {
   return (
     <div className="situation" style={{ fontSize: size }}>
-      <div className="eyebrow">Situation</div>
+      <div className="eyebrow">📌 The situation</div>
       {q.sit}
     </div>
   );
@@ -101,52 +98,59 @@ export function Explanation({ q, showAnswer = true }) {
   return (
     <div className="explain">
       {showAnswer && (
-        <div className="explain-box" style={{ background: "var(--mint-soft)" }}>
+        <div className="explain-box fill-green rise">
           <div className="between">
-            <div className="eyebrow" style={{ color: "var(--mint)" }}><CheckCircle2 size={14} /> The answer</div>
+            <span className="stamp"><CheckCircle2 size={13} /> The answer</span>
             <ListenButton text={explainSpeech(q)} id={`exp-${q.id}`} title="The answer" />
           </div>
-          <div style={{ fontWeight: 600 }}>{q.ans}</div>
+          <div style={{ fontWeight: 600, fontSize: 16.5, marginTop: 8 }}>{q.ans}</div>
         </div>
       )}
-      <div className="explain-box" style={{ background: "var(--brand-soft)" }}>
+      <div className="explain-box fill-violet">
         <div className="between">
-          <div className="eyebrow" style={{ color: "var(--brand-ink)" }}><HelpCircle size={14} /> Why (explained simply)</div>
+          <div className="eyebrow"><HelpCircle size={14} /> Why (explained simply)</div>
           {!showAnswer && <ListenButton text={explainSpeech(q).slice(1)} id={`exp-${q.id}`} title="Why" />}
         </div>
-        <div>{q.why}</div>
+        <div style={{ fontSize: 15.5 }}>{q.why}</div>
       </div>
-      <div className="explain-box" style={{ background: "var(--sun-soft)" }}>
-        <div className="eyebrow" style={{ color: "var(--sun)" }}><KeyRound size={14} /> Key word</div>
-        <div><b>{q.kw}</b> — {q.km}</div>
+      <div className="explain-box fill-yellow">
+        <div className="eyebrow"><KeyRound size={14} /> Key word</div>
+        <div style={{ fontSize: 15.5 }}><b className="display">{q.kw}</b> — {q.km}</div>
       </div>
-      <div className="row" style={{ alignItems: "flex-start", padding: "2px 4px", fontSize: 14.5 }}>
-        <Lightbulb size={17} color="var(--sun)" style={{ flexShrink: 0, marginTop: 2 }} />
-        <div><b>Remember:</b> {q.simple}</div>
+      <div className="row" style={{ alignItems: "flex-start", padding: "2px 4px", fontSize: 15 }}>
+        <Lightbulb size={18} style={{ flexShrink: 0, marginTop: 2 }} />
+        <div><span className="serif" style={{ fontSize: 19 }}>Remember:</span> {q.simple}</div>
       </div>
     </div>
   );
 }
 
 export function Confetti() {
-  const pieces = useMemo(() => Array.from({ length: 70 }, (_, i) => ({
-    left: (i * 37) % 100, delay: ((i * 13) % 20) / 20, color: ["#5B4BFF", "#D946EF", "#0FA97A", "#FFC14D", "#1E95EA", "#F04E5E"][i % 6], rot: (i * 47) % 360,
+  const pieces = useMemo(() => Array.from({ length: 60 }, (_, i) => ({
+    left: (i * 37) % 100, delay: ((i * 13) % 20) / 20, color: ["#C8F560", "#FF9FD2", "#9FD8FF", "#FFDD55", "#C5B3FF", "#FFAB6E"][i % 6],
   })), []);
   return (
     <div className="confetti" aria-hidden="true">
-      {pieces.map((p, i) => <i key={i} style={{ left: `${p.left}%`, background: p.color, animationDelay: `${p.delay}s`, transform: `rotate(${p.rot}deg)` }} />)}
+      {pieces.map((p, i) => <i key={i} style={{ left: `${p.left}%`, background: p.color, animationDelay: `${p.delay}s` }} />)}
     </div>
   );
 }
 
+const TONE_FILL = { brand: "violet", mint: "green", sun: "yellow", coral: "pink", sky: "blue", lime: "lime", orange: "orange" };
+
 export function StatTile({ icon: Icon, label, value, tone = "brand" }) {
   return (
-    <div className="card pad" style={{ display: "flex", alignItems: "center", gap: 14 }}>
-      <div className="tile-icon" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone === "brand" ? "brand-ink" : tone})` }}><Icon size={21} /></div>
-      <div style={{ minWidth: 0 }}>
-        <div className="display mono" style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{value}</div>
-        <div className="faint" style={{ fontSize: 13, lineHeight: 1.3 }}>{label}</div>
+    <div className="card pad" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div className={`tile-icon fill-${TONE_FILL[tone] || tone}`}><Icon size={21} /></div>
+      <div>
+        <div className="mono" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1 }}>{value}</div>
+        <div className="faint" style={{ fontSize: 13.5, marginTop: 4, lineHeight: 1.3 }}>{label}</div>
       </div>
     </div>
   );
+}
+
+// Coloured icon square.
+export function Ico({ icon: Icon, fill = "violet", size = 46 }) {
+  return <div className={`tile-icon fill-${fill}`} style={{ width: size, height: size }}><Icon size={size * 0.46} /></div>;
 }

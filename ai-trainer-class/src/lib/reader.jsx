@@ -241,17 +241,17 @@ export function ReaderDock({ inFocus }) {
           <div className="player" role="region" aria-label="AI Reader">
             <div className="between">
               <div className="row" style={{ gap: 10, minWidth: 0 }}>
-                <Wave on={r.status === "playing"} />
+                <span className={`on-air${r.status === "playing" ? "" : " paused"}`}>{r.status === "playing" ? "ON AIR" : "PAUSED"}</span>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".08em", opacity: .6 }}>AI READER · {r.index + 1}/{r.chunks.length}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title || "Reading"}</div>
+                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title || "AI Reader"}</div>
+                  <div className="mono" style={{ fontSize: 11.5, opacity: .7 }}>sentence {r.index + 1} of {r.chunks.length}</div>
                 </div>
               </div>
               <button className="pbtn" onClick={r.stop} aria-label="Stop reading"><X size={17} /></button>
             </div>
-            <div className="caption">“{r.chunks[r.index]}”</div>
+            <div className="row" style={{ alignItems: "flex-start", gap: 10 }}><Wave on={r.status === "playing"} /><div className="caption" style={{ flex: 1 }}>“{r.chunks[r.index]}”</div></div>
             <div className="between">
-              <button className="pbtn" style={{ width: "auto", padding: "0 12px", fontSize: 12.5, fontWeight: 800 }} onClick={() => r.updateSettings({ rate: SPEEDS[(speedIdx + 1) % SPEEDS.length] })} aria-label="Change speed">
+              <button className="pbtn mono" style={{ width: "auto", padding: "0 12px", fontSize: 12.5, fontWeight: 700 }} onClick={() => r.updateSettings({ rate: SPEEDS[(speedIdx + 1) % SPEEDS.length] })} aria-label="Change speed">
                 {SPEED_NAMES[r.settings.rate] || `${r.settings.rate}x`}
               </button>
               <div className="row">
@@ -266,7 +266,7 @@ export function ReaderDock({ inFocus }) {
           </div>
         ) : (
           <button className="orb" onClick={() => setOpen(true)} aria-label="AI Reader settings" title="AI Reader">
-            <Headphones size={24} />
+            <Headphones size={22} /> AI Reader
           </button>
         )}
       </div>
@@ -275,7 +275,7 @@ export function ReaderDock({ inFocus }) {
           <div className="sheet" onClick={e => e.stopPropagation()}>
             <div className="grabber" />
             <div className="row" style={{ marginBottom: 6 }}>
-              <div className="tile-icon" style={{ background: "var(--grad)", color: "#fff" }}><Headphones size={22} /></div>
+              <div className="tile-icon fill-pink"><Headphones size={22} /></div>
               <div>
                 <div className="h2">AI Reader</div>
                 <div className="faint" style={{ fontSize: 13 }}>Tap <b>Listen</b> on any card to hear it. Uses your phone's voice, so it is free.</div>
