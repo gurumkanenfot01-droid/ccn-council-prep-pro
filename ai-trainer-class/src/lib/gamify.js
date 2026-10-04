@@ -9,11 +9,11 @@ export const XP = { taskGot: 10, taskAgain: 3, lesson: 50, testCorrect: 5, testP
 export const LEVELS = [
   { name: "Newcomer", xp: 0, icon: "🌱" },
   { name: "Careful Reader", xp: 150, icon: "📖" },
-  { name: "Generalist", xp: 450, icon: "🧑‍🏫" },
-  { name: "Trusted Contributor", xp: 1000, icon: "⭐" },
-  { name: "Reviewer / QA", xp: 1800, icon: "🔍" },
-  { name: "Specialist", xp: 2800, icon: "🎓" },
-  { name: "Team Lead", xp: 4200, icon: "👑" },
+  { name: "Generalist", xp: 500, icon: "🧑‍🏫" },
+  { name: "Trusted Contributor", xp: 1300, icon: "⭐" },
+  { name: "Reviewer / QA", xp: 2600, icon: "🔍" },
+  { name: "Specialist", xp: 4200, icon: "🎓" },
+  { name: "Team Lead", xp: 6500, icon: "👑" },
 ];
 
 export function totalXp({ taskProgress, lessonsDone, history }) {
@@ -36,13 +36,14 @@ export function levelFor(xp) {
 export function skillStats(skill, taskProgress) {
   const got = skill.taskIds.filter(id => taskProgress[id]?.s === "got").length;
   const again = skill.taskIds.filter(id => taskProgress[id]?.s === "again").length;
-  return { got, again, tried: got + again, total: skill.taskIds.length, pct: Math.round((got / skill.taskIds.length) * 100) };
+  const total = skill.taskIds.length;
+  return { got, again, tried: got + again, total, pct: total ? Math.round((got / total) * 100) : 0 };
 }
 
 // A skill is "mastered" when the lesson is read and every task is done.
 export function skillState(skill, taskProgress, lessonsDone) {
   const st = skillStats(skill, taskProgress);
-  if (lessonsDone[skill.id] && st.got === st.total) return "done";
+  if (lessonsDone[skill.id] && st.got === st.total) return "done"; // (a skill with no tasks is done once its lesson is read)
   if (lessonsDone[skill.id] || st.tried > 0) return "started";
   return "new";
 }
@@ -53,7 +54,7 @@ export function nextSkill(taskProgress, lessonsDone) {
 
 export function overall(taskProgress, lessonsDone) {
   const got = TASKS.filter(q => taskProgress[q.id]?.s === "got").length;
-  return { got, total: TASKS.length, pct: Math.round((got / TASKS.length) * 100), lessons: Object.keys(lessonsDone).length };
+  return { got, total: TASKS.length, pct: TASKS.length ? Math.round((got / TASKS.length) * 100) : 0, lessons: Object.keys(lessonsDone).length };
 }
 
 // Last 7 days of study, oldest first, for the weekly chart.

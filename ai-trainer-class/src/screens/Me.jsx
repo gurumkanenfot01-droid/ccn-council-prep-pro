@@ -6,7 +6,7 @@ import {
 import { useApp, PageHead, Sheet, Picture } from "../ui.jsx";
 import { ReaderSettings, ListenButton } from "../lib/reader.jsx";
 import { LogoMark } from "../logo.jsx";
-import { COURSE, ROLES, SKILLS, TASKS, GLOSSARY } from "../data/course.js";
+import { DAYS, ROLES, SKILLS, TASKS, GLOSSARY, TEACHER_IMG } from "../data/course.js";
 
 const WHATSAPP_NUMBER = "2349031853995";
 const WHATSAPP_DISPLAY = "+234 903 185 3995";
@@ -20,7 +20,7 @@ export function Welcome() {
   const [name, setName] = useState(profile.name || "");
   const [goal, setGoal] = useState(profile.goal || "");
   const [daily, setDaily] = useState(profile.dailyGoal || 10);
-  const intro = "Welcome to the AI Trainer Class. AI companies need people to check and mark AI answers. In this class you learn 18 simple skills, practise on 360 real tasks, and track your progress. I am your AI Reader. Tap Listen on any card, and I will read it to you.";
+  const intro = `Welcome to the AI Trainer Class. AI companies need people to check and mark AI answers. In this class you learn ${SKILLS.length} simple skills, practise on ${TASKS.length} real tasks, and track your progress. New lessons are added day by day. I am your AI Reader. Tap Listen on any card, and I will read it to you.`;
 
   function finish(next) {
     setProfile({ ...profile, name: name.trim(), goal, dailyGoal: daily });
@@ -42,7 +42,7 @@ export function Welcome() {
               <div style={{ marginTop: 18 }}><ListenButton text={intro} id="welcome" label="Listen" title="Welcome" /></div>
             </div>
             <div className="grid g3" style={{ marginTop: 16 }}>
-              {[["📚", "18 short lessons", "With pictures and examples"], ["🎯", "360 practice tasks", "Each one explained simply"], ["🎧", "AI Reader", "Listen instead of reading"]].map(([e, t, s]) => (
+              {[["📚", `${SKILLS.length} short lessons`, `${DAYS.length} ${DAYS.length === 1 ? "day" : "days"} so far, more coming`], ["🎯", `${TASKS.length} practice tasks`, "Each one explained simply"], ["🎧", "AI Reader", "Listen instead of reading"]].map(([e, t, s]) => (
                 <div key={t} className="card pad"><div style={{ fontSize: 28 }}>{e}</div><div className="h3" style={{ marginTop: 6 }}>{t}</div><div className="muted" style={{ fontSize: 14 }}>{s}</div></div>
               ))}
             </div>
@@ -61,12 +61,12 @@ export function Welcome() {
           <div className="rise stack" style={{ gap: 14 }}>
             <div className="card pad" style={{ padding: 24 }}>
               <h1 className="h1" style={{ marginBottom: 6 }}>Nice to meet you, {name.trim().split(" ")[0]}!</h1>
-              <div className="muted">Which job do you want? (You will learn both.)</div>
+              <div className="muted">Which job interests you most? (You will learn them all.)</div>
               <div className="grid g2" style={{ marginTop: 14 }}>
                 {ROLES.map(r => (
                   <button key={r.key} className="card tap pad" onClick={() => setGoal(r.name)} style={{ textAlign: "left", borderColor: goal === r.name ? "var(--brand)" : undefined, background: goal === r.name ? "var(--brand-soft)" : undefined }}>
                     <div style={{ fontSize: 28 }}>{r.icon}</div>
-                    <div className="h3">{r.name}</div>
+                    <div className="h3">{r.name}</div><div className="eyebrow">Day {r.day}</div>
                     <div className="muted" style={{ fontSize: 13.5 }}>{r.intro}</div>
                   </button>
                 ))}
@@ -140,7 +140,7 @@ export function MeScreen() {
               <select id="gl" className="input" value={form.goal} onChange={e => setForm({ ...form, goal: e.target.value })}>
                 <option value="">Choose one</option>
                 {ROLES.map(r => <option key={r.key} value={r.name}>{r.name}</option>)}
-                <option value="Both roles">Both roles</option>
+                <option value="All roles">All roles</option>
               </select>
             </div>
             <button className="btn primary" onClick={save} disabled={!dirty || !form.name.trim()}>Save</button>
@@ -234,17 +234,17 @@ export function Help() {
 // ================= About =================
 export function About() {
   const { go } = useApp();
-  const stats = [["Roles", ROLES.length], ["Skills", SKILLS.length], ["Tasks", TASKS.length], ["Key words", GLOSSARY.length]];
+  const stats = [["Days", DAYS.length], ["Roles", ROLES.length], ["Skills", SKILLS.length], ["Tasks", TASKS.length], ["Key words", GLOSSARY.length]];
   return (
     <div>
-      <PageHead back={{ label: "Me", onClick: () => go("me") }} eyebrow="About" title="AI Trainer Class" sub={COURSE.title} />
-      <Picture src="/img/v_teacher.jpg" alt="Think of it like a teacher marking homework" style={{ marginBottom: 16 }} />
+      <PageHead back={{ label: "Me", onClick: () => go("me") }} eyebrow="About" title="AI Trainer Class" sub={DAYS.map(d => `Day ${d.day}: ${d.subtitle}`).join(" · ")} />
+      <Picture src={TEACHER_IMG} alt="Think of it like a teacher marking homework" style={{ marginBottom: 16 }} />
       <div className="grid g4">
         {stats.map(([l, v]) => <div key={l} className="card pad" style={{ textAlign: "center" }}><div className="display grad-text" style={{ fontSize: 30, fontWeight: 800 }}>{v}</div><div className="faint">{l}</div></div>)}
       </div>
       <div className="card pad section">
         <div className="h3" style={{ marginBottom: 10 }}>What's inside</div>
-        {["Story-style lessons with pictures, key words, steps and worked examples", "360 practice tasks, each with \"Why (explained simply)\" and a key word", "Learn-mode and exam-mode tests, Role Tests and a Daily Challenge", "XP, levels, daily goal, streak, badges and a skill map", "An AI Reader that reads everything out loud, even hands-free"].map(l => (
+        {["Day-by-day lessons as coloured slides, with pictures, key words, steps and worked examples", `${TASKS.length} practice tasks, each with "Why (explained simply)" and a key word`, "Lecture notes, must-know notes and sample CVs for every day", "Learn-mode and exam-mode tests, Role Tests and a Daily Challenge", "XP, levels, daily goal, streak, badges and a skill map", "An AI Reader that reads everything out loud, even hands-free"].map(l => (
           <div key={l} className="row" style={{ alignItems: "flex-start", padding: "6px 0" }}><BookOpenCheck size={17} color="var(--mint)" style={{ flexShrink: 0, marginTop: 2 }} /><span>{l}</span></div>
         ))}
       </div>

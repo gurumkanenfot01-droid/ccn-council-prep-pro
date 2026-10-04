@@ -1,22 +1,21 @@
 import { Target, BookOpen, TrendingUp, Flame, Lock } from "lucide-react";
 import { useApp, PageHead, StatTile, Picture, Empty } from "../ui.jsx";
 import { overall, skillStats, LEVELS, lastWeek } from "../lib/gamify.js";
-import { ROLES, SKILLS, TASKS } from "../data/course.js";
+import { DAYS, ROLES, SKILLS, TASKS, LADDER_IMG } from "../data/course.js";
 import { TodayCard } from "./Learn.jsx";
 
 export function badgesFor({ history, taskProgress, lessonsDone, streak }) {
   const got = TASKS.filter(q => taskProgress[q.id]?.s === "got").length;
-  const roleDone = key => ROLES.find(r => r.key === key).skills.every(s => lessonsDone[s.id]);
+  const dayLessons = DAYS.map(d => ({ icon: ["📗", "📘", "📙", "📕", "📓", "📔"][(d.day - 1) % 6], label: `All Day ${d.day} lessons`, earned: d.roles.every(r => r.skills.every(s => lessonsDone[s.id])) }));
   return [
     { icon: "📖", label: "First lesson", earned: Object.keys(lessonsDone).length >= 1 },
     { icon: "🎯", label: "First test", earned: history.length >= 1 },
     { icon: "💯", label: "50 tasks done", earned: got >= 50 },
     { icon: "🔥", label: "7-day streak", earned: streak >= 7 },
     { icon: "🌟", label: "Scored 90%+", earned: history.some(h => h.pct >= 90) },
-    { icon: "🧑‍🏫", label: "All Generalist lessons", earned: roleDone("g") },
-    { icon: "⭐", label: "All LLM Rater lessons", earned: roleDone("l") },
+    ...dayLessons,
     { icon: "🏅", label: "10 tests done", earned: history.length >= 10 },
-    { icon: "👑", label: "All 360 tasks", earned: got >= TASKS.length },
+    { icon: "👑", label: `All ${TASKS.length} tasks`, earned: TASKS.length > 0 && got >= TASKS.length },
   ];
 }
 
@@ -87,18 +86,18 @@ export function ProgressScreen() {
         </div>
         {ROLES.map(r => (
           <div key={r.key} style={{ marginBottom: 14 }}>
-            <div className="eyebrow" style={{ marginBottom: 8 }}>{r.icon} {r.name}</div>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Day {r.day} · {r.icon} {r.name}</div>
             <div className="heat">
               {r.skills.map(s => {
                 const st = skillStats(s, taskProgress);
                 const strong = st.pct >= 55;
                 return (
-                  <button key={s.id} className="heat-cell" onClick={() => go("skill", { id: s.id })} title={`${s.n}: ${st.got}/20`}
+                  <button key={s.id} className="heat-cell" onClick={() => go("skill", { id: s.id })} title={`${s.n}: ${st.got}/${st.total}`}
                     style={{ background: st.pct ? `color-mix(in srgb, var(--mint) ${Math.max(10, st.pct)}%, var(--surface-2))` : "var(--surface-2)", color: strong ? "#fff" : "var(--text)" }}>
                     <span style={{ fontSize: 20 }}>{s.icon}</span>
                     <span>
                       <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, lineHeight: 1.2 }}>{s.n}</span>
-                      <span className="mono" style={{ fontSize: 11, opacity: .8 }}>{st.got}/20{lessonsDone[s.id] ? " · 📖" : ""}</span>
+                      <span className="mono" style={{ fontSize: 11, opacity: .8 }}>{st.got}/{st.total}{lessonsDone[s.id] ? " · 📖" : ""}</span>
                     </span>
                   </button>
                 );
@@ -147,7 +146,7 @@ export function ProgressScreen() {
 
       <div className="section card pad">
         <div className="h3" style={{ marginBottom: 10 }}>Where this can lead</div>
-        <Picture src="/img/ladder.jpg" alt="Where generalist work can lead: generalist tasks, trusted contributor, reviewer or QA, specialist projects, team lead" />
+        <Picture src={LADDER_IMG} alt="Where generalist work can lead: generalist tasks, trusted contributor, reviewer or QA, specialist projects, team lead" />
         <div className="muted" style={{ fontSize: 14, marginTop: 10 }}>Your levels in this app follow the same ladder. Keep going!</div>
       </div>
 

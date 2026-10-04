@@ -371,3 +371,10 @@ textarea.input { resize: vertical; line-height: 1.6; }
 :root[data-theme="dark"] .marquee { background: var(--lime); color: var(--ink); border-color: var(--lime); }
 .logo-word { white-space: nowrap; }
 @media (max-width: 400px) { .logo-word { font-size: 17px; } .header-tools .sticker { display: none; } }
+
+/* Tables inside the class notes */
+.doc-table { overflow-x: auto; border: var(--bw) solid var(--line); border-radius: 16px; box-shadow: var(--sh); background: var(--surface); }
+.doc-table table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 420px; }
+.doc-table th { background: var(--yellow); color: var(--ink); text-align: left; padding: 10px 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; border-bottom: 2px solid var(--line); }
+.doc-table td { padding: 10px 12px; border-top: 1.5px solid color-mix(in srgb, var(--line) 18%, transparent); vertical-align: top; line-height: 1.5; }
+.doc-table tr:nth-child(even) td { background: var(--surface-2); }

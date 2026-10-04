@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  BookA, Lightbulb, Map, Bookmark, XCircle, Layers, Crown, Search, ChevronRight, ChevronLeft, ChevronDown, Play, RotateCcw, Repeat, Trophy,
+  BookA, Lightbulb, Map, Bookmark, FileText, XCircle, Layers, Crown, Search, ChevronRight, ChevronLeft, ChevronDown, Play, RotateCcw, Repeat, Trophy,
 } from "lucide-react";
 import { useApp, PageHead, Picture, Empty, Explanation, Situation } from "../ui.jsx";
 import { ListenButton } from "../lib/reader.jsx";
 import { loadJSON } from "../lib/store.js";
 import { shuffle } from "../lib/quiz.js";
-import { ROLES, SKILLS, GLOSSARY, BIG_PICTURES, SKILL_BY_ID, TASK_BY_ID } from "../data/course.js";
+import { ROLES, SKILLS, TASKS, GLOSSARY, BIG_PICTURES, SKILL_BY_ID, TASK_BY_ID } from "../data/course.js";
 import { ExampleBody } from "./Learn.jsx";
 
 const back = go => ({ label: "Library", onClick: () => go("library") });
@@ -15,6 +15,7 @@ const back = go => ({ label: "Library", onClick: () => go("library") });
 export function LibraryHome() {
   const { go, bookmarks, wrongBank } = useApp();
   const items = [
+    { id: "notes", icon: FileText, tone: "lime", title: "Class notes", sub: "Lecture notes, must-know notes, CVs" },
     { id: "bigpicture", icon: Map, tone: "sky", title: "How AI training works", sub: "5 simple pictures" },
     { id: "words", icon: BookA, tone: "sun", title: "Key words", sub: `${GLOSSARY.length} words, simply explained` },
     { id: "examples", icon: Lightbulb, tone: "brand", title: "Worked examples", sub: `${SKILLS.reduce((n, s) => n + s.examples.length, 0)} expert examples` },
@@ -29,7 +30,7 @@ export function LibraryHome() {
       <div className="grid g3">
         {items.map(it => (
           <button key={it.id} className="card tap pad" onClick={() => go(it.id)} style={{ textAlign: "left", display: "flex", gap: 14, alignItems: "center" }}>
-            <div className={`tile-icon fill-${{ brand: "violet", sky: "blue", sun: "yellow", mint: "green", coral: "pink" }[it.tone]}`}><it.icon size={22} /></div>
+            <div className={`tile-icon fill-${{ brand: "violet", sky: "blue", sun: "yellow", mint: "green", coral: "pink", lime: "lime" }[it.tone]}`}><it.icon size={22} /></div>
             <div style={{ flex: 1, minWidth: 0 }}><div className="h3">{it.title}</div><div className="muted" style={{ fontSize: 13.5 }}>{it.sub}</div></div>
             <ChevronRight size={18} color="var(--faint)" />
           </button>
@@ -40,7 +41,7 @@ export function LibraryHome() {
         <div className="grid g2">
           {ROLES.map(r => (
             <div key={r.key} className="card pad">
-              <div className="eyebrow" style={{ marginBottom: 8 }}>{r.icon} {r.name}</div>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>Day {r.day} · {r.icon} {r.name}</div>
               {r.skills.map((s, i) => (
                 <button key={s.id} className="list-row" style={{ padding: "10px 8px" }} onClick={() => go("lesson", { id: s.id })}>
                   <span className="faint mono" style={{ width: 20, fontSize: 13 }}>{i + 1}</span>
@@ -67,14 +68,14 @@ export function KeyWords() {
   list.forEach(g => { const L = g.word[0].toUpperCase(); (groups[L] = groups[L] || []).push(g); });
   return (
     <div>
-      <PageHead back={back(go)} eyebrow="Glossary" title="Key words" sub={`${list.length} words from the lessons and the 360 tasks.`} />
+      <PageHead back={back(go)} eyebrow="Glossary" title="Key words" sub={`${list.length} words from the lessons and the ${TASKS.length} tasks.`} />
       <div className="row" style={{ position: "relative", marginBottom: 12 }}>
         <Search size={17} style={{ position: "absolute", left: 14, color: "var(--faint)" }} />
         <input className="input" style={{ paddingLeft: 42 }} value={q} onChange={e => setQ(e.target.value)} placeholder="Find a word…" aria-label="Find a word" />
       </div>
       <div className="chips" style={{ marginBottom: 20 }}>
-        <button className={`chip${role === "all" ? " on" : ""}`} onClick={() => setRole("all")}>Both roles</button>
-        {ROLES.map(r => <button key={r.key} className={`chip${role === r.key ? " on" : ""}`} onClick={() => setRole(r.key)}>{r.icon} {r.short}</button>)}
+        <button className={`chip${role === "all" ? " on" : ""}`} onClick={() => setRole("all")}>All roles</button>
+        {ROLES.map(r => <button key={r.key} className={`chip${role === r.key ? " on" : ""}`} onClick={() => setRole(r.key)}>{r.icon} Day {r.day} · {r.short}</button>)}
       </div>
       {Object.keys(groups).sort().map(L => (
         <div key={L} style={{ marginBottom: 18 }}>
@@ -209,7 +210,7 @@ export function Bookmarks() {
 
 export function WrongAnswers() {
   const { go, wrongBank, startQuiz } = useApp();
-  const ids = Object.keys(wrongBank).map(Number).filter(id => TASK_BY_ID[id]).sort((a, b) => (wrongBank[b].count || 0) - (wrongBank[a].count || 0));
+  const ids = Object.keys(wrongBank).filter(id => TASK_BY_ID[id]).sort((a, b) => (wrongBank[b].count || 0) - (wrongBank[a].count || 0));
   return (
     <div>
       <PageHead back={back(go)} eyebrow="Fix your weak spots" title="Wrong answers"
@@ -222,7 +223,8 @@ export function WrongAnswers() {
 
 // ================= Flashcards =================
 function buildDeck(type, scope, bookmarks) {
-  const skills = scope === "all" || scope === "bookmarks" ? SKILLS : scope.length === 1 ? ROLES.find(r => r.key === scope).skills : [SKILL_BY_ID[scope]];
+  const role = ROLES.find(r => r.id === scope);
+  const skills = scope === "all" || scope === "bookmarks" ? SKILLS : role ? role.skills : [SKILL_BY_ID[scope]].filter(Boolean);
   if (type === "words") {
     const set = new Set(skills.map(s => s.id));
     return GLOSSARY.filter(g => set.has(g.skillId)).map(g => ({ front: g.word, back: g.meaning, tag: SKILL_BY_ID[g.skillId].n }));
@@ -264,7 +266,7 @@ export function Flashcards() {
           <div className="chips">
             <button className={`chip${scope === "all" ? " on" : ""}`} onClick={() => setScope("all")}>📚 Everything</button>
             {type === "tasks" && bookmarks.length > 0 && <button className={`chip${scope === "bookmarks" ? " on" : ""}`} onClick={() => setScope("bookmarks")}>⭐ Bookmarks</button>}
-            {ROLES.map(r => <button key={r.key} className={`chip${scope === r.key ? " on" : ""}`} onClick={() => setScope(r.key)}>{r.icon} {r.short}</button>)}
+            {ROLES.map(r => <button key={r.key} className={`chip${scope === r.key ? " on" : ""}`} onClick={() => setScope(r.key)}>{r.icon} Day {r.day} · {r.short}</button>)}
             {SKILLS.map(s => <button key={s.id} className={`chip${scope === s.id ? " on" : ""}`} onClick={() => setScope(s.id)}>{s.icon} {s.n}</button>)}
           </div>
         </div>

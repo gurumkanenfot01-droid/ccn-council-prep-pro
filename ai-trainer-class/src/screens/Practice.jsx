@@ -8,19 +8,30 @@ import { ListenButton, useReader } from "../lib/reader.jsx";
 import { loadJSON, saveJSON } from "../lib/store.js";
 import { LETTERS, dailySeed, buildBalancedPool, formatTime, estimateMinutes, questionSpeech, taskSpeech } from "../lib/quiz.js";
 import { XP } from "../lib/gamify.js";
-import { ROLES, SKILLS, TASKS, TASK_BY_ID, SKILL_BY_ID } from "../data/course.js";
+import { DAYS, ROLES, SKILLS, TASKS, TASK_BY_ID, SKILL_BY_ID } from "../data/course.js";
 
-const ROLE_TESTS = [
-  ...ROLES.map(r => ({ id: `${r.short} Test`, name: `${r.name} Test`, icon: r.icon, skillIds: r.skills.map(s => s.id), perSkill: r.skills.length >= 10 ? 5 : 6 })),
-  { id: "Full Day 1 Test", name: "Full Day 1 Test", icon: "🎓", skillIds: SKILLS.map(s => s.id), perSkill: 4 },
-];
+// Role Tests: one per role, plus a full test for each day. Each takes the
+// same number of questions from every skill (about 50 per role test).
+function roleTests() {
+  return DAYS.map(d => {
+    const withTasks = r => r.skills.filter(s => s.taskIds.length);
+    const per = (skills, target) => Math.max(1, Math.min(Math.round(target / Math.max(1, skills.length)), ...skills.map(s => s.taskIds.length)));
+    const tests = d.roles.filter(r => withTasks(r).length).map(r => ({
+      id: `Day ${d.day}: ${r.short} Test`, name: `${r.name} Test`, icon: r.icon, fill: r.fill, skillIds: withTasks(r).map(s => s.id), perSkill: per(withTasks(r), 50),
+    }));
+    const all = d.roles.flatMap(withTasks);
+    if (d.roles.length > 1 && all.length) tests.push({ id: `Full Day ${d.day} Test`, name: `Full Day ${d.day} Test`, icon: "🎓", fill: "yellow", skillIds: all.map(s => s.id), perSkill: per(all, 72) });
+    return { day: d, tests };
+  }).filter(g => g.tests.length);
+}
 
 // ================= Practice hub =================
 export function PracticeHub() {
   const { startQuiz, go, wrongBank, inProgress, resumeQuiz, history } = useApp();
   const dailyKey = `daily-${dailySeed()}`;
   const daily = loadJSON(dailyKey, null);
-  const weakIds = Object.keys(wrongBank).map(Number).filter(id => TASK_BY_ID[id]);
+  const weakIds = Object.keys(wrongBank).filter(id => TASK_BY_ID[id]);
+  const groups = roleTests();
 
   function roleTest(p) {
     const seed = Math.floor(Math.random() * 1e9);
@@ -66,25 +77,30 @@ export function PracticeHub() {
         <div className="section-head">
           <div><div className="eyebrow">Like a real job check</div><h2 className="h2">Role Tests</h2></div>
         </div>
-        <div className="grid g3">
-          {ROLE_TESTS.map(p => {
-            const n = p.skillIds.length * p.perSkill;
-            const best = history.filter(h => h.category === p.id).reduce((m, h) => Math.max(m, h.pct), -1);
-            return (
-              <div key={p.id} className="card pad stack" style={{ gap: 12 }}>
-                <div className="between">
-                  <div style={{ fontSize: 30 }}>{p.icon}</div>
-                  {best >= 0 && <span className={`pill ${best >= 50 ? "mint" : "coral"}`}>Best {best}%</span>}
-                </div>
-                <div>
-                  <div className="h3">{p.name}</div>
-                  <div className="muted" style={{ fontSize: 14 }}>{n} questions · {p.perSkill} from each of {p.skillIds.length} skills · ~{estimateMinutes(n)} min</div>
-                </div>
-                <button className="btn primary" onClick={() => roleTest(p)}><Trophy size={16} /> Start test</button>
-              </div>
-            );
-          })}
-        </div>
+        {[...groups].reverse().map(g => (
+          <div key={g.day.day} style={{ marginBottom: 18 }}>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>Day {g.day.day} · {g.day.subtitle}</div>
+            <div className="grid g3">
+              {g.tests.map(p => {
+                const n = p.skillIds.length * p.perSkill;
+                const best = history.filter(h => h.category === p.id).reduce((m, h) => Math.max(m, h.pct), -1);
+                return (
+                  <div key={p.id} className="card pad stack" style={{ gap: 12 }}>
+                    <div className="between">
+                      <div className={`tile-icon fill-${p.fill}`} style={{ fontSize: 24 }}>{p.icon}</div>
+                      {best >= 0 && <span className={`pill ${best >= 50 ? "mint" : "coral"}`}>Best {best}%</span>}
+                    </div>
+                    <div>
+                      <div className="h3">{p.name}</div>
+                      <div className="muted" style={{ fontSize: 14 }}>{n} questions · {p.perSkill} from each of {p.skillIds.length} skills · ~{estimateMinutes(n)} min</div>
+                    </div>
+                    <button className="btn primary" onClick={() => roleTest(p)}><Trophy size={16} /> Start test</button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
         <div className="faint" style={{ fontSize: 13, marginTop: 10 }}>Role Tests use exam mode: you see the answers at the end. Pass mark: 50%.</div>
       </div>
 
@@ -121,16 +137,18 @@ function ModeTile({ icon: Icon, tone, title, sub, onClick, disabled }) {
 // ================= Test builder =================
 export function TestBuilder({ preset }) {
   const { startQuiz, go, wrongBank } = useApp();
+  const [day, setDay] = useState(preset?.day || "all");
   const [role, setRole] = useState(preset?.role || "all");
   const [skill, setSkill] = useState(preset?.skill || "all");
   const [count, setCount] = useState(20);
   const [mode, setMode] = useState("learn");
   const [weak, setWeak] = useState(false);
   const roleObj = ROLES.find(r => r.key === role);
-  const weakIds = Object.keys(wrongBank).map(Number).filter(id => TASK_BY_ID[id]);
-  const pool = weak ? weakIds : skill !== "all" ? SKILL_BY_ID[skill].taskIds : roleObj ? roleObj.skills.flatMap(s => s.taskIds) : TASKS.map(t => t.id);
+  const weakIds = Object.keys(wrongBank).filter(id => TASK_BY_ID[id]);
+  const dayRoles = ROLES.filter(r => day === "all" || r.day === day);
+  const pool = weak ? weakIds : skill !== "all" ? SKILL_BY_ID[skill].taskIds : roleObj ? roleObj.skills.flatMap(s => s.taskIds) : day !== "all" ? TASKS.filter(t => t.day === day).map(t => t.id) : TASKS.map(t => t.id);
   const n = Math.min(count, pool.length);
-  const label = weak ? "Weak spots" : skill !== "all" ? SKILL_BY_ID[skill].n : roleObj ? roleObj.short : "Mixed";
+  const label = weak ? "Weak spots" : skill !== "all" ? SKILL_BY_ID[skill].n : roleObj ? `Day ${roleObj.day}: ${roleObj.short}` : day !== "all" ? `Day ${day} mix` : "Mixed";
 
   return (
     <div>
@@ -139,8 +157,12 @@ export function TestBuilder({ preset }) {
         <div className="card pad">
           <div className="label">1. What to practise</div>
           <div className="chips" style={{ marginBottom: 12 }}>
-            <button className={`chip${role === "all" && !weak ? " on" : ""}`} onClick={() => { setRole("all"); setSkill("all"); setWeak(false); }}>📚 Both roles</button>
-            {ROLES.map(r => <button key={r.key} className={`chip${role === r.key && !weak ? " on" : ""}`} onClick={() => { setRole(r.key); setSkill("all"); setWeak(false); }}>{r.icon} {r.name}</button>)}
+            <button className={`chip${day === "all" && !weak ? " on" : ""}`} onClick={() => { setDay("all"); setRole("all"); setSkill("all"); setWeak(false); }}>📚 All days</button>
+            {DAYS.filter(d => d.roles.some(r => r.skills.some(s => s.taskIds.length))).map(d => <button key={d.day} className={`chip${day === d.day && !weak ? " on" : ""}`} onClick={() => { setDay(d.day); setRole("all"); setSkill("all"); setWeak(false); }}>Day {d.day}</button>)}
+          </div>
+          <div className="chips" style={{ marginBottom: 12 }}>
+            <button className={`chip${role === "all" && !weak ? " on" : ""}`} onClick={() => { setRole("all"); setSkill("all"); setWeak(false); }}>All roles</button>
+            {dayRoles.map(r => <button key={r.key} className={`chip${role === r.key && !weak ? " on" : ""}`} onClick={() => { setRole(r.key); setSkill("all"); setWeak(false); }}>{r.icon} {day === "all" ? `Day ${r.day}: ` : ""}{r.name}</button>)}
           </div>
           {roleObj && !weak && (
             <div className="chips">
@@ -235,7 +257,7 @@ export function PracticeSession({ id, startTask, filter }) {
             <div className="card pad"><div className="display mono grad-text" style={{ fontSize: 30, fontWeight: 800 }}>+{xpWon}</div><div className="faint">XP earned</div></div>
           </div>
           <div className="stack" style={{ gap: 10 }}>
-            <button className="btn grad lg full" onClick={() => startQuiz({ count: 20, category: skill.n, idPool: skill.taskIds, mode: "learn" })}><Trophy size={18} /> Take the skill test</button>
+            <button className="btn grad lg full" onClick={() => startQuiz({ count: skill.taskIds.length, category: skill.n, idPool: skill.taskIds, mode: "learn" })}><Trophy size={18} /> Take the skill test</button>
             {session.again > 0 && <button className="btn soft lg full" onClick={() => go("session", { id, filter: "again" })}><RotateCcw size={18} /> Practise the {session.again} again</button>}
             {nextSkill && <button className="btn ghost lg full" onClick={() => go("skill", { id: nextSkill.id })}>Next skill: {nextSkill.n} <ChevronRight size={18} /></button>}
             <button className="btn ghost lg full" onClick={() => go("skill", { id })}>Back to the skill</button>
@@ -266,6 +288,7 @@ export function PracticeSession({ id, startTask, filter }) {
           <div className="between" style={{ marginBottom: 14 }}>
             <div className="row" style={{ gap: 8 }}>
               <span className="pill brand">Task {q.num}</span>
+              {q.level && <span className={`pill ${{ easy: "mint", medium: "sun", hard: "coral" }[q.level] || ""}`}>{q.level}</span>}
               {status === "got" && <span className="pill mint">✓ Done before</span>}
               {status === "again" && <span className="pill coral">↺ Practise again</span>}
             </div>

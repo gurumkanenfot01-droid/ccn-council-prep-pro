@@ -13,6 +13,7 @@ import { LibraryHome, KeyWords, Examples, BigPicture, Bookmarks, WrongAnswers, F
 import { ProgressScreen } from "./screens/Progress.jsx";
 import { MeScreen, Welcome, Help, About } from "./screens/Me.jsx";
 import { SearchSheet } from "./screens/Search.jsx";
+import { NotesHome, DocReader } from "./screens/Notes.jsx";
 
 const TABS = [
   { id: "learn", label: "Learn", icon: Route },
@@ -24,16 +25,17 @@ const TABS = [
 // Which tab is lit for each screen.
 const TAB_OF = {
   learn: "learn", skill: "learn", practice: "practice", builder: "practice",
-  library: "library", words: "library", examples: "library", bigpicture: "library", bookmarks: "library", wrong: "library", flashcards: "library", leaderboard: "library",
+  library: "library", notes: "library", doc: "library", words: "library", examples: "library", bigpicture: "library", bookmarks: "library", wrong: "library", flashcards: "library", leaderboard: "library",
   progress: "progress", me: "me", help: "me", about: "me",
 };
 const FOCUS_VIEWS = ["lesson", "session", "quiz", "results", "welcome"];
 // Reading-heavy screens use a narrower column.
-const NARROW = ["builder", "examples", "bigpicture", "bookmarks", "wrong", "flashcards", "leaderboard", "help", "about"];
+const NARROW = ["doc", "notes", "builder", "examples", "bigpicture", "bookmarks", "wrong", "flashcards", "leaderboard", "help", "about"];
 
 // Everything in the app, as big colourful tiles (full-screen menu).
 const MENU = [
-  ["learn", "Course", "18 skills, step by step", "lime"], ["practice", "Practice", "Drills and tests", "pink"],
+  ["learn", "Course", "Every day, step by step", "lime"], ["notes", "Class notes", "Lecture notes, must-know, CVs", "yellow"],
+  ["practice", "Practice", "Drills and tests", "pink"],
   ["builder", "Build a test", "Your mix, your size", "blue"], ["progress", "Progress", "XP, levels, badges", "yellow"],
   ["bigpicture", "Big picture", "How AI training works", "violet"], ["words", "Key words", "Simple meanings", "orange"],
   ["examples", "Examples", "Learn from experts", "green"], ["flashcards", "Flashcards", "Flip and remember", "pink"],
@@ -284,6 +286,8 @@ export default function App() {
       case "practice": return <PracticeHub />;
       case "builder": return <TestBuilder preset={params} />;
       case "library": return <LibraryHome />;
+      case "notes": return <NotesHome />;
+      case "doc": return <DocReader key={`${params.day}-${params.id}`} day={params.day} id={params.id} />;
       case "words": return <KeyWords />;
       case "examples": return <Examples />;
       case "bigpicture": return <BigPicture />;

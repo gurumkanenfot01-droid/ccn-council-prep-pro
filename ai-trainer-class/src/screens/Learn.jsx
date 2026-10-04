@@ -7,10 +7,8 @@ import { useApp, Ring, Bar, Picture, Confetti } from "../ui.jsx";
 import { ListenButton, useReader, Wave } from "../lib/reader.jsx";
 import { loadJSON, saveJSON } from "../lib/store.js";
 import { skillStats, skillState, nextSkill, overall, lastWeek } from "../lib/gamify.js";
-import { COURSE, ROLES, SKILLS, SKILL_BY_ID } from "../data/course.js";
+import { DAYS, ROLES, SKILLS, SKILL_BY_ID, TEACHER_IMG } from "../data/course.js";
 
-// Each role has its own sticker colour.
-export const ROLE_FILL = { g: "lime", l: "pink" };
 const pad2 = n => String(n).padStart(2, "0");
 export function skillNumber(skill) {
   return ROLES.find(r => r.key === skill.roleKey).skills.findIndex(s => s.id === skill.id) + 1;
@@ -22,7 +20,12 @@ export function LearnHome() {
   const reader = useReader();
   const next = nextSkill(taskProgress, lessonsDone);
   const all = overall(taskProgress, lessonsDone);
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [courseDay, setCourseDay] = useState(() => {
+    const saved = loadJSON("course-day", null);
+    return DAYS.some(d => d.day === saved) ? saved : next?.day || DAYS[DAYS.length - 1]?.day || 1;
+  });
+  const dayInfo = DAYS.find(d => d.day === courseDay) || DAYS[0];
+  function pickDay(n) { setCourseDay(n); saveJSON("course-day", n); }
   const hour = new Date().getHours();
   const hello = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const first = profile.name ? profile.name.split(" ")[0] : "friend";
@@ -37,9 +40,9 @@ export function LearnHome() {
         {/* Continue */}
         <section className="hero s8 rise" style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 300px", minWidth: 0 }}>
-            <div className="eyebrow">{hello} · Day {COURSE.day}</div>
+            <div className="eyebrow">{hello}{next ? ` · Day ${next.day}` : ""}</div>
             <h1 className="h1" style={{ margin: "10px 0 14px" }}>
-              {next ? <>Ready to <span className="serif">train some AI,</span> {first}?</> : <>You finished <span className="serif">Day 1!</span> 🎉</>}
+              {next ? <>Ready to <span className="serif">train some AI,</span> {first}?</> : <>You are <span className="serif">all caught up!</span> 🎉</>}
             </h1>
             <div className="row wrap" style={{ gap: 10 }}>
               {nextAction
@@ -47,7 +50,7 @@ export function LearnHome() {
                 : <button className="btn inkfill lg" onClick={() => go("practice")}><Trophy size={18} /> Take a Role Test</button>}
               {inProgress && <button className="btn white lg" onClick={resumeQuiz}><RotateCcw size={18} /> Finish your test</button>}
             </div>
-            {next && <div style={{ marginTop: 14, fontSize: 14.5 }}>Up next: <b>{next.n}</b> · {skillStats(next, taskProgress).got}/20 tasks</div>}
+            {next && <div style={{ marginTop: 14, fontSize: 14.5 }}>Up next: <b>{next.n}</b> · {skillStats(next, taskProgress).got}/{next.taskIds.length} tasks</div>}
           </div>
           {next && (
             <figure className="polaroid tilt-r" style={{ width: 210, margin: "0 6px 0 0", flexShrink: 0 }}>
@@ -92,7 +95,7 @@ export function LearnHome() {
             <div className="h2" style={{ margin: "6px 0" }}>The big picture <span className="serif">in 5 drawings</span></div>
             <div style={{ fontSize: 14.5 }}>How AI learns from people like you.</div>
           </div>
-          <div className="picture" style={{ width: 130, flexShrink: 0, transform: "rotate(-3deg)", borderColor: "var(--ink)" }}><img src="/img/v_teacher.jpg" alt="" /></div>
+          <div className="picture" style={{ width: 130, flexShrink: 0, transform: "rotate(-3deg)", borderColor: "var(--ink)" }}><img src={TEACHER_IMG} alt="" /></div>
         </button>
 
         {/* AI Reader */}
@@ -120,19 +123,43 @@ export function LearnHome() {
 
       <div className="marquee section" aria-hidden="true"><div>{ticker}  ✦  {ticker}</div></div>
 
-      {/* Course index */}
+      {/* Course index, one day at a time */}
       <div className="section">
         <div className="section-head">
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div className="eyebrow">The course · {all.got}/{all.total} tasks done</div>
-            <h2 className="h1" style={{ fontSize: "clamp(28px, 4vw, 42px)" }}>18 skills. Two roles. <span className="serif">One day.</span></h2>
-          </div>
-          <div className="seg">
-            <button className={roleFilter === "all" ? "on" : ""} onClick={() => setRoleFilter("all")}>All</button>
-            {ROLES.map(r => <button key={r.key} className={roleFilter === r.key ? "on" : ""} onClick={() => setRoleFilter(r.key)}>{r.short}</button>)}
+            <h2 className="h1" style={{ fontSize: "clamp(28px, 4vw, 42px)" }}>{DAYS.length} {DAYS.length === 1 ? "day" : "days"}. {SKILLS.length} skills. <span className="serif">One step at a time.</span></h2>
           </div>
         </div>
-        {ROLES.filter(r => roleFilter === "all" || r.key === roleFilter).map((role, ri) => <RoleIndex key={role.key} role={role} part={ri + 1} current={next} />)}
+        <div className="chips" style={{ marginBottom: 18 }} role="tablist" aria-label="Choose a day">
+          {DAYS.map(d => {
+            const ids = d.roles.flatMap(r => r.skills.flatMap(s => s.taskIds));
+            const got = ids.filter(id => taskProgress[id]?.s === "got").length;
+            return (
+              <button key={d.day} role="tab" aria-selected={courseDay === d.day} className={`chip${courseDay === d.day ? " on" : ""}`} onClick={() => pickDay(d.day)} style={{ padding: "9px 16px", fontSize: 14.5 }}>
+                Day {d.day} <span className="mono" style={{ fontSize: 12, opacity: .75 }}>{ids.length ? `${Math.round((got / ids.length) * 100)}%` : ""}</span>
+              </button>
+            );
+          })}
+          <span className="chip" style={{ borderStyle: "dashed", opacity: .7 }}>Day {(DAYS[DAYS.length - 1]?.day || 0) + 1} · soon</span>
+        </div>
+        {dayInfo && (
+          <>
+            <div className="card pad between wrap" style={{ marginBottom: 18, gap: 14 }}>
+              <div style={{ minWidth: 0, flex: "1 1 280px" }}>
+                <div className="eyebrow">Day {dayInfo.day}</div>
+                <div className="h2" style={{ marginTop: 4 }}>{dayInfo.subtitle || dayInfo.title}</div>
+                <div className="muted" style={{ fontSize: 14, marginTop: 4 }}>{dayInfo.roles.length} roles · {dayInfo.roles.reduce((n, r) => n + r.skills.length, 0)} skills · {dayInfo.roles.reduce((n, r) => n + r.skills.reduce((m, s) => m + s.taskIds.length, 0), 0)} tasks</div>
+              </div>
+              {dayInfo.docs?.length > 0 && (
+                <div className="row wrap" style={{ gap: 8 }}>
+                  {dayInfo.docs.map(doc => <button key={doc.id} className="btn sm" onClick={() => go("doc", { day: dayInfo.day, id: doc.id })}>{{ lecture: "📒", mustknow: "⭐", cvs: "📄" }[doc.kind] || "📝"} {doc.label}</button>)}
+                </div>
+              )}
+            </div>
+            {dayInfo.roles.map(role => <RoleIndex key={role.id} role={role} current={next} />)}
+          </>
+        )}
       </div>
     </div>
   );
@@ -143,9 +170,9 @@ function RoleIndex({ role, current }) {
   const done = role.skills.filter(s => skillState(s, taskProgress, lessonsDone) === "done").length;
   return (
     <div style={{ marginBottom: 30 }}>
-      <div className={`role-band fill-${ROLE_FILL[role.key]}`}>
+      <div className={`role-band fill-${role.fill}`}>
         <div style={{ minWidth: 0, flex: "1 1 260px" }}>
-          <div className="eyebrow">Part {role.key === "g" ? 1 : 2}</div>
+          <div className="eyebrow">Day {role.day} · Part {role.part}</div>
           <div className="h2" style={{ margin: "4px 0" }}>{role.icon} {role.name}</div>
           <div style={{ fontSize: 14.5, maxWidth: 560 }}>{role.intro}</div>
         </div>
@@ -159,7 +186,7 @@ function RoleIndex({ role, current }) {
           return (
             <div key={s.id}>
               {i > 0 && <div style={{ height: 2, background: "var(--line)", opacity: .12 }} />}
-              <button className="index-row" onClick={() => go("skill", { id: s.id })} style={{ borderRadius: 0, background: isCurrent ? "var(--surface-2)" : undefined }} aria-label={`${s.n}: ${st.got} of 20 tasks done`}>
+              <button className="index-row" onClick={() => go("skill", { id: s.id })} style={{ borderRadius: 0, background: isCurrent ? "var(--surface-2)" : undefined }} aria-label={`${s.n}: ${st.got} of ${st.total} tasks done`}>
                 <span className="index-num" style={{ color: state === "done" ? "var(--mint)" : undefined }}>{pad2(i + 1)}</span>
                 <span style={{ minWidth: 0 }}>
                   <span className="h3" style={{ display: "block" }}>{s.icon} {s.n}</span>
@@ -169,7 +196,7 @@ function RoleIndex({ role, current }) {
                 <span className="index-end row" style={{ gap: 8 }}>
                   {state === "done" ? <span className="pill mint">✓ Done</span>
                     : isCurrent ? <span className="pill sun">▶ You are here</span>
-                    : state === "started" ? <span className="pill sky">{st.got}/20</span>
+                    : state === "started" ? <span className="pill sky">{st.got}/{st.total}</span>
                     : <span className="pill">New</span>}
                   <ChevronRight size={20} />
                 </span>
@@ -235,16 +262,16 @@ export function SkillOverview({ id }) {
       <button className="btn sm" style={{ marginBottom: 18 }} onClick={() => go("learn")}><ChevronLeft size={16} /> The course</button>
 
       <div className="bento">
-        <section className={`hero s7 fill-${ROLE_FILL[skill.roleKey]}`}>
+        <section className={`hero s7 fill-${role.fill}`}>
           <div className="row wrap" style={{ gap: 8 }}>
-            <span className="sticker">{role.short} · Skill {pad2(n)}/{pad2(role.skills.length)}</span>
+            <span className="sticker">Day {skill.day} · {role.short} · Skill {pad2(n)}/{pad2(role.skills.length)}</span>
             {lessonsDone[skill.id] ? <span className="sticker" style={{ background: "var(--green)" }}>✓ Lesson done</span> : <span className="sticker" style={{ background: "var(--yellow)" }}>Lesson to do</span>}
           </div>
           <h1 className="h1" style={{ margin: "16px 0 10px" }}>{skill.icon} {skill.n}</h1>
           <div className="serif" style={{ fontSize: 26, lineHeight: 1.2 }}>“{skill.s}”</div>
           <div style={{ marginTop: 20, maxWidth: 420 }}>
             <Bar pct={st.pct} />
-            <div className="mono" style={{ fontSize: 13, marginTop: 6 }}>{st.got}/20 tasks done{st.again ? ` · ${st.again} to redo` : ""}</div>
+            <div className="mono" style={{ fontSize: 13, marginTop: 6 }}>{st.got}/{st.total} tasks done{st.again ? ` · ${st.again} to redo` : ""}</div>
           </div>
         </section>
         <div className="s5" style={{ display: "grid", placeItems: "center", padding: 10 }}>
@@ -258,15 +285,23 @@ export function SkillOverview({ id }) {
       <div className="grid g3 section">
         <StepCard n="1" fill="violet" icon={BookOpen} title="Read the lesson" sub={`${lessonCards} short slides · about ${Math.round(lessonCards * 0.6)} min`}
           cta={lessonsDone[skill.id] ? "Read again" : "Start lesson"} done={!!lessonsDone[skill.id]} onClick={() => go("lesson", { id: skill.id })} />
-        <StepCard n="2" fill="green" icon={Target} title="Do the tasks" sub={left ? `${left} of 20 tasks left` : "All 20 done!"}
-          cta={st.tried ? "Continue" : "Start practice"} done={st.got === 20} onClick={() => go("session", { id: skill.id })} />
-        <StepCard n="3" fill="yellow" icon={Trophy} title="Take the test" sub="20 questions, answers as you go"
-          cta="Start test" onClick={() => startQuiz({ count: 20, category: skill.n, idPool: skill.taskIds, mode: "learn" })} />
+        {st.total > 0 ? (
+          <>
+            <StepCard n="2" fill="green" icon={Target} title="Do the tasks" sub={left ? `${left} of ${st.total} tasks left` : `All ${st.total} done!`}
+              cta={st.tried ? "Continue" : "Start practice"} done={st.got === st.total} onClick={() => go("session", { id: skill.id })} />
+            <StepCard n="3" fill="yellow" icon={Trophy} title="Take the test" sub={`${st.total} questions, answers as you go`}
+              cta="Start test" onClick={() => startQuiz({ count: st.total, category: skill.n, idPool: skill.taskIds, mode: "learn" })} />
+          </>
+        ) : (
+          <div className="card pad" style={{ display: "grid", placeItems: "center", textAlign: "center", borderStyle: "dashed" }}>
+            <div><div className="h3">Practice tasks coming soon</div><div className="muted" style={{ fontSize: 14 }}>They appear when the task bank for Day {skill.day} is added.</div></div>
+          </div>
+        )}
       </div>
 
-      <div className="card pad section">
+      {st.total > 0 && <div className="card pad section">
         <div className="between wrap" style={{ marginBottom: 14 }}>
-          <div className="h2">All 20 tasks</div>
+          <div className="h2">All {st.total} tasks</div>
           {st.again > 0 && <button className="btn sm danger" onClick={() => go("session", { id: skill.id, filter: "again" })}><RotateCcw size={14} /> Redo the {st.again} I missed</button>}
         </div>
         <div className="dots">
@@ -278,7 +313,7 @@ export function SkillOverview({ id }) {
         <div className="row wrap" style={{ fontSize: 13, marginTop: 14, gap: 8 }}>
           <span className="pill mint">Got it</span><span className="pill coral">Redo</span><span className="pill">Not tried</span>
         </div>
-      </div>
+      </div>}
 
       <div className="grid g2 section">
         <div className="card pad fill-blue">
@@ -329,7 +364,7 @@ function StepCard({ n, fill, icon: Icon, title, sub, cta, onClick, done }) {
 
 // ================= Lesson player (deck of slides) =================
 // Slide colours: every kind of slide has its own sticker colour.
-const CARD_FILL = { intro: "lime", analogy: "pink", words: "yellow", why: "blue", example: "violet", mistakes: "orange", levels: "green", check: "blue", done: "lime" };
+const CARD_FILL = { intro: "lime", analogy: "pink", words: "yellow", why: "blue", example: "violet", mistakes: "orange", tested: "yellow", levels: "green", check: "blue", done: "lime" };
 const fillOf = kind => (CARD_FILL[kind] ? ` fill-${CARD_FILL[kind]}` : "");
 
 function exampleSpeech([title, sit, check, result, lesson], n) {
@@ -344,13 +379,14 @@ function buildCards(skill) {
     { kind: "words", emoji: "🔑", title: "Key words", speech: ["Key words.", ...skill.words.map(([w, m]) => `${w}: ${m}`)] },
     { kind: "why", emoji: "🎯", title: "Where it fits and why it matters", speech: ["Where it fits in the job.", ...skill.fits, "Why it matters.", ...skill.why] },
     { kind: "steps", emoji: "🪜", title: "Step by step", speech: skill.steps.map(([a], i) => `Step ${i + 1}. ${a}`) },
+    ...(skill.tested?.[0] ? [{ kind: "tested", emoji: "🧪", title: "How it's tested", speech: ["How it's tested.", ...skill.tested] }] : []),
     { kind: "goodbad", emoji: "⚖️", title: "Good habit vs bad habit", speech: skill.goodbad.map(([g, b]) => `Do this: ${g}. Not this: ${b}.`) },
     ...skill.examples.map((ex, i) => ({ kind: "example", emoji: "🧪", title: `Example ${i + 1}: ${ex[0]}`, ex, n: i + 1, speech: exampleSpeech(ex, i + 1) })),
     { kind: "mistakes", emoji: "⚠️", title: "Common mistakes", speech: ["Common mistakes.", ...skill.mistakes.map(([m, w]) => `${m}. ${w}`)] },
     { kind: "levels", emoji: "📈", title: "What level are you?", speech: [`Beginner: ${skill.levels[0]}`, `Getting there: ${skill.levels[1]}`, `Expert: ${skill.levels[2]}`] },
     { kind: "cv", emoji: "📝", title: "Your CV and home practice", speech: ["For your CV:", skill.cv[0], skill.cv[1], "Practise at home.", ...skill.prac] },
     { kind: "check", emoji: "❓", title: "Quick check", speech: skill.check.map(([q]) => q) },
-    { kind: "done", emoji: "🏁", title: "Lesson complete", speech: [`Well done! You finished the lesson: ${skill.n}. Now try the 20 practice tasks.`] },
+    { kind: "done", emoji: "🏁", title: "Lesson complete", speech: [`Well done! You finished the lesson: ${skill.n}.${skill.taskIds.length ? ` Now try the ${skill.taskIds.length} practice tasks.` : ""}`] },
   ];
   return cards;
 }
@@ -441,7 +477,7 @@ export function LessonPlayer({ id }) {
             {cards.slice(0, -1).map((c, k) => <div key={k} className={`story-card${fillOf(c.kind)}`} style={{ minHeight: 0 }}><CardView skill={skill} card={c} simple={simple} /></div>)}
             <div className="story-card" style={{ minHeight: 0, textAlign: "center" }}>
               <div className="h2" style={{ marginBottom: 8 }}>Finished reading?</div>
-              <button className="btn grad lg" onClick={() => { markLessonDone(id); go("session", { id }); }}><CheckCircle2 size={18} /> Done. Start practice tasks</button>
+              <button className="btn grad lg" onClick={() => { markLessonDone(id); go(skill.taskIds.length ? "session" : "skill", { id }); }}><CheckCircle2 size={18} /> {skill.taskIds.length ? "Done. Start practice tasks" : "Done"}</button>
             </div>
           </div>
         )}
@@ -452,7 +488,9 @@ export function LessonPlayer({ id }) {
           <div className="focus-foot-inner">
             <button className="btn ghost lg" onClick={() => goTo(i - 1)} disabled={i === 0} aria-label="Previous card"><ChevronLeft size={20} /></button>
             {last
-              ? <button className="btn grad lg full" onClick={() => go("session", { id })}><Target size={18} /> Start the 20 practice tasks</button>
+              ? (skill.taskIds.length
+                ? <button className="btn grad lg full" onClick={() => go("session", { id })}><Target size={18} /> Start the {skill.taskIds.length} practice tasks</button>
+                : <button className="btn grad lg full" onClick={() => go("skill", { id })}><CheckCircle2 size={18} /> Back to the skill</button>)
               : <button className="btn primary lg full" onClick={() => goTo(i + 1)}>Next <ChevronRight size={20} /></button>}
           </div>
         </div>
@@ -507,6 +545,7 @@ function CardView({ skill, card, simple }) {
       return (
         <>
           {head}
+          {skill.stepsImage && <Picture src={skill.stepsImage} alt={`${skill.n}: the steps`} style={{ marginBottom: 14 }} />}
           <div className="stack" style={{ gap: 8 }}>
             {skill.steps.map(([a, b], k) => (
               <div key={k} className={`step${isHl(`step${k}`) ? " hl" : ""}`} onClick={() => toggleHl(`step${k}`)}>
@@ -521,6 +560,8 @@ function CardView({ skill, card, simple }) {
           <div className="faint" style={{ fontSize: 12.5, marginTop: 10 }}>Tip: tap a step to highlight it.</div>
         </>
       );
+    case "tested":
+      return (<>{head}{!simple && <p className="big-text" style={{ margin: 0 }}>{skill.tested[0]}</p>}{skill.tested[1] && <Short>{skill.tested[1]}</Short>}</>);
     case "goodbad":
       return (
         <>
@@ -602,10 +643,10 @@ function CardView({ skill, card, simple }) {
         <div style={{ textAlign: "center", padding: "30px 0" }}>
           <div style={{ fontSize: 64 }}>🏆</div>
           <div className="h1" style={{ margin: "10px 0" }}>Lesson complete!</div>
-          <div className="muted big-text">You learned <b>{skill.n}</b>. Now use it on 20 real tasks.</div>
+          <div className="muted big-text">You learned <b>{skill.n}</b>.{skill.taskIds.length ? ` Now use it on ${skill.taskIds.length} real tasks.` : ""}</div>
           <div className="row" style={{ justifyContent: "center", marginTop: 18, gap: 8 }}>
             <span className="pill brand"><Sparkles size={14} /> +50 XP</span>
-            <span className="pill mint"><Clock size={14} /> 20 tasks waiting</span>
+            {skill.taskIds.length > 0 && <span className="pill mint"><Clock size={14} /> {skill.taskIds.length} tasks waiting</span>}
           </div>
         </div>
       );
