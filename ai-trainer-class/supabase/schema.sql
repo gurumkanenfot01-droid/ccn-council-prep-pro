@@ -174,6 +174,14 @@ create policy "days: teacher changes" on public.days for update to authenticated
 drop policy if exists "days: teacher deletes" on public.days;
 create policy "days: teacher deletes" on public.days for delete to authenticated using (public.is_teacher());
 
+-- Let the app reach the tables (the security rules above still decide which rows).
+-- Needed when "Automatically expose new tables" was switched off for the project.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.profiles, public.progress, public.announcements, public.submissions, public.days to authenticated;
+grant select on public.teachers to authenticated;
+grant select on public.announcements, public.days to anon;
+grant usage, select on all sequences in schema public to authenticated;
+
 grant execute on function public.is_teacher() to anon, authenticated;
 grant execute on function public.class_leaderboard() to authenticated;
 
