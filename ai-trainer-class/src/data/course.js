@@ -137,18 +137,27 @@ function addDay(info, data) {
 // on the phone so they also open offline.
 export const ONLINE_DAYS = new Set();
 const ONLINE_KEY = "aitc-online-days";
+// Only days that changed since the last visit are downloaded again, which
+// keeps the free Supabase data allowance (egress) low.
 async function onlineDays() {
   if (!supabase) return [];
-  const cached = () => { try { return JSON.parse(localStorage.getItem(ONLINE_KEY) || "[]"); } catch { return []; } };
+  let cached = [];
+  try { cached = JSON.parse(localStorage.getItem(ONLINE_KEY) || "[]"); } catch { /* ignore */ }
   try {
-    const query = supabase.from("days").select("day, info, data").eq("published", true).order("day");
-    const { data, error } = await Promise.race([query, new Promise((_, no) => setTimeout(() => no(new Error("slow")), 6000))]);
+    const slow = new Promise((_, no) => setTimeout(() => no(new Error("slow")), 6000));
+    const { data: rows, error } = await Promise.race([supabase.from("days").select("day, updated_at").eq("published", true).order("day"), slow]);
     if (error) throw error;
-    const list = data.map(r => ({ info: r.info, data: r.data }));
+    const list = await Promise.all(rows.map(async r => {
+      const have = cached.find(c => c.info?.day === r.day && c.v === r.updated_at);
+      if (have) return have;
+      const { data: full, error: e2 } = await supabase.from("days").select("info, data").eq("day", r.day).single();
+      if (e2) throw e2;
+      return { info: full.info, data: full.data, v: r.updated_at };
+    }));
     try { localStorage.setItem(ONLINE_KEY, JSON.stringify(list)); } catch { /* too big for this phone: works online only */ }
     return list;
   } catch {
-    return cached();
+    return cached;
   }
 }
 
