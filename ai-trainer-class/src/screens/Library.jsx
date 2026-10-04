@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  BookA, Lightbulb, Map, Bookmark, FileText, XCircle, Layers, Crown, Search, ChevronRight, ChevronLeft, ChevronDown, Play, RotateCcw, Repeat, Trophy,
+  BookA, Lightbulb, Map, Bookmark, FileText, XCircle, Layers, Crown, Search, ChevronRight, ChevronLeft, ChevronDown, Play, RotateCcw, Repeat, Trophy, Send, Megaphone, Award,
 } from "lucide-react";
 import { useApp, PageHead, Picture, Empty, Explanation, Situation } from "../ui.jsx";
 import { ListenButton } from "../lib/reader.jsx";
@@ -8,6 +8,7 @@ import { loadJSON } from "../lib/store.js";
 import { shuffle } from "../lib/quiz.js";
 import { ROLES, SKILLS, TASKS, GLOSSARY, BIG_PICTURES, SKILL_BY_ID, TASK_BY_ID } from "../data/course.js";
 import { ExampleBody } from "./Learn.jsx";
+import { ClassLeaderboard } from "./Class.jsx";
 
 const back = go => ({ label: "Library", onClick: () => go("library") });
 
@@ -22,7 +23,10 @@ export function LibraryHome() {
     { id: "flashcards", icon: Layers, tone: "mint", title: "Flashcards", sub: "Flip and remember" },
     { id: "bookmarks", icon: Bookmark, tone: "sun", title: "Bookmarks", sub: `${bookmarks.length} saved tasks` },
     { id: "wrong", icon: XCircle, tone: "coral", title: "Wrong answers", sub: `${Object.keys(wrongBank).length} to review` },
-    { id: "leaderboard", icon: Crown, tone: "brand", title: "Leaderboard", sub: "Top scores on this device" },
+    { id: "leaderboard", icon: Crown, tone: "brand", title: "Leaderboard", sub: "See how you rank" },
+    { id: "assignments", icon: Send, tone: "sky", title: "Assignments", sub: "Hand in your work, see marks" },
+    { id: "news", icon: Megaphone, tone: "sun", title: "Messages", sub: "News from your teacher" },
+    { id: "certificates", icon: Award, tone: "mint", title: "Certificates", sub: "One for every day you finish" },
   ];
   return (
     <div>
@@ -329,7 +333,7 @@ export function Flashcards() {
 
 // ================= Leaderboard =================
 export function Leaderboard() {
-  const { go, profile } = useApp();
+  const { go, profile, cloudOn } = useApp();
   const [range, setRange] = useState("week");
   const entries = loadJSON("leaderboard-entries", []);
   const now = new Date().getTime();
@@ -340,7 +344,8 @@ export function Leaderboard() {
   const medal = ["🥇", "🥈", "🥉"];
   return (
     <div>
-      <PageHead back={back(go)} eyebrow="Compete" title="Leaderboard" sub="Best test scores on this device. Pass a test, then add your score." />
+      <PageHead back={back(go)} eyebrow="Compete" title="Leaderboard" sub={cloudOn ? "See how you are doing next to your classmates." : "Best test scores on this device. Pass a test, then add your score."} />
+      {cloudOn && <><ClassLeaderboard /><div className="section-head section"><h2 className="h2">Best test scores on this phone</h2></div></>}
       <div className="seg" style={{ marginBottom: 18 }}>
         {[["week", "This week"], ["month", "This month"], ["all", "All time"]].map(([k, l]) => <button key={k} className={range === k ? "on" : ""} onClick={() => setRange(k)}>{l}</button>)}
       </div>

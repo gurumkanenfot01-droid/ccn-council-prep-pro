@@ -2,8 +2,10 @@
 // offline once it has been opened.
 //  - Pages and lesson data (/content/*.json): network first, so a new day you
 //    upload shows up straight away; the saved copy is used when offline.
-//  - Everything else (app code, pictures, fonts): cache first, fast.
-const CACHE_NAME = "ai-trainer-class-v5";
+//  - Everything else (app code, pictures, fonts): cache first, fast. This also
+//    covers pictures of days added in the app (Supabase storage, named by content).
+//  - Supabase data and sign-in are never cached.
+const CACHE_NAME = "ai-trainer-class-v6";
 const APP_SHELL = ["/", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -39,7 +41,8 @@ self.addEventListener("fetch", (event) => {
   }
 
   const isFont = url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
-  if (url.origin !== self.location.origin && !isFont) return;
+  const isDayPicture = url.pathname.startsWith("/storage/v1/object/public/content/");
+  if (url.origin !== self.location.origin && !isFont && !isDayPicture) return;
 
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req).then((res) => {

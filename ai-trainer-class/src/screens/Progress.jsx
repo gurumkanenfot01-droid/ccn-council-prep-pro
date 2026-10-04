@@ -1,4 +1,4 @@
-import { Target, BookOpen, TrendingUp, Flame, Lock } from "lucide-react";
+import { Target, BookOpen, TrendingUp, Flame, Lock, Award } from "lucide-react";
 import { useApp, PageHead, StatTile, Picture, Empty } from "../ui.jsx";
 import { overall, skillStats, LEVELS, lastWeek } from "../lib/gamify.js";
 import { DAYS, ROLES, SKILLS, TASKS, LADDER_IMG } from "../data/course.js";
@@ -48,7 +48,7 @@ export function ProgressScreen() {
 
   return (
     <div>
-      <PageHead eyebrow="Progress" title="How you are doing" sub={`${all.got} of ${all.total} tasks done · ${weekTotal} things studied this week`} />
+      <PageHead eyebrow="Progress" title="How you are doing" sub={`${all.got} of ${all.total} tasks done · ${weekTotal} things studied this week`} action={<button className="btn ghost" onClick={() => go("certificates")}><Award size={16} /> Certificates</button>} />
 
       <div className="hero" style={{ marginBottom: 18 }}>
         <div className="between wrap" style={{ gap: 18 }}>

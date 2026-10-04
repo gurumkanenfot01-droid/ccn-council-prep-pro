@@ -11,6 +11,8 @@
 // IDs include the day ("2-r1-3", task "2-r1-3-7"), so adding a new day never
 // changes or mixes up the progress saved for older days.
 
+import { supabase } from "../lib/supa.js";
+
 export const COURSE = { title: "AI Trainer Class" };
 export const DAYS = [];
 export const ROLES = [];
@@ -131,6 +133,25 @@ function addDay(info, data) {
   return day;
 }
 
+// Days the teacher added from the app (Supabase "days" table). A copy is kept
+// on the phone so they also open offline.
+export const ONLINE_DAYS = new Set();
+const ONLINE_KEY = "aitc-online-days";
+async function onlineDays() {
+  if (!supabase) return [];
+  const cached = () => { try { return JSON.parse(localStorage.getItem(ONLINE_KEY) || "[]"); } catch { return []; } };
+  try {
+    const query = supabase.from("days").select("day, info, data").eq("published", true).order("day");
+    const { data, error } = await Promise.race([query, new Promise((_, no) => setTimeout(() => no(new Error("slow")), 6000))]);
+    if (error) throw error;
+    const list = data.map(r => ({ info: r.info, data: r.data }));
+    try { localStorage.setItem(ONLINE_KEY, JSON.stringify(list)); } catch { /* too big for this phone: works online only */ }
+    return list;
+  } catch {
+    return cached();
+  }
+}
+
 let loading = null;
 export function loadCourse() {
   if (!loading) loading = (async () => {
@@ -139,10 +160,16 @@ export function loadCourse() {
     const index = await res.json();
     CONTENT.version = index.version;
     CONTENT.warnings = index.warnings || [];
-    const datas = await Promise.all(index.days.map(d => d.hasCourse
-      ? fetch(`/content/day-${d.day}.json?v=${index.version}`).then(r => r.json())
-      : Promise.resolve({ roles: [] })));
-    index.days.forEach((d, i) => DAYS.push(addDay(d, datas[i])));
+    const [datas, online] = await Promise.all([
+      Promise.all(index.days.map(d => d.hasCourse
+        ? fetch(`/content/day-${d.day}.json?v=${index.version}`).then(r => r.json())
+        : Promise.resolve({ roles: [] }))),
+      onlineDays(),
+    ]);
+    // A day added by the teacher in the app replaces a built-in day with the same number.
+    const all = index.days.map((d, i) => ({ info: d, data: datas[i] })).filter(x => !online.some(o => o.info.day === x.info.day));
+    online.forEach(o => { ONLINE_DAYS.add(o.info.day); all.push(o); });
+    all.sort((a, b) => a.info.day - b.info.day).forEach(x => DAYS.push(addDay(x.info, x.data)));
     TASKS.forEach(makeOptions);
     const seen = new Map();
     SKILLS.forEach(s => (s.words || []).forEach(([w, m]) => { if (w && !seen.has(w.toLowerCase())) seen.set(w.toLowerCase(), { word: w, meaning: m, skillId: s.id }); }));
@@ -156,6 +183,22 @@ export function loadCourse() {
 const docCache = {};
 export async function loadDoc(day, id) {
   const key = `${day}/${id}`;
+  if (!docCache[key] && ONLINE_DAYS.has(Number(day))) {
+    docCache[key] = (async () => {
+      const cacheKey = `aitc-doc-${day}-${id}`;
+      try {
+        const { data, error } = await supabase.from("days").select("docs").eq("day", Number(day)).single();
+        if (error || !data.docs?.[id]) throw error || new Error("missing");
+        try { localStorage.setItem(cacheKey, JSON.stringify(data.docs[id])); } catch { /* full */ }
+        return data.docs[id];
+      } catch (e) {
+        const saved = localStorage.getItem(cacheKey);
+        if (saved) return JSON.parse(saved);
+        delete docCache[key];
+        throw e;
+      }
+    })();
+  }
   if (!docCache[key]) docCache[key] = fetch(`/content/day-${day}/${id}.json?v=${CONTENT.version}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
   return docCache[key];
 }

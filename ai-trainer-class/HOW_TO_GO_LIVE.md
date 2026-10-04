@@ -8,7 +8,9 @@ You do this once (Part A). After that, adding a new day takes about 3 minutes (P
 - **Vercel** is the free website host. It takes the files from GitHub, builds the app, and gives you a web link
   (for example `https://ai-trainer-class.vercel.app`). Every time something changes on GitHub, Vercel updates the
   website by itself, in about 1 minute.
-- **Supabase** is an online database. **You do not need it for this app.** See Part C.
+- **Supabase** is a free online database. It gives students accounts (so their progress is saved online), and gives
+  you the Teacher dashboard, class leaderboard, messages, assignments and "Add a day" from your phone. See Part C.
+  Without it, the app still works, but everything stays on each phone.
 
 ---
 
@@ -37,7 +39,7 @@ This only adds the new `ai-trainer-class` folder. Your CCN Council Prep Pro app 
    **This is the most important step.** If you skip it, Vercel builds the CCN app instead.
 5. **Framework Preset:** Vite (Vercel finds this by itself).
    Leave Build Command (`npm run build`) and Output Directory (`dist`) as they are.
-6. You do **not** need any Environment Variables.
+6. You do not need any Environment Variables now (Part C adds two later).
 7. Tap **Deploy** and wait about 1 to 2 minutes.
 
 ### Step 4: Open your live site
@@ -55,7 +57,24 @@ The app then works like a normal app, even offline.
 
 ---
 
-## Part B: Add a new day (every day, from your phone or computer)
+## Part B: Add a new day
+
+There are two ways. Use whichever is easier.
+
+### Option 1 (easiest): from the app, on your phone
+This needs Part C (Supabase) done first.
+1. Open the app and sign in with your teacher account.
+2. Go to **Me → Teacher dashboard → Add a day**.
+3. Type the day number, tap **Choose Word files** and pick the day's files
+   (Lecture Notes, Task Bank, Must-Know notes, CVs, Assignment answers).
+4. Tap **Check the files**. The app shows how many lessons, tasks and notes it found, and warns you about
+   anything wrong (for example a Day 4 file picked for Day 5).
+5. Tap **Publish**. Students get the new day the next time they open the app, with a "Day N is here!" banner.
+
+You can hide or delete a day you published from the same page.
+
+### Option 2: upload to GitHub
+(every day, from your phone or computer)
 
 Each day lives in its own folder: `ai-trainer-class/content/day-1`, `day-2`, `day-3`, and so on.
 The app reads the Word files in that folder and builds the lessons, tasks and notes **by itself**.
@@ -96,24 +115,87 @@ with ⚠ when a file could not be read.
 
 ---
 
-## Part C: Do I need Supabase?
+## Part C: Switch on accounts, the Teacher dashboard and the class features (Supabase)
 
-**No. Not for this app as it is now.**
+Do this once. It takes about 15 minutes. It is free.
 
-- The app needs no accounts and no payments. Each student's progress (tasks, XP, streak, badges) is saved **on their
-  own phone**. So Vercel alone is enough, and it's free.
-- The lessons come from the Word files on GitHub, not from a database.
+**What you get:**
+- Students make a free account. Their progress is saved online, so it comes back on any phone or laptop.
+- **Teacher dashboard**: who studied today, each student's progress, who is behind, the skills the class finds hardest,
+  and a download of everything for Excel.
+- **Class leaderboard** for all students.
+- **Messages**: post news, and students see it on their home screen.
+- **Assignments**: students hand in answers (typed, or a Word/PDF/photo file). You mark them with a score and a comment.
+- **Add a day from your phone** (Part B, Option 1).
 
-Supabase is only needed **if later you want**:
-- students to log in, so their progress follows them to a new phone;
-- one shared leaderboard for all students (now it is per phone);
-- paid subscriptions (like the CCN app's Paystack paywall).
+(Certificates and the daily reminder work even without Supabase.)
 
-If you want that later, ask for "add Supabase login to the AI Trainer Class". You would then:
-1. Create a free project at https://supabase.com/dashboard (tap **New project**, choose a name and password, region Europe or US).
-2. In **Project Settings → API**, copy the **Project URL** and the **anon public** key.
-3. Add them in Vercel at **Project → Settings → Environment Variables** as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`,
-   then **Redeploy**.
+### Step 1: Create a Supabase project
+1. Open https://supabase.com/dashboard and sign in (tap **Continue with GitHub**, it's easiest).
+2. Tap **New project**.
+3. **Name:** `ai-trainer-class`. **Database password:** tap **Generate a password** and save it somewhere safe.
+   **Region:** choose the one closest to your students (for Nigeria: **West EU (London)** or **Central EU (Frankfurt)**).
+4. Tap **Create new project** and wait about 2 minutes until it's ready.
+
+### Step 2: Create the tables (copy and paste one file)
+1. Open the file with the setup code:
+   https://github.com/gurumkanenfot01-droid/ccn-council-prep-pro/blob/main/ai-trainer-class/supabase/schema.sql
+   Tap the **Copy raw file** button (two squares icon, top right of the file).
+2. Open the SQL Editor: https://supabase.com/dashboard/project/_/sql/new
+   (If it asks, choose your `ai-trainer-class` project.)
+3. Paste everything into the big box and tap **Run** (bottom right). You should see **Success. No rows returned**.
+   If Supabase asks "this query has destructive operations", tap **Run this query**. It is safe: it only removes and re-adds
+   its own security rules, so you can also run it again later.
+
+### Step 3: Let students sign up without waiting for an email
+Supabase's free email sender only sends a few emails per hour, so turn off the "confirm your email" step:
+1. Open https://supabase.com/dashboard/project/_/auth/providers
+2. Tap **Email**. Turn **Confirm email** **off**. Tap **Save**.
+
+### Step 4: Tell Supabase your web address (for "forgot password" emails)
+1. Open https://supabase.com/dashboard/project/_/auth/url-configuration
+2. **Site URL:** `https://ai-trainer-class.vercel.app` (your real link). Tap **Save**.
+
+### Step 5: Copy two keys from Supabase
+1. Open https://supabase.com/dashboard/project/_/settings/api-keys
+2. Copy the **Publishable key** (starts with `sb_publishable_`). If you only see "Legacy API keys", copy the
+   **anon public** key instead. Either one works. **Never** use the `secret` or `service_role` key.
+3. Copy your **Project URL**. It looks like `https://abcdefghijk.supabase.co`. You can find it on
+   https://supabase.com/dashboard/project/_/settings/api (or tap **Connect** at the top of the project).
+
+### Step 6: Put the two keys in Vercel
+1. Open https://vercel.com/dashboard, tap your **ai-trainer-class** project, then **Settings → Environment Variables**.
+2. Add the first one:
+   - **Key:** `VITE_SUPABASE_URL`
+   - **Value:** your Project URL
+   - Tap **Save**.
+3. Add the second one:
+   - **Key:** `VITE_SUPABASE_ANON_KEY`
+   - **Value:** the Publishable (or anon) key
+   - Tap **Save**.
+4. Go to **Deployments**. On the newest one, tap **⋯ → Redeploy → Redeploy**, then wait about 1 minute.
+   (The keys only take effect after a new deploy.)
+
+### Step 7: Make yourself the teacher
+1. Open your app, go to **Me → Save your progress online → Create account**, and make your own account.
+2. Open the teacher file: https://github.com/gurumkanenfot01-droid/ccn-council-prep-pro/blob/main/ai-trainer-class/supabase/teacher.sql
+   and copy it.
+3. Open https://supabase.com/dashboard/project/_/sql/new, paste it, and change `PUT-THE-EMAIL-HERE` to the email you
+   just used. Tap **Run**.
+4. Close and open the app again. **Me** now shows **Teacher dashboard**.
+
+To add another teacher later, they make an account first, then you run the same file with their email.
+
+### Good to know
+- **Students' privacy:** students only see their own work. The leaderboard shows first names and scores only.
+  Only teachers see emails, progress and handed-in files.
+- **Free plan pause:** Supabase pauses a free project after about 1 week with **no visits at all**. If that happens, open
+  https://supabase.com/dashboard and tap **Restore project**. With students using the app every day, it stays awake.
+- **Forgot password:** students tap **Me → Account → Sign in → I forgot my password**. The free email sender is slow and
+  limited (a few emails per hour). If a student is stuck, you can set a new password for them in
+  https://supabase.com/dashboard/project/_/auth/users (tap the student → **Send password recovery**), or delete the
+  user so they can sign up again.
+- **See your data:** https://supabase.com/dashboard/project/_/editor (tables `progress`, `submissions`, `announcements`, `days`).
 
 ---
 
@@ -125,4 +207,7 @@ If you want that later, ask for "add Supabase login to the AI Trainer Class". Yo
 - Vercel new project: https://vercel.com/new
 - Vercel dashboard (your sites and deployments): https://vercel.com/dashboard
 - Your live site (after Part A): https://ai-trainer-class.vercel.app
-- Supabase (only if needed later): https://supabase.com/dashboard
+- Supabase dashboard: https://supabase.com/dashboard
+- Supabase SQL Editor: https://supabase.com/dashboard/project/_/sql/new
+- Setup code to paste: https://github.com/gurumkanenfot01-droid/ccn-council-prep-pro/blob/main/ai-trainer-class/supabase/schema.sql
+- Make a teacher: https://github.com/gurumkanenfot01-droid/ccn-council-prep-pro/blob/main/ai-trainer-class/supabase/teacher.sql

@@ -8,6 +8,8 @@ import { ListenButton, useReader, Wave } from "../lib/reader.jsx";
 import { loadJSON, saveJSON } from "../lib/store.js";
 import { skillStats, skillState, nextSkill, overall, lastWeek } from "../lib/gamify.js";
 import { DAYS, ROLES, SKILLS, SKILL_BY_ID, TEACHER_IMG } from "../data/course.js";
+import { SaveOnlineCard } from "./Account.jsx";
+import { HomeAnnouncement, NewDayBanner } from "./Class.jsx";
 
 const pad2 = n => String(n).padStart(2, "0");
 export function skillNumber(skill) {
@@ -58,6 +60,8 @@ export function LearnHome() {
   return (
     <div className="home">
       <div className="home-main">
+        <NewDayBanner />
+        <HomeAnnouncement />
         <div className="muted" style={{ fontWeight: 500, fontSize: 15 }}>{hello}, {first}</div>
         <h1 className="title-xl">{next ? <>Continue your <em>journey</em></> : <>You are <em>all caught up</em></>}</h1>
 
@@ -108,6 +112,8 @@ export function LearnHome() {
           </div>
           <Bar pct={(todayCount / goal) * 100} />
         </div>
+
+        <SaveOnlineCard />
 
         <div className="only-narrow" style={{ marginTop: 26 }}>{quick}</div>
 
