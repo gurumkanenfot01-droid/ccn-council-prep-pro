@@ -12,17 +12,29 @@ export default function AuthScreen({ t }) {
   // actually logged in, via applyPendingReferralCode().
   useEffect(() => {
     const ref = new URLSearchParams(window.location.search).get("ref");
-    if (ref) window.localStorage.setItem("pending-referral-code", ref.trim().toUpperCase());
+    try {
+      if (ref) window.localStorage.setItem("pending-referral-code", ref.trim().toUpperCase());
+    } catch (e) { /* storage blocked (e.g. Safari "Block All Cookies") — skip the referral */ }
   }, []);
-  const [email, setEmail] = useState("");
+  const [rawEmail, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [unconfirmedEmail, setUnconfirmedEmail] = useState("");
 
+  // Turn Supabase/Safari error text into something a student can act on.
+  function friendlyError(err) {
+    const msg = (err && err.message) || "";
+    if (/invalid login credentials/i.test(msg)) return "Wrong email or password. Check for typos, or tap \"Forgot password?\" below to reset it.";
+    if (/load failed|failed to fetch|networkerror|network request failed/i.test(msg)) return "Couldn't reach the server. Check your internet connection and try again.";
+    return msg || "Something went wrong.";
+  }
+
   async function submit(e) {
     e.preventDefault();
+    // Autofill and iPad keyboards often add a trailing space or a capital letter.
+    const email = rawEmail.trim().toLowerCase();
     setError("");
     setNotice("");
     setBusy(true);
@@ -53,7 +65,7 @@ export default function AuthScreen({ t }) {
         setNotice("Check your email for a password reset link.");
       }
     } catch (err) {
-      setError(err.message || "Something went wrong.");
+      setError(friendlyError(err));
     } finally {
       setBusy(false);
     }
@@ -104,9 +116,10 @@ export default function AuthScreen({ t }) {
           </div>
 
           <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <Field label="Email" icon={Mail} value={email} onChange={setEmail} type="email" />
+            <Field label="Email" icon={Mail} value={rawEmail} onChange={setEmail} type="email" autoComplete="username" />
             {mode !== "forgot" && (
-              <Field label="Password" icon={Lock} value={password} onChange={setPassword} type="password" />
+              <Field label="Password" icon={Lock} value={password} onChange={setPassword} type="password"
+                autoComplete={mode === "signup" ? "new-password" : "current-password"} />
             )}
 
             {error && <div style={{ fontSize: 13, color: t.red, fontWeight: 600 }}>{error}</div>}

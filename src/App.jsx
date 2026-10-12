@@ -236,7 +236,9 @@ function Toggle({ on, onClick, label }) {
 }
 function InstallAppBanner() {
   const { t, canInstall, isAppInstalled, promptInstall } = useApp();
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem("install-banner-dismissed") === "1");
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem("install-banner-dismissed") === "1"; } catch (e) { return false; }
+  });
   const [showIOSHelp, setShowIOSHelp] = useState(false);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
@@ -245,7 +247,7 @@ function InstallAppBanner() {
 
   function dismiss() {
     setDismissed(true);
-    localStorage.setItem("install-banner-dismissed", "1");
+    try { localStorage.setItem("install-banner-dismissed", "1"); } catch (e) { /* storage blocked */ }
   }
 
   return (
