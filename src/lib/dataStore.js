@@ -221,7 +221,7 @@ async function loadDaily(seed) {
     .select("pct, taken_at")
     .eq("user_id", userId)
     .eq("day", seedToDate(seed))
-    .single();
+    .maybeSingle(); // no row yet today is normal — avoids a 406 error on every visit
   if (error || !data) return null;
   return { pct: Number(data.pct), date: data.taken_at };
 }
