@@ -3,7 +3,7 @@ import { Mail, Lock, GraduationCap, ArrowRight } from "lucide-react";
 import { Card, Button, Field } from "../ui/kit.jsx";
 import { supabase } from "../lib/supabase.js";
 
-export default function AuthScreen({ t }) {
+export default function AuthScreen({ t, signOutNotice }) {
   const [mode, setMode] = useState("login"); // login | signup | forgot
 
   // Capture ?ref=CODE from a shared referral link. Stored in localStorage
@@ -20,6 +20,8 @@ export default function AuthScreen({ t }) {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Explains a sign-out the student didn't ask for (wrong clock, session lost).
+  useEffect(() => { if (signOutNotice && signOutNotice.text) setError(signOutNotice.text); }, [signOutNotice]);
   const [notice, setNotice] = useState("");
   const [unconfirmedEmail, setUnconfirmedEmail] = useState("");
 

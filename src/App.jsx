@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { AppCtx, useApp, Card, IconBadge, StatCard, Button, Chip, Modal, SectionHeader, EmptyState, Field } from "./ui/kit.jsx";
 import { loadJSON, saveJSON, fetchQuestionBank, fetchStudyNotes, fetchSubscription, setCurrentUserId, applyPendingReferralCode } from "./lib/dataStore.js";
 import { supabase } from "./lib/supabase.js";
+import { clockIsWrong, CLOCK_WRONG_MESSAGE, SESSION_LOST_MESSAGE } from "./lib/authNotice.js";
 import AuthScreen from "./screens/AuthScreen.jsx";
 import AdminOverviewScreen from "./screens/AdminOverviewScreen.jsx";
 import AdminReviewScreen from "./screens/AdminReviewScreen.jsx";
@@ -1645,9 +1646,26 @@ export default function App() {
     setInstallPrompt(null);
   }
 
+  // Why the student was signed out without asking (wrong clock, lost session),
+  // shown on the login screen. `n` makes a repeat of the same message show again.
+  const [authNotice, setAuthNoticeState] = useState({ text: "", n: 0 });
+  const setAuthNotice = text => setAuthNoticeState(prev => ({ text, n: prev.n + 1 }));
+  const hadSession = useRef(false);
+  const userSignedOut = useRef(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => setSession(sess));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (sess && clockIsWrong(sess.access_token)) {
+        setAuthNotice(CLOCK_WRONG_MESSAGE);
+        userSignedOut.current = true;
+        supabase.auth.signOut().catch(() => {});
+        setSession(null);
+        return;
+      }
+      if (event === "SIGNED_OUT" && hadSession.current && !userSignedOut.current) setAuthNotice(SESSION_LOST_MESSAGE);
+      if (sess) { hadSession.current = true; userSignedOut.current = false; }
+      setSession(sess);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
@@ -1678,6 +1696,7 @@ export default function App() {
     };
   }, [session]);
 
+  const sessionUserKey = session === undefined ? "checking" : session ? session.user.id : "signed-out";
   useEffect(() => {
     if (session === undefined) return; // still checking
     if (session === null) { setBooted(true); return; } // logged out, nothing to load
@@ -1706,9 +1725,13 @@ export default function App() {
       if (!bootIsSubscribed && !bootIsExistingMember) setShowUpsell(true);
       setBooted(true);
     })();
-  }, [session]);
+    // Keyed on the user id, not the session object: Supabase hands over a new
+    // session object on every hourly token refresh, which used to re-download
+    // everything and flash the loading screen.
+  }, [sessionUserKey]);
 
   function signOut() {
+    userSignedOut.current = true;
     supabase.auth.signOut();
     setCurrentUserId(null);
     setProfile(defaultProfile); setSubscription(null); setBookmarks([]); setWrongBank({}); setHistory([]); setInProgress(null);
@@ -1847,7 +1870,7 @@ export default function App() {
       </div>
     );
   }
-  if (!session) return <AppCtx.Provider value={{ t }}><AuthScreen t={t} /></AppCtx.Provider>;
+  if (!session) return <AppCtx.Provider value={{ t }}><AuthScreen t={t} signOutNotice={authNotice} /></AppCtx.Provider>;
   if (profile.disabled) {
     return (
       <AppCtx.Provider value={{ t }}>
