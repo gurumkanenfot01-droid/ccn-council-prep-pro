@@ -93,10 +93,18 @@ export function useCamera() {
 
 // How long each condition must last before it is reported (ms). Generous
 // enough that a sneeze or glance isn't punished, strict enough to catch cheating.
-const HOLD = { no_face: 5000, multiple_faces: 2000, looking_away: 6000, dark: 3000, noise: 2000, phone: 1500 };
+const HOLD = { no_face: 5000, multiple_faces: 2000, looking_away: 6000, dark: 3000, noise: 1200, phone: 1500 };
 const YAW_LIMIT = 0.33;
-const NOISE_MARGIN_DB = 15;
-const NOISE_FLOOR_DB = -48;
+// Sound. Voices are picked out by the energy in the speech band (300–3400 Hz),
+// compared with the room's own quiet level, so a whisper-to-normal voice nearby
+// triggers it while a steady fan or generator hum doesn't.
+const VOICE_MARGIN_DB = 8;    // speech band this much above the quiet room
+const LOUD_MARGIN_DB = 10;    // any sound this much above the quiet room
+const SOUND_FLOOR_DB = -62;   // ignore anything quieter than this
+
+// While the page itself beeps (warning sound) the mic would hear it; skip sound checks briefly.
+let audioChecksPausedUntil = 0;
+export function pauseSoundChecks(ms) { audioChecksPausedUntil = performance.now() + ms; }
 const DARK_LUMA = 22;
 const IDENTITY_EVERY_MS = 60000;
 
@@ -133,6 +141,7 @@ export function useProctor({ cam, active, report, identity }) {
     let alive = true;
     const timers = [];
     const conds = {};
+    const details = {}; // extra text for the admin's timeline, e.g. "Talking (voice detected)"
     let dark = false;
 
     const fire = (type, detail = "") => {
@@ -146,7 +155,7 @@ export function useProctor({ cam, active, report, identity }) {
       if (!on) { c.since = null; c.fired = false; return; }
       const now = performance.now();
       if (c.since == null) c.since = now;
-      if (!c.fired && now - c.since >= HOLD[type]) { c.fired = true; fire(type); }
+      if (!c.fired && now - c.since >= HOLD[type]) { c.fired = true; fire(type, details[type] || ""); }
     };
 
     cam.setOnEnded(type => fire(type));
@@ -209,27 +218,49 @@ export function useProctor({ cam, active, report, identity }) {
       if (dark) setFace("dark");
     }, 1000));
 
-    // Sound: louder than the room's own normal level for 2 seconds.
+    // Sound: talking (speech band) or a loud noise, for about a second.
     const analyser = cam.getAnalyser();
     if (analyser) {
-      const buf = new Uint8Array(analyser.fftSize);
-      const samples = [];
-      let baseline = null;
+      const timeBuf = new Uint8Array(analyser.fftSize);
+      const freqBuf = new Float32Array(analyser.frequencyBinCount);
+      const hzPerBin = analyser.context.sampleRate / analyser.fftSize;
+      const lo = Math.max(1, Math.floor(300 / hzPerBin));
+      const hi = Math.min(freqBuf.length - 1, Math.ceil(3400 / hzPerBin));
+      const learn = { all: [], voice: [] };
+      let base = null; // { all, voice } quiet-room levels in dB
       timers.push(setInterval(() => {
-        analyser.getByteTimeDomainData(buf);
+        analyser.getByteTimeDomainData(timeBuf);
         let sum = 0;
-        for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; sum += x * x; }
-        const db = 20 * Math.log10(Math.max(Math.sqrt(sum / buf.length), 1e-5));
-        setLevel(Math.min(1, Math.max(0, (db + 60) / 50)));
-        if (baseline == null) {
-          samples.push(db);
-          if (samples.length >= 20) baseline = samples.slice().sort((x, y) => x - y)[10];
+        for (let i = 0; i < timeBuf.length; i++) { const x = (timeBuf[i] - 128) / 128; sum += x * x; }
+        const all = 20 * Math.log10(Math.max(Math.sqrt(sum / timeBuf.length), 1e-5));
+        analyser.getFloatFrequencyData(freqBuf);
+        let p = 0;
+        for (let i = lo; i <= hi; i++) p += Math.pow(10, Math.max(freqBuf[i], -140) / 10);
+        const voice = 10 * Math.log10(p / (hi - lo + 1) + 1e-14);
+        setLevel(Math.min(1, Math.max(0, (all + 60) / 45)));
+        if (performance.now() < audioChecksPausedUntil) return;
+
+        // Learn the quiet room over the first ~2 s (the quietest half, so a
+        // student talking at the start doesn't raise the bar).
+        if (base == null) {
+          learn.all.push(all); learn.voice.push(voice);
+          if (learn.all.length >= 20) {
+            const q = arr => arr.slice().sort((x, y) => x - y)[Math.floor(arr.length * 0.3)];
+            base = { all: q(learn.all), voice: q(learn.voice) };
+          }
           return;
         }
-        const loud = db > Math.max(baseline + NOISE_MARGIN_DB, NOISE_FLOOR_DB);
-        if (!loud && db < baseline + 6) baseline = baseline * 0.995 + db * 0.005;
-        setNoisy(loud);
-        track("noise", loud);
+        const talking = voice > base.voice + VOICE_MARGIN_DB && all > SOUND_FLOOR_DB;
+        const loud = all > Math.max(base.all + LOUD_MARGIN_DB, SOUND_FLOOR_DB);
+        const noisyNow = talking || loud;
+        // Follow slow changes in the room (a fan switched on), only while quiet.
+        if (!noisyNow) {
+          base.all = base.all * 0.99 + all * 0.01;
+          base.voice = base.voice * 0.99 + voice * 0.01;
+        }
+        setNoisy(noisyNow ? (talking ? "talking" : "noise") : false);
+        if (noisyNow) details.noise = talking ? "Talking (voice detected)" : "Loud noise";
+        track("noise", noisyNow);
       }, 100));
     }
 

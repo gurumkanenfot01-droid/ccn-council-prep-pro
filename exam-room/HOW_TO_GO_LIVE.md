@@ -68,12 +68,21 @@ and log in with your **CCN admin email and password**. Bookmark this page.
 | Leaves the page, switches apps, opens notifications or Control Centre | Warning |
 | Phone held up in front of the camera | Warning |
 | Face not visible, looking away, camera covered | Warning |
-| Talking or noise | Warning |
+| Talking or noise | A red “keep quiet” banner the moment a voice is heard; after about 1 second of talking it becomes a warning |
 | Screenshot keys, copy, print, right-click (computers) | Blocked + warning |
 | Reaches the warning limit (you choose, e.g. 3) | Exam submitted automatically |
 | Time runs out / you close the exam | Exam submitted automatically |
 
-Every warning is saved with a photo for you to review.
+Every warning is saved with a photo for you to review. Each warning also pops up on the student's screen with a
+beep and vibration, and they must tap **I understand** to continue.
+
+## Retakes
+- In **Exams**, set **Attempts each student may take** (e.g. 2 or 3). After finishing — or after being
+  auto-submitted at the warning limit — students see **Retake exam** while attempts remain.
+- If an exam was **ended for cheating** (another person, face mismatch, or ended by you), students can't
+  retake by themselves. In **Live monitor** or **Results**, tap **Allow retake** next to the student.
+  You can do this as many times as you like. Every earlier attempt stays on record.
+- To ban a student completely, use **Disable** in **Students & codes** (and **Enable** to lift the ban).
 
 **Honest limits — please read:**
 - **No website can fully block screenshots or screen recording on phones.** The Exam Room makes leaks
@@ -92,4 +101,5 @@ Every warning is saved with a photo for you to review.
 - If a student's connection drops, their answers are already saved; they can log in again and **Resume**
   (their face is checked again). The timer keeps running on the server.
 - Students can't open the questions before the start time or after the closing time — this is enforced by the database, not just the website.
-- Each student can take each exam once. To let someone retake it, delete their attempt in Supabase or create a new exam.
+- **Updating an existing setup:** whenever this guide's SQL file changes, run it again in the Supabase SQL Editor
+  (Part A, Step 1). It's safe to run more than once and keeps all your data.

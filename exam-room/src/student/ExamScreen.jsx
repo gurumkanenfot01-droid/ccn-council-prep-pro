@@ -1,11 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
-import { useProctor, VIOLATION_LABELS } from "../lib/proctor.js";
+import { useProctor, VIOLATION_LABELS, pauseSoundChecks } from "../lib/proctor.js";
 import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinner } from "../ui.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
 const HEARTBEAT_MS = 15000;
+
+// Two short beeps + a vibration so a warning can't be missed.
+let beepCtx = null;
+function alertStudent() {
+  try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch (e) { /* not supported */ }
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    beepCtx = beepCtx || new AC();
+    pauseSoundChecks(1500); // don't let our own beep count as noise
+    [0, 0.3].forEach(start => {
+      const osc = beepCtx.createOscillator();
+      const gain = beepCtx.createGain();
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.25, beepCtx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, beepCtx.currentTime + start + 0.22);
+      osc.connect(gain).connect(beepCtx.destination);
+      osc.start(beepCtx.currentTime + start);
+      osc.stop(beepCtx.currentTime + start + 0.25);
+    });
+  } catch (e) { /* sound is a bonus */ }
+}
 
 export default function ExamScreen({ cam, session, onFinished }) {
   const token = session.token;
@@ -20,6 +42,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const [offline, setOffline] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [warning, setWarning] = useState(null); // { count, max, label } — must be acknowledged
   const [, setTick] = useState(0);
   const ended = useRef(false);
   const maxWarnings = session.max_warnings;
@@ -68,7 +91,9 @@ export default function ExamScreen({ cam, session, onFinished }) {
     try {
       const data = absorb(await api.report(token, type, detail, photo));
       if (data && !data.finished && !data.ignored) {
-        setToast({ text: `Warning ${data.warnings} of ${data.max_warnings}: ${VIOLATION_LABELS[type]}`, n: Date.now(), warn: true });
+        setToast(null);
+        setWarning({ count: data.warnings, max: data.max_warnings, label: VIOLATION_LABELS[type], type });
+        alertStudent();
       }
     } catch (e) { onError(e); }
   }, [token, absorb, onError]);
@@ -178,6 +203,11 @@ export default function ExamScreen({ cam, session, onFinished }) {
         </div>
       </header>
 
+      {proctor.noisy && (
+        <div className="banner banner-bad" role="alert">
+          <VolumeX size={18} /> {proctor.noisy === "talking" ? "Talking detected" : "Noise detected"} — keep completely quiet. If it continues you get a warning.
+        </div>
+      )}
       {offline && <div className="banner banner-warn"><WifiOff size={16} /> Reconnecting… your answers so far are saved. Stay on this page.</div>}
       {message && (
         <div className="banner banner-info">
@@ -256,6 +286,24 @@ export default function ExamScreen({ cam, session, onFinished }) {
       </div>
 
       {toast && <div className="toast" role="alert" key={toast.n}><AlertTriangle size={16} /> {toast.text}</div>}
+
+      {warning && (
+        <div className="overlay" role="alertdialog" aria-modal="true" aria-labelledby="warn-h">
+          <div className="card" style={{ borderColor: "var(--red)", textAlign: "center" }}>
+            <AlertTriangle size={40} color="var(--red)" />
+            <h2 id="warn-h" style={{ fontSize: 22, margin: "8px 0 4px", color: "var(--red)" }}>Warning {warning.count} of {warning.max}</h2>
+            <p style={{ fontWeight: 700, margin: "0 0 6px" }}>{warning.label}</p>
+            <p className="muted" style={{ marginTop: 0 }}>
+              {warning.type === "noise" ? "Keep your surroundings completely quiet and don't talk to anyone. " : ""}
+              {warning.max - warning.count === 1
+                ? "One more warning and your exam is submitted automatically."
+                : `${warning.max - warning.count} more warnings and your exam is submitted automatically.`}
+              {" "}Your administrator has been notified and a photo was saved.
+            </p>
+            <button className="btn btn-primary btn-full" onClick={() => setWarning(null)}>I understand</button>
+          </div>
+        </div>
+      )}
 
       {confirmSubmit && (
         <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="submit-h">

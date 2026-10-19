@@ -54,6 +54,7 @@ create table if not exists public.exam_exams (
   paused boolean not null default false,         -- admin can hide the questions mid-exam
   closed boolean not null default false,         -- admin can end the exam for everyone
   all_candidates boolean not null default true,  -- false = only students listed in exam_allowed
+  attempts_allowed integer not null default 1 check (attempts_allowed between 1 and 50),
   created_at timestamptz not null default now(),
   check (ends_at > starts_at)
 );
@@ -88,7 +89,8 @@ create table if not exists public.exam_sessions (
   last_photo_at timestamptz,
   admin_message text,
   user_agent text,
-  unique (exam_id, candidate_id)       -- one attempt per student per exam
+  attempt integer not null default 1,
+  archived boolean not null default false  -- earlier attempts, kept for the record after a retake
 );
 
 create table if not exists public.exam_answers (
@@ -120,6 +122,14 @@ create table if not exists public.exam_login_attempts (
 );
 
 create index if not exists exam_sessions_exam_idx on public.exam_sessions(exam_id);
+
+-- Retakes (added after the first release; safe to re-run on an existing database).
+alter table public.exam_exams add column if not exists attempts_allowed integer not null default 1;
+alter table public.exam_sessions add column if not exists attempt integer not null default 1;
+alter table public.exam_sessions add column if not exists archived boolean not null default false;
+alter table public.exam_sessions drop constraint if exists exam_sessions_exam_id_candidate_id_key;
+-- One current attempt per student per exam; earlier attempts are archived.
+create unique index if not exists exam_sessions_current_idx on public.exam_sessions(exam_id, candidate_id) where not archived;
 create index if not exists exam_events_session_idx on public.exam_events(session_id, created_at);
 create index if not exists exam_events_exam_idx on public.exam_events(exam_id, created_at);
 create index if not exists exam_login_attempts_ip_idx on public.exam_login_attempts(ip, created_at);
@@ -263,6 +273,39 @@ language sql stable security definer set search_path = public as $$
   from exam_exams e where e.id = s.exam_id
 $$;
 
+-- A student may start another attempt by themselves when their last attempt
+-- was submitted (normally or at the warning limit), attempts remain and the
+-- exam is open. An attempt ended for cheating needs the admin's permission.
+create or replace function public.exam__can_self_retake(e public.exam_exams, s public.exam_sessions) returns boolean
+language sql stable security definer set search_path = public as $$
+  select s.id is not null
+     and s.status in ('submitted', 'auto_submitted')
+     and (select count(*) from exam_sessions x where x.exam_id = e.id and x.candidate_id = s.candidate_id) < e.attempts_allowed
+     and not e.closed and not e.paused and now() >= e.starts_at and now() < e.ends_at
+$$;
+
+-- ===================== ADMIN FUNCTIONS =====================
+
+-- Let a student sit the exam again, whatever happened before (submitted,
+-- auto-submitted, ended for cheating), as many times as the admin wants.
+-- The earlier attempt is kept (archived) with its answers and evidence.
+create or replace function public.exam_admin_allow_retake(p_session uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  s public.exam_sessions;
+begin
+  if not public.is_admin() then raise exception 'admins_only'; end if;
+  select * into s from exam_sessions where id = p_session;
+  if s.id is null then return exam__err('not_found'); end if;
+  if s.status = 'in_progress' then
+    perform exam__finish(s.id, 'terminated', 'Ended by the administrator for a retake');
+  end if;
+  update exam_sessions set archived = true where id = s.id;
+  insert into exam_events(exam_id, candidate_id, session_id, type, detail)
+    values (s.exam_id, s.candidate_id, s.id, 'retake_allowed', 'Administrator allowed a retake');
+  return jsonb_build_object('ok', true);
+end; $$;
+
 -- ===================== STUDENT FUNCTIONS =====================
 
 -- Log in with an access code. Returns the student's name, face status and
@@ -289,10 +332,13 @@ begin
         'show_answers', e.show_answers, 'max_warnings', e.max_warnings,
         'paused', e.paused,
         'session_status', s.status,
-        'result', case when s.status is not null and s.status <> 'in_progress' then exam__result(s) end
+        'result', case when s.status is not null and s.status <> 'in_progress' then exam__result(s) end,
+        'attempts_allowed', e.attempts_allowed,
+        'attempts_used', (select count(*) from exam_sessions x where x.exam_id = e.id and x.candidate_id = c.id),
+        'can_retake', exam__can_self_retake(e, s)
       ) order by e.starts_at)
       from exam_exams e
-      left join exam_sessions s on s.exam_id = e.id and s.candidate_id = c.id
+      left join exam_sessions s on s.exam_id = e.id and s.candidate_id = c.id and not s.archived
       where (e.all_candidates or exists (select 1 from exam_allowed a where a.exam_id = e.id and a.candidate_id = c.id))
         and ((not e.closed and e.ends_at > now()) or s.id is not null)
         and e.ends_at > now() - interval '7 days'
@@ -345,10 +391,20 @@ begin
     return exam__err('face_mismatch');
   end if;
 
-  select * into s from exam_sessions where exam_id = e.id and candidate_id = c.id;
+  select * into s from exam_sessions where exam_id = e.id and candidate_id = c.id and not archived;
   if s.id is not null then
     s := exam__session(s.token);
-    if s.status <> 'in_progress' then return exam__err('already_taken'); end if;
+    if s.status <> 'in_progress' then
+      -- Finished attempt: start a new one only if the exam allows another try
+      -- (never after being ended for cheating — that needs the admin).
+      if not exam__can_self_retake(e, s) then
+        return exam__err(case when s.status = 'terminated' then 'retake_needs_admin' else 'already_taken' end);
+      end if;
+      update exam_sessions set archived = true where id = s.id;
+      s := null;
+    end if;
+  end if;
+  if s.id is not null then
     update exam_sessions set last_seen_at = now(), face_fail_streak = 0 where id = s.id;
     insert into exam_events(exam_id, candidate_id, session_id, type, detail, photo)
       values (e.id, c.id, s.id, 'resume', 'Re-entered the exam (face matched)', exam__clean_photo(p_photo));
@@ -361,12 +417,13 @@ begin
     ord := case when e.shuffle
       then (select array_agg(x order by random()) from unnest(e.question_ids) x)
       else e.question_ids end;
-    insert into exam_sessions(exam_id, candidate_id, question_order, deadline, total, user_agent, last_photo, last_photo_at)
+    insert into exam_sessions(exam_id, candidate_id, question_order, deadline, total, user_agent, last_photo, last_photo_at, attempt)
       values (e.id, c.id, ord, least(now() + make_interval(mins => e.duration_minutes), e.ends_at),
-              cardinality(ord), left(coalesce(p_user_agent, ''), 300), exam__clean_photo(p_photo), now())
+              cardinality(ord), left(coalesce(p_user_agent, ''), 300), exam__clean_photo(p_photo), now(),
+              1 + (select count(*) from exam_sessions x where x.exam_id = e.id and x.candidate_id = c.id))
       returning * into s;
     insert into exam_events(exam_id, candidate_id, session_id, type, detail, photo)
-      values (e.id, c.id, s.id, 'start', 'Started the exam (face matched)', exam__clean_photo(p_photo));
+      values (e.id, c.id, s.id, 'start', format('Started attempt %s (face matched)', s.attempt), exam__clean_photo(p_photo));
   end if;
 
   return jsonb_build_object(
@@ -569,7 +626,11 @@ end; $$;
 
 -- ===================== PERMISSIONS =====================
 
+revoke all on function public.exam_admin_allow_retake(uuid) from public, anon;
+grant execute on function public.exam_admin_allow_retake(uuid) to authenticated;
+
 revoke all on function
+  public.exam__can_self_retake(public.exam_exams, public.exam_sessions),
   public.exam__throttled(), public.exam__candidate(text), public.exam__finish(uuid, text, text), public.exam__session(uuid),
   public.exam__result(public.exam_sessions), public.exam__client_ip()
   from public, anon, authenticated;

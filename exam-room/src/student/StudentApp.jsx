@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock } from "lucide-react";
+import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock, RotateCcw } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useCamera, enterFullscreen, exitFullscreen } from "../lib/proctor.js";
 import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
@@ -110,8 +110,12 @@ function ExamCard({ exam, onStart }) {
   const finished = exam.session_status && exam.session_status !== "in_progress";
   const r = exam.result;
   let action;
+  const used = exam.attempts_used || 0;
+  const allowed = exam.attempts_allowed || 1;
+  const open = now >= starts && now < ends && !exam.paused;
   if (finished) {
     action = (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <div className="row">
         <span className={`pill ${r.status === "submitted" ? "pill-ok" : "pill-bad"}`}>
           {r.status === "submitted" ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
@@ -119,6 +123,18 @@ function ExamCard({ exam, onStart }) {
         </span>
         {r.show_score && <strong>{r.score} / {r.total}</strong>}
         {r.reason && r.status !== "submitted" && <span className="muted" style={{ fontSize: 13 }}>{r.reason}</span>}
+      </div>
+      {exam.can_retake ? (
+        <button className="btn btn-primary" style={{ alignSelf: "flex-start" }} onClick={() => onStart(exam)}>
+          <RotateCcw size={16} /> Retake exam (attempt {used + 1} of {allowed})
+        </button>
+      ) : open && (
+        <span className="faint" style={{ fontSize: 13 }}>
+          {r.status === "terminated"
+            ? "Only your administrator can allow a retake."
+            : used >= allowed ? `No attempts left (${used} of ${allowed} used). Ask your administrator if you need another try.` : ""}
+        </span>
+      )}
       </div>
     );
   } else if (now < starts) {
@@ -139,6 +155,7 @@ function ExamCard({ exam, onStart }) {
       <div className="row"><strong style={{ fontSize: 16 }}>{exam.title}</strong></div>
       <div className="muted" style={{ fontSize: 13.5 }}>
         <Clock size={13} /> {fmtDateTime(exam.starts_at)} – {fmtDateTime(exam.ends_at)} · {exam.duration_minutes} min · {exam.question_count} questions
+        {allowed > 1 && ` · ${allowed} attempts allowed`}
       </div>
       <div>{action}</div>
     </div>
@@ -183,6 +200,7 @@ function PrepScreen({ exam, name, code, cam, onStarted, onBack }) {
           {exam.question_count} questions · {exam.duration_minutes} minutes
           {exam.per_question_seconds ? ` · ${exam.per_question_seconds} seconds per question` : ""}
           {" · "}{exam.max_warnings} warnings allowed
+          {(exam.attempts_allowed || 1) > 1 && ` · attempt ${Math.min((exam.attempts_used || 0) + (exam.session_status === "in_progress" ? 0 : 1), exam.attempts_allowed)} of ${exam.attempts_allowed}`}
         </p>
         {exam.instructions && <div className="card" style={{ marginBottom: 12, whiteSpace: "pre-wrap" }}>{exam.instructions}</div>}
         <div className="card" style={{ marginBottom: 12 }}>
