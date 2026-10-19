@@ -25,7 +25,7 @@ function blankExam() {
   return {
     title: "", instructions: "", starts_at: start.toISOString(), ends_at: end.toISOString(),
     duration_minutes: 60, question_ids: [], per_question_seconds: null, show_answers: true, show_score: true,
-    max_warnings: 3, shuffle: true, all_candidates: true,
+    max_warnings: 3, shuffle: true, all_candidates: true, attempts_allowed: 1,
   };
 }
 
@@ -69,7 +69,7 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
       duration_minutes: Number(f.duration_minutes), question_ids: f.question_ids,
       per_question_seconds: f.per_question_seconds ? Number(f.per_question_seconds) : null,
       show_answers: f.show_answers, show_score: f.show_score, max_warnings: Number(f.max_warnings),
-      shuffle: f.shuffle, all_candidates: f.all_candidates,
+      shuffle: f.shuffle, all_candidates: f.all_candidates, attempts_allowed: Number(f.attempts_allowed || 1),
     };
     const res = f.id
       ? await supabase.from("exam_exams").update(row).eq("id", f.id).select("id").single()
@@ -102,9 +102,12 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
           <input id="pq" type="number" min={10} max={3600} value={f.per_question_seconds ?? ""} onChange={e => set("per_question_seconds", e.target.value || null)} /></div>
         <div className="field"><label htmlFor="w">Warnings before auto-submit</label>
           <input id="w" type="number" min={1} max={50} value={f.max_warnings} onChange={e => set("max_warnings", e.target.value)} /></div>
+        <div className="field"><label htmlFor="att">Attempts each student may take</label>
+          <input id="att" type="number" min={1} max={50} value={f.attempts_allowed ?? 1} onChange={e => set("attempts_allowed", e.target.value)} /></div>
       </div>
       <p className="faint" style={{ margin: 0, fontSize: 12.5 }}>
         Students can start any time between the two times. Each student gets the full time allowed, but never past the closing time.
+        With more than one attempt, students can retake after finishing (or after reaching the warning limit). If an exam is ended for cheating, only you can allow a retake.
       </p>
 
       <div className="card" style={{ background: "var(--surface-alt)", boxShadow: "none" }}>
@@ -212,7 +215,7 @@ export default function ExamsTab() {
                     <td><strong>{e.title}</strong><div className="faint" style={{ fontSize: 12 }}>{e.question_ids.length} questions · {e.duration_minutes} min</div></td>
                     <td style={{ fontSize: 13 }}>{fmtDateTime(e.starts_at)}<br />to {fmtDateTime(e.ends_at)}</td>
                     <td style={{ fontSize: 12.5 }} className="muted">
-                      {e.max_warnings} warnings{e.per_question_seconds ? ` · ${e.per_question_seconds}s/question` : ""}<br />
+                      {e.max_warnings} warnings{e.per_question_seconds ? ` · ${e.per_question_seconds}s/question` : ""} · {e.attempts_allowed || 1} attempt{(e.attempts_allowed || 1) === 1 ? "" : "s"}<br />
                       {e.show_answers ? "Answers shown" : "Answers hidden"}{e.all_candidates ? "" : " · selected students"}
                     </td>
                     <td><span className={`pill ${cls}`}>{label}</span></td>

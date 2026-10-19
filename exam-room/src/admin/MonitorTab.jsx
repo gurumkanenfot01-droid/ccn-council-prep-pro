@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Eye, MessageSquare, XCircle, PauseCircle, PlayCircle, Camera, AlertTriangle, X, Lock } from "lucide-react";
+import { Eye, MessageSquare, XCircle, PauseCircle, PlayCircle, Camera, AlertTriangle, X, Lock, RotateCcw } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { fmtClock } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
@@ -10,7 +10,7 @@ const PHOTO_POLL_MS = 30000;
 const ONLINE_MS = 40000;
 
 export const EVENT_TEXT = {
-  start: "Started (face matched)", resume: "Re-entered (face matched)", start_face_mismatch: "Face did NOT match at start",
+  start: "Started (face matched)", resume: "Re-entered (face matched)", retake_allowed: "Retake allowed by administrator", start_face_mismatch: "Face did NOT match at start",
   face_mismatch: "Face did not match", no_face: "Face not visible", multiple_faces: "Another person in view",
   looking_away: "Looking away", phone: "Phone seen by camera", dark: "Camera covered / dark", noise: "Talking or noise",
   tab_away: "Left the exam screen", window_blur: "Opened another app or panel", fullscreen_exit: "Left full screen",
@@ -118,8 +118,8 @@ export default function MonitorTab() {
     if (!examId) return;
     const [{ data: s, error: err }, { data: ev }, { data: ex }] = await Promise.all([
       supabase.from("exam_sessions")
-        .select("id, candidate_id, status, ended_reason, current_index, answered, score, total, warnings, face_fail_streak, last_seen_at, started_at, deadline")
-        .eq("exam_id", examId),
+        .select("id, candidate_id, status, ended_reason, current_index, answered, score, total, warnings, face_fail_streak, last_seen_at, started_at, deadline, attempt")
+        .eq("exam_id", examId).eq("archived", false),
       supabase.from("exam_events").select("id, candidate_id, type, counted, created_at").eq("exam_id", examId).eq("counted", true)
         .order("created_at", { ascending: false }).limit(15),
       supabase.from("exam_exams").select("*").eq("id", examId).maybeSingle(),
@@ -140,7 +140,7 @@ export default function MonitorTab() {
   useEffect(() => {
     if (!livePhotos || !examId) { setPhotos({}); return undefined; }
     const load = async () => {
-      const { data } = await supabase.from("exam_sessions").select("id, last_photo").eq("exam_id", examId).eq("status", "in_progress");
+      const { data } = await supabase.from("exam_sessions").select("id, last_photo").eq("exam_id", examId).eq("status", "in_progress").eq("archived", false);
       setPhotos(Object.fromEntries((data || []).map(r => [r.id, r.last_photo])));
     };
     load();
@@ -163,6 +163,12 @@ export default function MonitorTab() {
     if (!confirm(`End ${name}'s exam now? They are logged out of the exam and it is submitted as is.`)) return;
     await supabase.from("exam_sessions").update({ status: "terminated", ended_reason: "Ended by the administrator", ended_at: new Date().toISOString() })
       .eq("id", s.id).eq("status", "in_progress");
+    poll();
+  }
+  async function allowRetake(s, name) {
+    if (!confirm(`Allow ${name} to take this exam again? Their current attempt is kept on record and they can start a fresh one.`)) return;
+    const { error: err } = await supabase.rpc("exam_admin_allow_retake", { p_session: s.id });
+    if (err) setError(err.message);
     poll();
   }
   async function message(s, name) {
@@ -222,7 +228,7 @@ export default function MonitorTab() {
                       {s && s.status === "in_progress" && <span className="dot" style={{ background: isOnline ? "var(--emerald)" : "var(--red)" }} title={isOnline ? "Online" : "Not responding"} />}
                       <strong>{name}</strong>
                     </div>
-                    <div className="faint num" style={{ fontSize: 12 }}>{c?.access_code}</div>
+                    <div className="faint num" style={{ fontSize: 12 }}>{c?.access_code}{s && s.attempt > 1 ? ` · attempt ${s.attempt}` : ""}</div>
                   </td>
                   <td>{statusPill(s)}{s && s.status !== "in_progress" && s.ended_reason && <div className="faint" style={{ fontSize: 11.5 }}>{s.ended_reason}</div>}</td>
                   <td className="num">{s ? `${s.answered}/${s.total}` : "–"}</td>
@@ -238,6 +244,9 @@ export default function MonitorTab() {
                           <button className="btn btn-sm btn-ghost" onClick={() => message(s, name)}><MessageSquare size={13} /> Message</button>
                           <button className="btn btn-sm btn-ghost" style={{ color: "var(--red)" }} onClick={() => endSession(s, name)}><XCircle size={13} /> End</button>
                         </>}
+                        {s.status !== "in_progress" && (
+                          <button className="btn btn-sm btn-ghost" onClick={() => allowRetake(s, name)}><RotateCcw size={13} /> Allow retake</button>
+                        )}
                       </div>
                     )}
                   </td>
