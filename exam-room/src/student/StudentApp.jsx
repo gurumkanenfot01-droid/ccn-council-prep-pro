@@ -1,0 +1,329 @@
+import { useCallback, useEffect, useState } from "react";
+import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock } from "lucide-react";
+import { api, serverNow, fmtClock } from "../lib/api.js";
+import { useCamera, enterFullscreen, exitFullscreen } from "../lib/proctor.js";
+import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
+import Liveness from "./Liveness.jsx";
+import ExamScreen from "./ExamScreen.jsx";
+
+const CODE_KEY = "exam-room-code";
+
+function Header({ name, onLogout }) {
+  return (
+    <header className="topbar">
+      <div className="brand">
+        <span className="brand-mark"><ShieldCheck size={20} /></span>
+        <div>
+          <div className="serif" style={{ fontWeight: 700, fontSize: 17 }}>CCN Exam Room</div>
+          {name && <div className="faint" style={{ fontSize: 12 }}>{name}</div>}
+        </div>
+      </div>
+      {onLogout && <button className="btn btn-ghost btn-sm" onClick={onLogout}><LogOut size={14} /> Log out</button>}
+    </header>
+  );
+}
+
+function CodeScreen({ onLogin }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function submit(e) {
+    e.preventDefault();
+    setBusy(true); setError("");
+    try { await onLogin(code.trim().toUpperCase()); } catch (err) { setError(err.message); } finally { setBusy(false); }
+  }
+  return (
+    <main className="wrap" style={{ minHeight: "100vh", display: "flex", alignItems: "center" }}>
+      <div className="narrow" style={{ width: "100%" }}>
+        <div style={{ textAlign: "center", marginBottom: 22 }}>
+          <div className="brand-mark" style={{ margin: "0 auto 10px", width: 52, height: 52, borderRadius: 16 }}><ShieldCheck size={26} /></div>
+          <h1 className="serif" style={{ fontSize: 24, margin: "0 0 4px" }}>CCN Exam Room</h1>
+          <p className="muted" style={{ margin: 0, fontSize: 14 }}>Enter the personal access code your administrator gave you.</p>
+        </div>
+        <form className="card" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="field">
+            <label htmlFor="code"><KeyRound size={11} /> Access code</label>
+            <input id="code" className="code-input" value={code} onChange={e => setCode(e.target.value.replace(/[^a-z0-9]/gi, "").slice(0, 12))}
+              autoCapitalize="characters" autoCorrect="off" spellCheck={false} autoComplete="one-time-code" inputMode="text" required />
+          </div>
+          {error && <div className="error" role="alert">{error}</div>}
+          <button className="btn btn-primary btn-full" disabled={busy || code.length < 6}>
+            {busy ? "Checking…" : "Continue"} {!busy && <ArrowRight size={16} />}
+          </button>
+          <p className="faint" style={{ fontSize: 12.5, margin: 0, display: "flex", gap: 6 }}>
+            <Lock size={14} style={{ flex: "none", marginTop: 2 }} />
+            Your code only works with your face. Sharing it won’t let anyone else sit your exam.
+          </p>
+        </form>
+      </div>
+    </main>
+  );
+}
+
+function EnrollScreen({ name, code, cam, onEnrolled, onLogout }) {
+  const [started, setStarted] = useState(false);
+  const [error, setError] = useState("");
+  async function begin() { setStarted(true); await cam.start(); }
+  async function finish({ descriptor, photo }) {
+    try { await api.enroll(code, descriptor, photo); cam.stop(); onEnrolled(); }
+    catch (e) { setError(e.message); setStarted(false); cam.stop(); }
+  }
+  return (
+    <main className="wrap">
+      <Header name={name} onLogout={onLogout} />
+      <div className="narrow">
+        <h1 className="serif" style={{ fontSize: 22, margin: "0 0 6px" }}>Register your face</h1>
+        <p className="muted" style={{ marginTop: 0 }}>
+          This is done once. Your face will be checked at the start of every exam and every minute during it,
+          so nobody else can use your code. An administrator will approve your registration.
+        </p>
+        <ul className="muted" style={{ fontSize: 14, paddingLeft: 18 }}>
+          <li>Sit in good light, facing the camera, with nothing covering your face.</li>
+          <li>Make sure you are alone in view.</li>
+        </ul>
+        {error && <div className="banner banner-bad">{error}</div>}
+        {!started || cam.camera !== "on" ? (
+          <>
+            <PermissionHelp camera={cam.camera} mic={cam.mic} />
+            <button className="btn btn-primary btn-full" onClick={begin} disabled={cam.camera === "starting"}>
+              <Video size={16} /> Turn on camera &amp; start
+            </button>
+          </>
+        ) : (
+          <div className="card"><Liveness cam={cam} onDone={finish} actionLabel="Saving your registration" /></div>
+        )}
+      </div>
+    </main>
+  );
+}
+
+function useCountdown() {
+  const [, setTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => setTick(x => x + 1), 1000); return () => clearInterval(t); }, []);
+  return serverNow();
+}
+
+function ExamCard({ exam, onStart }) {
+  const now = useCountdown();
+  const starts = new Date(exam.starts_at).getTime();
+  const ends = new Date(exam.ends_at).getTime();
+  const finished = exam.session_status && exam.session_status !== "in_progress";
+  const r = exam.result;
+  let action;
+  if (finished) {
+    action = (
+      <div className="row">
+        <span className={`pill ${r.status === "submitted" ? "pill-ok" : "pill-bad"}`}>
+          {r.status === "submitted" ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+          {r.status === "submitted" ? "Submitted" : r.status === "auto_submitted" ? "Auto-submitted" : "Ended"}
+        </span>
+        {r.show_score && <strong>{r.score} / {r.total}</strong>}
+        {r.reason && r.status !== "submitted" && <span className="muted" style={{ fontSize: 13 }}>{r.reason}</span>}
+      </div>
+    );
+  } else if (now < starts) {
+    action = <span className="pill pill-off"><Hourglass size={13} /> Opens in {fmtClock(starts - now)}</span>;
+  } else if (now >= ends) {
+    action = <span className="pill pill-off">Closed</span>;
+  } else if (exam.paused) {
+    action = <span className="pill pill-warn">Paused by administrator</span>;
+  } else {
+    action = (
+      <button className="btn btn-primary" onClick={() => onStart(exam)}>
+        <PlayCircle size={16} /> {exam.session_status === "in_progress" ? "Resume exam" : "Start exam"}
+      </button>
+    );
+  }
+  return (
+    <div className="card exam-card">
+      <div className="row"><strong style={{ fontSize: 16 }}>{exam.title}</strong></div>
+      <div className="muted" style={{ fontSize: 13.5 }}>
+        <Clock size={13} /> {fmtDateTime(exam.starts_at)} – {fmtDateTime(exam.ends_at)} · {exam.duration_minutes} min · {exam.question_count} questions
+      </div>
+      <div>{action}</div>
+    </div>
+  );
+}
+
+const STANDARD_RULES = [
+  "Stay alone, facing the camera, for the whole exam. Your face is checked every minute.",
+  "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
+  "No phones, books or notes in view. A phone seen by the camera counts as a warning.",
+  "Keep quiet. Talking or noise around you counts as a warning.",
+  "Screenshots, copying and printing are blocked and count as warnings. Your name is shown across the screen.",
+  "If someone else appears in view, or your face doesn't match, the exam ends immediately.",
+];
+
+function PrepScreen({ exam, name, code, cam, onStarted, onBack }) {
+  const [agreed, setAgreed] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState("");
+  async function begin() {
+    setError("");
+    enterFullscreen(); // must happen straight from the tap
+    await cam.start();
+    setChecking(true);
+  }
+  async function verified({ descriptor, photo }) {
+    try {
+      const session = await api.start(code, exam.id, descriptor, photo);
+      onStarted(session);
+    } catch (e) {
+      setError(e.message); setChecking(false); exitFullscreen();
+    }
+  }
+  const ready = cam.camera === "on" && cam.mic === "on";
+  return (
+    <main className="wrap">
+      <Header name={name} />
+      <div className="narrow" style={{ maxWidth: 560 }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => { cam.stop(); exitFullscreen(); onBack(); }} style={{ marginBottom: 12 }}>← Back</button>
+        <h1 className="serif" style={{ fontSize: 22, margin: "0 0 4px" }}>{exam.title}</h1>
+        <p className="muted" style={{ marginTop: 0 }}>
+          {exam.question_count} questions · {exam.duration_minutes} minutes
+          {exam.per_question_seconds ? ` · ${exam.per_question_seconds} seconds per question` : ""}
+          {" · "}{exam.max_warnings} warnings allowed
+        </p>
+        {exam.instructions && <div className="card" style={{ marginBottom: 12, whiteSpace: "pre-wrap" }}>{exam.instructions}</div>}
+        <div className="card" style={{ marginBottom: 12 }}>
+          <strong>Exam rules</strong>
+          <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 14 }}>
+            {STANDARD_RULES.map(r => <li key={r} style={{ marginBottom: 4 }}>{r}</li>)}
+            <li>You answer one question at a time and can’t go back.{exam.show_answers ? " The correct answer is shown right after you answer." : ""}</li>
+            <li>Reaching {exam.max_warnings} warnings submits your exam automatically.</li>
+          </ul>
+        </div>
+        {error && <div className="banner banner-bad">{error}</div>}
+        {!checking || !ready ? (
+          <>
+            <PermissionHelp camera={cam.camera} mic={cam.mic} />
+            <label className="toggle-row" style={{ marginBottom: 12 }}>
+              <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} />
+              I understand the rules and I am the person registered to code {code}.
+            </label>
+            <button className="btn btn-primary btn-full" disabled={!agreed || cam.camera === "starting"} onClick={begin}>
+              <ShieldCheck size={16} /> Verify my face &amp; begin
+            </button>
+          </>
+        ) : (
+          <div className="card"><Liveness cam={cam} onDone={verified} actionLabel="Matching your face and opening the exam" /></div>
+        )}
+      </div>
+    </main>
+  );
+}
+
+function DoneScreen({ result, name, onBack }) {
+  const ok = result.status === "submitted";
+  return (
+    <main className="wrap">
+      <Header name={name} />
+      <div className="narrow card" style={{ textAlign: "center" }}>
+        {ok ? <CheckCircle2 size={40} color="var(--emerald)" /> : <XCircle size={40} color="var(--red)" />}
+        <h1 className="serif" style={{ fontSize: 22, margin: "8px 0 4px" }}>
+          {ok ? "Exam submitted" : result.status === "auto_submitted" ? "Exam submitted automatically" : "Exam ended"}
+        </h1>
+        {result.reason && <p className="muted" style={{ margin: "0 0 10px" }}>{result.reason}</p>}
+        {result.show_score
+          ? <p style={{ fontSize: 28, fontWeight: 800, margin: "6px 0" }}>{result.score} / {result.total}</p>
+          : <p className="muted">Your result will be shared by your administrator.</p>}
+        <p className="faint" style={{ fontSize: 13 }}>Answered {result.answered} of {result.total} · {result.warnings} warning{result.warnings === 1 ? "" : "s"} · Your camera is off.</p>
+        <button className="btn btn-primary" onClick={onBack}>Back to my exams</button>
+      </div>
+    </main>
+  );
+}
+
+export default function StudentApp() {
+  const [code, setCode] = useState(() => { try { return sessionStorage.getItem(CODE_KEY) || ""; } catch (e) { return ""; } });
+  const [profile, setProfile] = useState(null);
+  const [view, setView] = useState("exams"); // exams | prep | exam | done
+  const [exam, setExam] = useState(null);
+  const [session, setSession] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(!!code);
+  const [refreshError, setRefreshError] = useState("");
+  const cam = useCamera();
+
+  const refresh = useCallback(async (c = code) => {
+    const data = await api.login(c);
+    setProfile(data);
+    setRefreshError("");
+    return data;
+  }, [code]);
+
+  async function login(c) {
+    await refresh(c);
+    setCode(c);
+    try { sessionStorage.setItem(CODE_KEY, c); } catch (e) { /* not kept across reloads */ }
+  }
+
+  function logout() {
+    cam.stop(); exitFullscreen();
+    try { sessionStorage.removeItem(CODE_KEY); } catch (e) { /* ignore */ }
+    setCode(""); setProfile(null); setView("exams"); setSession(null);
+  }
+
+  // Restore after a page reload (code kept for this tab only).
+  useEffect(() => {
+    if (!code || profile) return;
+    refresh(code).catch(() => logout()).finally(() => setLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep the exam list current (start times, pauses, results).
+  useEffect(() => {
+    if (!profile || view !== "exams") return undefined;
+    const t = setInterval(() => refresh().catch(e => setRefreshError(e.message)), 30000);
+    return () => clearInterval(t);
+  }, [profile, view, refresh]);
+
+  if (loading) return <main className="wrap" style={{ textAlign: "center", paddingTop: 80 }}><Spinner size={28} /></main>;
+  if (!profile) return <CodeScreen onLogin={login} />;
+
+  if (profile.face_status === "none" || profile.face_status === "rejected") {
+    return (
+      <>
+        {profile.face_status === "rejected" && <div className="wrap" style={{ paddingBottom: 0 }}><div className="banner banner-bad">Your last face registration wasn’t approved. Please register again in good light.</div></div>}
+        <EnrollScreen name={profile.name} code={code} cam={cam} onEnrolled={() => refresh()} onLogout={logout} />
+      </>
+    );
+  }
+
+  if (view === "exam" && session) {
+    return (
+      <ExamScreen cam={cam} session={session}
+        onFinished={r => { cam.stop(); exitFullscreen(); setResult(r); setView("done"); refresh().catch(() => {}); }} />
+    );
+  }
+  if (view === "done" && result) return <DoneScreen result={result} name={profile.name} onBack={() => setView("exams")} />;
+  if (view === "prep" && exam) {
+    return <PrepScreen exam={exam} name={profile.name} code={code} cam={cam}
+      onStarted={s => { setSession(s); setView("exam"); }} onBack={() => { setView("exams"); refresh().catch(() => {}); }} />;
+  }
+
+  return (
+    <main className="wrap">
+      <Header name={profile.name} onLogout={logout} />
+      <h1 className="serif" style={{ fontSize: 24, margin: "0 0 12px" }}>Welcome, {profile.name.split(" ")[0]}</h1>
+      {profile.face_status === "pending" && (
+        <div className="banner banner-warn"><Hourglass size={16} /> Your face registration is waiting for approval. You can start exams once it’s approved.</div>
+      )}
+      {refreshError && <div className="banner banner-warn">{refreshError}</div>}
+      <div className="row" style={{ marginBottom: 10 }}>
+        <h2 style={{ fontSize: 16, margin: 0 }}>Your exams</h2>
+        <span className="spacer" />
+        <button className="btn btn-ghost btn-sm" onClick={() => refresh().catch(e => setRefreshError(e.message))}><RefreshCw size={14} /> Refresh</button>
+      </div>
+      {profile.exams.length === 0 ? (
+        <div className="card muted">No exams are scheduled for you right now.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {profile.exams.map(e => (
+            <ExamCard key={e.id} exam={e}
+              onStart={ex => { if (profile.face_status !== "approved") { setRefreshError("Your face registration must be approved first."); return; } setExam(ex); setView("prep"); }} />
+          ))}
+        </div>
+      )}
+    </main>
+  );
+}
