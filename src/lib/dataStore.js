@@ -533,16 +533,28 @@ export async function fetchStudyNotes() {
 }
 
 // ---- subscription (latest active row, or null) ----
+// A failed request used to look exactly like "no subscription", so a paying
+// student on a weak connection was shown the Subscribe screen as if their plan
+// had expired. Now: retry once, and if the server still can't be reached, use
+// the last subscription confirmed on this device (its expiry date still applies).
 export async function fetchSubscription() {
   const userId = requireUserId();
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .select("plan, status, expires_at, starts_at")
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .order("expires_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error || !data) return null;
-  return { plan: data.plan, status: data.status, expiresAt: data.expires_at, startsAt: data.starts_at };
+  const cacheKey = `subscription:${userId}`;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select("plan, status, expires_at, starts_at")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .order("expires_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!error) {
+      const sub = data ? { plan: data.plan, status: data.status, expiresAt: data.expires_at, startsAt: data.starts_at } : null;
+      try { localStorage.setItem(cacheKey, JSON.stringify(sub)); } catch (e) { /* storage blocked */ }
+      return sub;
+    }
+    if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
+  }
+  try { return JSON.parse(localStorage.getItem(cacheKey) || "null"); } catch (e) { return null; }
 }
