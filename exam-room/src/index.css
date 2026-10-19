@@ -260,3 +260,11 @@ table.data tr:last-child td { border-bottom: none; }
 textarea { font: inherit; color: inherit; border: 1px solid var(--border); background: var(--surface-alt); border-radius: 10px; padding: 11px 12px; width: 100%; resize: vertical; }
 .option.chosen { border-color: var(--navy); background: var(--navy-soft); }
 .option.chosen .letter { background: var(--navy); border-color: var(--navy); color: var(--on-navy); }
+
+/* Camera wall */
+.wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+@media (max-width: 520px) { .wall { grid-template-columns: 1fr 1fr; gap: 8px; } .wall-card { padding: 8px; } }
+.wall-card { padding: 10px; }
+.wall-photo { position: relative; display: block; width: 100%; padding: 0; border: none; background: none; border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3; }
+.wall-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wall-photo .cam { height: 100%; aspect-ratio: auto; }

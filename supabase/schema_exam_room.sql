@@ -55,6 +55,8 @@ create table if not exists public.exam_exams (
   closed boolean not null default false,         -- admin can end the exam for everyone
   all_candidates boolean not null default true,  -- false = only students listed in exam_allowed
   attempts_allowed integer not null default 1 check (attempts_allowed between 1 and 50),
+  -- How strict the camera/microphone checks are: relaxed | normal | strict
+  proctor_level text not null default 'relaxed' check (proctor_level in ('relaxed', 'normal', 'strict')),
   created_at timestamptz not null default now(),
   check (ends_at > starts_at)
 );
@@ -127,6 +129,10 @@ create index if not exists exam_sessions_exam_idx on public.exam_sessions(exam_i
 alter table public.exam_exams add column if not exists attempts_allowed integer not null default 1;
 alter table public.exam_sessions add column if not exists attempt integer not null default 1;
 alter table public.exam_sessions add column if not exists archived boolean not null default false;
+alter table public.exam_exams add column if not exists proctor_level text not null default 'relaxed';
+-- Live status sent by the student's browser with each heartbeat, for the admin's monitor:
+-- { face: ok|none|multiple|away|dark, noise: false|talking|noise, phone: bool, fullscreen: bool }
+alter table public.exam_sessions add column if not exists live_status jsonb;
 alter table public.exam_sessions drop constraint if exists exam_sessions_exam_id_candidate_id_key;
 -- One current attempt per student per exam; earlier attempts are archived.
 create unique index if not exists exam_sessions_current_idx on public.exam_sessions(exam_id, candidate_id) where not archived;
@@ -306,6 +312,44 @@ begin
   return jsonb_build_object('ok', true);
 end; $$;
 
+-- Give a student extra time (e.g. after a power or network problem).
+create or replace function public.exam_admin_extend(p_session uuid, p_minutes integer) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  s public.exam_sessions;
+begin
+  if not public.is_admin() then raise exception 'admins_only'; end if;
+  if p_minutes is null or p_minutes not between 1 and 240 then return exam__err('bad_minutes'); end if;
+  update exam_sessions set deadline = deadline + make_interval(mins => p_minutes)
+   where id = p_session and status = 'in_progress' returning * into s;
+  if s.id is null then return exam__err('not_in_progress'); end if;
+  insert into exam_events(exam_id, candidate_id, session_id, type, detail)
+    values (s.exam_id, s.candidate_id, s.id, 'time_added', format('Administrator added %s minutes', p_minutes));
+  update exam_sessions set admin_message = format('The administrator gave you %s extra minutes.', p_minutes) where id = s.id;
+  return jsonb_build_object('ok', true, 'deadline', s.deadline);
+end; $$;
+
+-- Give a student a warning by hand (counts towards the limit like any other).
+create or replace function public.exam_admin_warn(p_session uuid, p_reason text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  s public.exam_sessions;
+  e public.exam_exams;
+  reason text := coalesce(nullif(trim(left(p_reason, 200)), ''), 'Rule broken');
+begin
+  if not public.is_admin() then raise exception 'admins_only'; end if;
+  update exam_sessions set warnings = warnings + 1, admin_message = 'Warning from the administrator: ' || reason
+   where id = p_session and status = 'in_progress' returning * into s;
+  if s.id is null then return exam__err('not_in_progress'); end if;
+  select * into e from exam_exams where id = s.exam_id;
+  insert into exam_events(exam_id, candidate_id, session_id, type, detail, counted)
+    values (s.exam_id, s.candidate_id, s.id, 'admin_warning', reason, true);
+  if s.warnings >= e.max_warnings then
+    perform exam__finish(s.id, 'auto_submitted', format('Reached the limit of %s warnings', e.max_warnings));
+  end if;
+  return jsonb_build_object('ok', true, 'warnings', s.warnings);
+end; $$;
+
 -- ===================== STUDENT FUNCTIONS =====================
 
 -- Log in with an access code. Returns the student's name, face status and
@@ -329,7 +373,7 @@ begin
         'duration_minutes', e.duration_minutes,
         'question_count', cardinality(e.question_ids),
         'per_question_seconds', e.per_question_seconds,
-        'show_answers', e.show_answers, 'max_warnings', e.max_warnings,
+        'show_answers', e.show_answers, 'max_warnings', e.max_warnings, 'proctor_level', e.proctor_level,
         'paused', e.paused,
         'session_status', s.status,
         'result', case when s.status is not null and s.status <> 'in_progress' then exam__result(s) end,
@@ -430,6 +474,7 @@ begin
     'token', s.token, 'title', e.title, 'deadline', s.deadline, 'server_time', now(),
     'total', s.total, 'per_question_seconds', e.per_question_seconds,
     'show_answers', e.show_answers, 'max_warnings', e.max_warnings, 'warnings', s.warnings,
+    'proctor_level', e.proctor_level,
     'name', c.full_name, 'code', c.access_code);
 end; $$;
 
@@ -525,7 +570,8 @@ end; $$;
 -- Sent every ~15 seconds. Optionally carries a fresh face descriptor + photo
 -- for the periodic identity check. Returns anything the admin changed:
 -- ended exam, pause, a message to the student.
-create or replace function public.exam_heartbeat(p_token uuid, p_descriptor float8[] default null, p_photo text default null)
+drop function if exists public.exam_heartbeat(uuid, float8[], text);
+create or replace function public.exam_heartbeat(p_token uuid, p_descriptor float8[] default null, p_photo text default null, p_status jsonb default null)
 returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
@@ -565,6 +611,7 @@ begin
   msg := s.admin_message;
   update exam_sessions
      set last_seen_at = now(), admin_message = null,
+         live_status = case when p_status is not null and length(p_status::text) < 500 then p_status else live_status end,
          last_photo = coalesce(photo, last_photo),
          last_photo_at = case when photo is not null then now() else last_photo_at end
    where id = s.id;
@@ -626,8 +673,8 @@ end; $$;
 
 -- ===================== PERMISSIONS =====================
 
-revoke all on function public.exam_admin_allow_retake(uuid) from public, anon;
-grant execute on function public.exam_admin_allow_retake(uuid) to authenticated;
+revoke all on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text) from public, anon;
+grant execute on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text) to authenticated;
 
 revoke all on function
   public.exam__can_self_retake(public.exam_exams, public.exam_sessions),
@@ -642,7 +689,7 @@ grant execute on function
   public.exam_question(uuid),
   public.exam_answer(uuid, integer, integer),
   public.exam_next(uuid),
-  public.exam_heartbeat(uuid, float8[], text),
+  public.exam_heartbeat(uuid, float8[], text, jsonb),
   public.exam_report(uuid, text, text, text),
   public.exam_submit(uuid)
   to anon, authenticated;

@@ -162,14 +162,20 @@ function ExamCard({ exam, onStart }) {
   );
 }
 
-const STANDARD_RULES = [
-  "Stay alone, facing the camera, for the whole exam. Your face is checked every minute.",
-  "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
-  "No phones, books or notes in view. A phone seen by the camera counts as a warning.",
-  "Keep quiet. Talking or noise around you counts as a warning.",
-  "Screenshots, copying and printing are blocked and count as warnings. Your name is shown across the screen.",
-  "If someone else appears in view, or your face doesn't match, the exam ends immediately.",
-];
+function rulesFor(level) {
+  return [
+    "Stay alone and in view of the camera for the whole exam. Your face is checked every minute.",
+    "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
+    "No phones in view of the camera — a phone seen by the camera counts as a warning.",
+    level === "strict"
+      ? "Keep completely quiet and face the screen. Any talking, noise or looking away counts as a warning."
+      : level === "normal"
+        ? "Keep quiet. Talking, loud noise or looking away for a long time counts as a warning."
+        : "Quiet murmuring and turning your head are fine. Loud talking or loud noise counts as a warning.",
+    "Screenshots, copying and printing are blocked and count as warnings. Your name is shown across the screen.",
+    "If someone else appears in view, or your face doesn't match, the exam ends immediately.",
+  ];
+}
 
 function PrepScreen({ exam, name, code, cam, onStarted, onBack }) {
   const [agreed, setAgreed] = useState(false);
@@ -206,7 +212,7 @@ function PrepScreen({ exam, name, code, cam, onStarted, onBack }) {
         <div className="card" style={{ marginBottom: 12 }}>
           <strong>Exam rules</strong>
           <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 14 }}>
-            {STANDARD_RULES.map(r => <li key={r} style={{ marginBottom: 4 }}>{r}</li>)}
+            {rulesFor(exam.proctor_level).map(r => <li key={r} style={{ marginBottom: 4 }}>{r}</li>)}
             <li>You answer one question at a time and can’t go back.{exam.show_answers ? " The correct answer is shown right after you answer." : ""}</li>
             <li>Reaching {exam.max_warnings} warnings submits your exam automatically.</li>
           </ul>
