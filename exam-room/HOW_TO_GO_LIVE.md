@@ -53,6 +53,10 @@ and log in with your **CCN admin email and password**. Bookmark this page.
 4. **Exams → New exam:** set the title, **when questions become visible and when they're hidden**,
    the time allowed, seconds per question (optional), how many warnings before auto-submit,
    and pick the questions (by topic and number). Tap **Save exam**.
+   - **Different numbers of questions for different students (same exam):** the questions you pick are the *pool*
+     (e.g. 300). Set **Questions each student gets** (e.g. 100), then under **Different number of questions for some
+     students** choose a group or a student, type their number (e.g. 150 or 50) and tap **Assign**. Their time is suggested
+     in proportion (you can change it). Every student draws their own random set from the pool.
 5. **On exam day, open Live monitor.** You'll see who is writing, online or offline, their progress, score
    and warnings. Tick **Live photos** to see their latest camera photo. You can:
    - **Message** a student (it appears on their screen within 15 seconds)
