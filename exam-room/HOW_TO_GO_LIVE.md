@@ -39,8 +39,13 @@ and log in with your **CCN admin email and password**. Bookmark this page.
 
 ## Part B: Running an exam
 
-1. **Students & codes:** type your students' full names (one per line) and tap **Create access codes**.
-   Tap **Copy codes list** and send each student their own code privately (e.g. on WhatsApp).
+1. **Students & codes:** create codes in one of two ways:
+   - **From a list of names:** paste your class list (straight from Excel, Word or WhatsApp is fine; numbering is removed)
+     and tap **Create access codes**.
+   - **Blank codes (no names):** type how many you need (up to 500 at a time) and tap **Generate**. Each student types their
+     own full name when they register their face; check it when you approve them.
+   Add an optional **group label** (e.g. "2026 Set A") to keep classes apart. Then tap **Print slips** (cut-out slips, 10 per page),
+   **Download for Excel**, or **Copy list** to share on WhatsApp. **Delete unused blank codes** clears codes nobody used.
 2. **Students register their face** by opening the site and entering their code. They turn their head
    left and right (this proves a real person, not a photo) and their face is saved.
 3. **Approve faces:** in **Students & codes**, tap **Photo** next to each “Waiting for approval”,

@@ -92,6 +92,7 @@ button:disabled { cursor: default; opacity: 0.5; }
   border-radius: 10px; padding: 11px 12px; outline: none; width: 100%;
 }
 .field input:focus, .field select:focus { border-color: var(--navy); }
+.row > select { border: 1px solid var(--border); background: var(--surface-alt); border-radius: 10px; padding: 8px 10px; font-size: 13px; }
 
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
@@ -226,6 +227,7 @@ button:disabled { cursor: default; opacity: 0.5; }
 .banner-info { background: var(--navy-soft); color: var(--navy); }
 .banner-warn { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); }
 .banner-bad { background: var(--red-soft); color: var(--red); border: 1px solid var(--red); }
+.banner-ok { background: var(--emerald-soft); color: var(--emerald); border: 1px solid var(--emerald); align-items: flex-start; }
 
 .code-input {
   text-align: center; font-size: 26px; letter-spacing: 0.25em; font-weight: 800; text-transform: uppercase;
