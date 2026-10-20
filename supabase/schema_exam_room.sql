@@ -67,6 +67,16 @@ create table if not exists public.exam_allowed (
   primary key (exam_id, candidate_id)
 );
 
+-- How many questions (and minutes) a particular student gets in an exam. Each
+-- student draws their own random set of that size from the exam's question pool.
+create table if not exists public.exam_question_limits (
+  exam_id uuid not null references public.exam_exams(id) on delete cascade,
+  candidate_id uuid not null references public.exam_candidates(id) on delete cascade,
+  question_count integer not null check (question_count between 1 and 2000),
+  duration_minutes integer check (duration_minutes is null or duration_minutes between 1 and 600),
+  primary key (exam_id, candidate_id)
+);
+
 create table if not exists public.exam_sessions (
   id uuid primary key default gen_random_uuid(),
   exam_id uuid not null references public.exam_exams(id) on delete cascade,
@@ -140,6 +150,9 @@ create unique index if not exists exam_sessions_current_idx on public.exam_sessi
 -- own name when they register their face. "batch" is an optional label.
 alter table public.exam_candidates add column if not exists name_pending boolean not null default false;
 alter table public.exam_candidates add column if not exists batch text not null default '';
+-- Default number of questions each student draws from the pool (null = all of them).
+alter table public.exam_exams add column if not exists questions_per_student integer
+  check (questions_per_student is null or questions_per_student between 1 and 2000);
 create index if not exists exam_events_session_idx on public.exam_events(session_id, created_at);
 create index if not exists exam_events_exam_idx on public.exam_events(exam_id, created_at);
 create index if not exists exam_login_attempts_ip_idx on public.exam_login_attempts(ip, created_at);
@@ -149,6 +162,7 @@ create index if not exists exam_login_attempts_ip_idx on public.exam_login_attem
 alter table public.exam_candidates enable row level security;
 alter table public.exam_exams enable row level security;
 alter table public.exam_allowed enable row level security;
+alter table public.exam_question_limits enable row level security;
 alter table public.exam_sessions enable row level security;
 alter table public.exam_answers enable row level security;
 alter table public.exam_events enable row level security;
@@ -157,14 +171,14 @@ alter table public.exam_login_attempts enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['exam_candidates','exam_exams','exam_allowed','exam_sessions','exam_answers','exam_events','exam_login_attempts'] loop
+  foreach t in array array['exam_candidates','exam_exams','exam_allowed','exam_question_limits','exam_sessions','exam_answers','exam_events','exam_login_attempts'] loop
     execute format('drop policy if exists %I on public.%I', t || '_admin_all', t);
     execute format('create policy %I on public.%I for all using (public.is_admin()) with check (public.is_admin())', t || '_admin_all', t);
   end loop;
 end $$;
 
 grant select, insert, update, delete on
-  public.exam_candidates, public.exam_exams, public.exam_allowed, public.exam_sessions,
+  public.exam_candidates, public.exam_exams, public.exam_allowed, public.exam_question_limits, public.exam_sessions,
   public.exam_answers, public.exam_events, public.exam_login_attempts
   to authenticated;
 grant usage, select on sequence public.exam_events_id_seq, public.exam_login_attempts_id_seq to authenticated;
@@ -356,6 +370,15 @@ end; $$;
 
 -- ===================== STUDENT FUNCTIONS =====================
 
+-- This student's share of an exam: number of questions and minutes.
+create or replace function public.exam__plan(e public.exam_exams, p_candidate uuid) returns table (n integer, minutes integer)
+language sql stable security definer set search_path = public as $$
+  select least(cardinality(e.question_ids), coalesce(l.question_count, e.questions_per_student, cardinality(e.question_ids))),
+         coalesce(l.duration_minutes, e.duration_minutes)
+  from (select 1) one
+  left join exam_question_limits l on l.exam_id = e.id and l.candidate_id = p_candidate
+$$;
+
 -- Log in with an access code. Returns the student's name, face status and
 -- their exams (titles, times and rules only — never questions).
 create or replace function public.exam_login(p_code text) returns jsonb
@@ -375,8 +398,8 @@ begin
       select jsonb_agg(jsonb_build_object(
         'id', e.id, 'title', e.title, 'instructions', e.instructions,
         'starts_at', e.starts_at, 'ends_at', e.ends_at,
-        'duration_minutes', e.duration_minutes,
-        'question_count', cardinality(e.question_ids),
+        'duration_minutes', (select minutes from exam__plan(e, c.id)),
+        'question_count', (select n from exam__plan(e, c.id)),
         'per_question_seconds', e.per_question_seconds,
         'show_answers', e.show_answers, 'max_warnings', e.max_warnings, 'proctor_level', e.proctor_level,
         'paused', e.paused,
@@ -430,6 +453,7 @@ declare
   s public.exam_sessions;
   dist float8;
   ord integer[];
+  plan record;
 begin
   if exam__throttled() then return exam__err('too_many_attempts'); end if;
   c := exam__candidate(p_code);
@@ -471,11 +495,12 @@ begin
     if now() >= e.ends_at then return exam__err('exam_ended'); end if;
     if e.paused then return exam__err('exam_paused'); end if;
     if cardinality(e.question_ids) = 0 then return exam__err('exam_has_no_questions'); end if;
-    ord := case when e.shuffle
-      then (select array_agg(x order by random()) from unnest(e.question_ids) x)
-      else e.question_ids end;
+    -- Draw this student's random set from the pool; keep the pool's order unless shuffling.
+    select * into plan from exam__plan(e, c.id);
+    select array_agg(x order by case when e.shuffle then random() else pos end) into ord
+      from (select x, pos from unnest(e.question_ids) with ordinality u(x, pos) order by random() limit plan.n) pick;
     insert into exam_sessions(exam_id, candidate_id, question_order, deadline, total, user_agent, last_photo, last_photo_at, attempt)
-      values (e.id, c.id, ord, least(now() + make_interval(mins => e.duration_minutes), e.ends_at),
+      values (e.id, c.id, ord, least(now() + make_interval(mins => plan.minutes), e.ends_at),
               cardinality(ord), left(coalesce(p_user_agent, ''), 300), exam__clean_photo(p_photo), now(),
               1 + (select count(*) from exam_sessions x where x.exam_id = e.id and x.candidate_id = c.id))
       returning * into s;
@@ -692,7 +717,8 @@ grant execute on function public.exam_admin_allow_retake(uuid), public.exam_admi
 revoke all on function
   public.exam__can_self_retake(public.exam_exams, public.exam_sessions),
   public.exam__throttled(), public.exam__candidate(text), public.exam__finish(uuid, text, text), public.exam__session(uuid),
-  public.exam__result(public.exam_sessions), public.exam__client_ip()
+  public.exam__result(public.exam_sessions), public.exam__client_ip(),
+  public.exam__plan(public.exam_exams, uuid)
   from public, anon, authenticated;
 
 grant execute on function
