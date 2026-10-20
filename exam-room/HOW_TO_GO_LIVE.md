@@ -76,6 +76,25 @@ and log in with your **CCN admin email and password**. Bookmark this page.
 Every warning is saved with a photo for you to review. Each warning also pops up on the student's screen with a
 beep and vibration, and they must tap **I understand** to continue.
 
+## How strict should the checks be? (per exam)
+In **Exams → New exam / Edit**, choose **How strict the camera & microphone are**:
+
+| Level | Talking / noise | Head turns | Face out of view | Good for |
+|---|---|---|---|---|
+| **Relaxed** (default) | Murmuring and reading under your breath are fine; only **loud** talking or noise for ~3 s is a warning | Allowed | Warning after 10 s | Practice exams, noisy homes |
+| **Normal** | Clear talking for ~2 s is a warning | Warning only after looking away 10 s | Warning after 7 s | Most real exams |
+| **Strict** | Any talking for ~1 s is a warning | Warning after looking away 6 s | Warning after 5 s | Final, high-stakes exams |
+
+Another person in view, a phone held up, leaving the exam screen and a face mismatch always count, at every level.
+
+## Live monitor (exam day)
+- **Table** or **Camera wall** (everyone's latest camera photo, refreshed every 20 s).
+- **Live** column: face OK / no face / looking away, quiet / talking, phone seen — updated every ~15 s.
+- **Filters:** All, Writing, With warnings, Not responding, Finished, Not started.
+- **Alerts:** a chime, a red "New warnings" banner and a flashing tab title whenever someone gets a warning.
+- **Actions per student:** View (timeline + photos), Message, **Warn** (a warning that counts, with your reason shown to them),
+  **+Time** (extra minutes, e.g. after a power cut), End, Allow retake.
+
 ## Retakes
 - In **Exams**, set **Attempts each student may take** (e.g. 2 or 3). After finishing — or after being
   auto-submitted at the warning limit — students see **Retake exam** while attempts remain.

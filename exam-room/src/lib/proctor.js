@@ -91,16 +91,29 @@ export function useCamera() {
 // Exam proctoring loops
 // ---------------------------------------------------------------------------
 
-// How long each condition must last before it is reported (ms). Generous
-// enough that a sneeze or glance isn't punished, strict enough to catch cheating.
-const HOLD = { no_face: 5000, multiple_faces: 2000, looking_away: 6000, dark: 3000, noise: 1200, phone: 1500 };
-const YAW_LIMIT = 0.33;
-// Sound. Voices are picked out by the energy in the speech band (300–3400 Hz),
-// compared with the room's own quiet level, so a whisper-to-normal voice nearby
-// triggers it while a steady fan or generator hum doesn't.
-const VOICE_MARGIN_DB = 8;    // speech band this much above the quiet room
-const LOUD_MARGIN_DB = 10;    // any sound this much above the quiet room
-const SOUND_FLOOR_DB = -62;   // ignore anything quieter than this
+// Strictness levels, chosen per exam by the admin.
+//   hold     — how long a condition must last before it counts as a warning (ms)
+//   yaw      — head turn that counts as "looking away" (Infinity = never counted)
+//   voice    — speech-band level above the quiet room that counts as talking (dB)
+//   loud     — any sound this far above the quiet room (dB)
+//   floor    — ignore anything quieter than this (dBFS)
+// Relaxed lets students murmur, read under their breath and turn their head;
+// only clearly loud talking/noise, leaving the camera, another person or a
+// phone count.
+export const PROCTOR_LEVELS = {
+  relaxed: {
+    hold: { no_face: 10000, multiple_faces: 3000, looking_away: Infinity, dark: 5000, noise: 3000, phone: 2000 },
+    yaw: Infinity, voice: 22, loud: 24, floor: -40,
+  },
+  normal: {
+    hold: { no_face: 7000, multiple_faces: 2500, looking_away: 10000, dark: 4000, noise: 2000, phone: 1500 },
+    yaw: 0.45, voice: 15, loud: 17, floor: -50,
+  },
+  strict: {
+    hold: { no_face: 5000, multiple_faces: 2000, looking_away: 6000, dark: 3000, noise: 1200, phone: 1500 },
+    yaw: 0.33, voice: 8, loud: 10, floor: -62,
+  },
+};
 
 // While the page itself beeps (warning sound) the mic would hear it; skip sound checks briefly.
 let audioChecksPausedUntil = 0;
@@ -127,7 +140,8 @@ export const VIOLATION_LABELS = {
 
 // Runs while `active`. Calls report(type, detail, photo) for each violation
 // and identity(descriptor, photo) about once a minute.
-export function useProctor({ cam, active, report, identity }) {
+export function useProctor({ cam, active, report, identity, level: strictness = "relaxed" }) {
+  const L = PROCTOR_LEVELS[strictness] || PROCTOR_LEVELS.relaxed;
   const [face, setFace] = useState("checking"); // ok | none | multiple | away | dark | checking
   const [phone, setPhone] = useState(false);
   const [noisy, setNoisy] = useState(false);
@@ -155,7 +169,7 @@ export function useProctor({ cam, active, report, identity }) {
       if (!on) { c.since = null; c.fired = false; return; }
       const now = performance.now();
       if (c.since == null) c.since = now;
-      if (!c.fired && now - c.since >= HOLD[type]) { c.fired = true; fire(type, details[type] || ""); }
+      if (!c.fired && now - c.since >= L.hold[type]) { c.fired = true; fire(type, details[type] || ""); }
     };
 
     cam.setOnEnded(type => fire(type));
@@ -172,7 +186,7 @@ export function useProctor({ cam, active, report, identity }) {
           if (!alive || faces == null) return;
           const none = faces.length === 0 && !dark;
           const many = faces.length > 1;
-          const away = faces.length === 1 && Math.abs(faces[0].yaw) > YAW_LIMIT;
+          const away = faces.length === 1 && Math.abs(faces[0].yaw) > L.yaw;
           track("no_face", none);
           track("multiple_faces", many);
           track("looking_away", away);
@@ -228,6 +242,8 @@ export function useProctor({ cam, active, report, identity }) {
       const hi = Math.min(freqBuf.length - 1, Math.ceil(3400 / hzPerBin));
       const learn = { all: [], voice: [] };
       let base = null; // { all, voice } quiet-room levels in dB
+      let lastTalkAt = -1e9;
+      let lastLoudAt = -1e9;
       timers.push(setInterval(() => {
         analyser.getByteTimeDomainData(timeBuf);
         let sum = 0;
@@ -250,16 +266,23 @@ export function useProctor({ cam, active, report, identity }) {
           }
           return;
         }
-        const talking = voice > base.voice + VOICE_MARGIN_DB && all > SOUND_FLOOR_DB;
-        const loud = all > Math.max(base.all + LOUD_MARGIN_DB, SOUND_FLOOR_DB);
-        const noisyNow = talking || loud;
+        const talking = voice > base.voice + L.voice && all > L.floor;
+        const loud = all > Math.max(base.all + L.loud, L.floor);
+        // Speech has short gaps between syllables and words; keep counting it
+        // as one stretch of talking unless it stops for more than ~0.8 s.
+        const tNow = performance.now();
+        if (talking) lastTalkAt = tNow;
+        if (loud) lastLoudAt = tNow;
+        const talkingOn = tNow - lastTalkAt < 800;
+        const loudOn = tNow - lastLoudAt < 800;
+        const noisyNow = talkingOn || loudOn;
         // Follow slow changes in the room (a fan switched on), only while quiet.
         if (!noisyNow) {
           base.all = base.all * 0.99 + all * 0.01;
           base.voice = base.voice * 0.99 + voice * 0.01;
         }
-        setNoisy(noisyNow ? (talking ? "talking" : "noise") : false);
-        if (noisyNow) details.noise = talking ? "Talking (voice detected)" : "Loud noise";
+        setNoisy(noisyNow ? (talkingOn ? "talking" : "noise") : false);
+        if (noisyNow) details.noise = talkingOn ? "Talking (voice detected)" : "Loud noise";
         track("noise", noisyNow);
       }, 100));
     }

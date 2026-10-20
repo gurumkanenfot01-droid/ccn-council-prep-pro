@@ -71,8 +71,8 @@ export const api = {
   question: token => rpc("exam_question", { p_token: token }),
   answer: (token, questionId, choice) => rpc("exam_answer", { p_token: token, p_question_id: questionId, p_choice: choice }),
   next: token => rpc("exam_next", { p_token: token }),
-  heartbeat: (token, descriptor = null, photo = null) =>
-    rpc("exam_heartbeat", { p_token: token, p_descriptor: descriptor, p_photo: photo }),
+  heartbeat: (token, descriptor = null, photo = null, status = null) =>
+    rpc("exam_heartbeat", { p_token: token, p_descriptor: descriptor, p_photo: photo, p_status: status }),
   report: (token, type, detail = "", photo = null) =>
     rpc("exam_report", { p_token: token, p_type: type, p_detail: detail, p_photo: photo }),
   submit: token => rpc("exam_submit", { p_token: token }),

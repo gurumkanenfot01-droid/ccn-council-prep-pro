@@ -61,9 +61,16 @@ export default function ExamScreen({ cam, session, onFinished }) {
     if (typeof data.paused === "boolean") setPaused(data.paused);
     if (typeof data.warnings === "number") setWarnings(data.warnings);
     if (data.deadline) setDeadline(new Date(data.deadline).getTime());
-    if (data.message) setMessage(data.message);
+    if (data.message) {
+      if (data.message.startsWith("Warning from the administrator")) {
+        setWarning({ count: data.warnings, max: maxWarnings, label: data.message.replace(/^Warning from the administrator:\s*/, ""), type: "admin" });
+        alertStudent();
+      } else {
+        setMessage(data.message);
+      }
+    }
     return data;
-  }, [finish]);
+  }, [finish, maxWarnings]);
 
   const onError = useCallback(e => {
     if (e.code === "network") setOffline(true);
@@ -101,20 +108,28 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const identity = useCallback(async (descriptor, photo) => {
     if (ended.current) return;
     try {
-      const data = absorb(await api.heartbeat(token, descriptor, photo));
+      const data = absorb(await api.heartbeat(token, descriptor, photo, liveStatus.current));
       if (data && data.face_fail_streak > 0) {
         setToast({ text: "Your face didn't match. Face the camera — a second mismatch ends the exam.", n: Date.now(), warn: true });
       }
     } catch (e) { onError(e); }
   }, [token, absorb, onError]);
 
-  const proctor = useProctor({ cam, active: true, report, identity });
+  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level });
+
+  // What the admin's live monitor shows for this student (sent with each heartbeat).
+  const liveStatus = useRef(null);
+  liveStatus.current = {
+    face: proctor.face, noise: proctor.noisy || false, phone: proctor.phone,
+    fullscreen: !!(document.fullscreenElement || document.webkitFullscreenElement),
+    camera: cam.camera === "on", mic: cam.mic === "on",
+  };
 
   // Heartbeat: keeps the admin's live view current and picks up admin actions.
   useEffect(() => {
     const t = setInterval(async () => {
       if (ended.current) return;
-      try { absorb(await api.heartbeat(token)); } catch (e) { onError(e); }
+      try { absorb(await api.heartbeat(token, null, null, liveStatus.current)); } catch (e) { onError(e); }
     }, HEARTBEAT_MS);
     return () => clearInterval(t);
   }, [token, absorb, onError]);
@@ -294,7 +309,8 @@ export default function ExamScreen({ cam, session, onFinished }) {
             <h2 id="warn-h" style={{ fontSize: 22, margin: "8px 0 4px", color: "var(--red)" }}>Warning {warning.count} of {warning.max}</h2>
             <p style={{ fontWeight: 700, margin: "0 0 6px" }}>{warning.label}</p>
             <p className="muted" style={{ marginTop: 0 }}>
-              {warning.type === "noise" ? "Keep your surroundings completely quiet and don't talk to anyone. " : ""}
+              {warning.type === "noise" ? "Keep your surroundings quiet and don't talk to anyone. " : ""}
+              {warning.type === "admin" ? "This warning was given by your administrator, who is watching the exam. " : ""}
               {warning.max - warning.count === 1
                 ? "One more warning and your exam is submitted automatically."
                 : `${warning.max - warning.count} more warnings and your exam is submitted automatically.`}

@@ -25,7 +25,7 @@ function blankExam() {
   return {
     title: "", instructions: "", starts_at: start.toISOString(), ends_at: end.toISOString(),
     duration_minutes: 60, question_ids: [], per_question_seconds: null, show_answers: true, show_score: true,
-    max_warnings: 3, shuffle: true, all_candidates: true, attempts_allowed: 1,
+    max_warnings: 3, shuffle: true, all_candidates: true, attempts_allowed: 1, proctor_level: "relaxed",
   };
 }
 
@@ -70,6 +70,7 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
       per_question_seconds: f.per_question_seconds ? Number(f.per_question_seconds) : null,
       show_answers: f.show_answers, show_score: f.show_score, max_warnings: Number(f.max_warnings),
       shuffle: f.shuffle, all_candidates: f.all_candidates, attempts_allowed: Number(f.attempts_allowed || 1),
+      proctor_level: f.proctor_level || "relaxed",
     };
     const res = f.id
       ? await supabase.from("exam_exams").update(row).eq("id", f.id).select("id").single()
@@ -102,6 +103,12 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
           <input id="pq" type="number" min={10} max={3600} value={f.per_question_seconds ?? ""} onChange={e => set("per_question_seconds", e.target.value || null)} /></div>
         <div className="field"><label htmlFor="w">Warnings before auto-submit</label>
           <input id="w" type="number" min={1} max={50} value={f.max_warnings} onChange={e => set("max_warnings", e.target.value)} /></div>
+        <div className="field"><label htmlFor="lvl">How strict the camera &amp; microphone are</label>
+          <select id="lvl" value={f.proctor_level || "relaxed"} onChange={e => set("proctor_level", e.target.value)}>
+            <option value="relaxed">Relaxed — murmuring and head turns allowed</option>
+            <option value="normal">Normal — quiet room, short glances allowed</option>
+            <option value="strict">Strict — silence, eyes on the screen</option>
+          </select></div>
         <div className="field"><label htmlFor="att">Attempts each student may take</label>
           <input id="att" type="number" min={1} max={50} value={f.attempts_allowed ?? 1} onChange={e => set("attempts_allowed", e.target.value)} /></div>
       </div>
@@ -215,7 +222,7 @@ export default function ExamsTab() {
                     <td><strong>{e.title}</strong><div className="faint" style={{ fontSize: 12 }}>{e.question_ids.length} questions · {e.duration_minutes} min</div></td>
                     <td style={{ fontSize: 13 }}>{fmtDateTime(e.starts_at)}<br />to {fmtDateTime(e.ends_at)}</td>
                     <td style={{ fontSize: 12.5 }} className="muted">
-                      {e.max_warnings} warnings{e.per_question_seconds ? ` · ${e.per_question_seconds}s/question` : ""} · {e.attempts_allowed || 1} attempt{(e.attempts_allowed || 1) === 1 ? "" : "s"}<br />
+                      {e.max_warnings} warnings{e.per_question_seconds ? ` · ${e.per_question_seconds}s/question` : ""} · {e.attempts_allowed || 1} attempt{(e.attempts_allowed || 1) === 1 ? "" : "s"} · {(e.proctor_level || "relaxed").replace(/^./, c => c.toUpperCase())}<br />
                       {e.show_answers ? "Answers shown" : "Answers hidden"}{e.all_candidates ? "" : " · selected students"}
                     </td>
                     <td><span className={`pill ${cls}`}>{label}</span></td>
