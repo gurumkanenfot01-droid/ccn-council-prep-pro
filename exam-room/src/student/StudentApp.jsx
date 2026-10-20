@@ -60,12 +60,20 @@ function CodeScreen({ onLogin }) {
   );
 }
 
-function EnrollScreen({ name, code, cam, onEnrolled, onLogout }) {
+// Full name typed by a student with a blank code: first name and surname.
+function validName(n) { return /\p{L}.*\s.*\p{L}/u.test(n.trim()) && n.trim().length >= 3 && n.trim().length <= 80; }
+
+function EnrollScreen({ name, nameNeeded, code, cam, onEnrolled, onLogout }) {
   const [started, setStarted] = useState(false);
   const [error, setError] = useState("");
-  async function begin() { setStarted(true); await cam.start(); }
+  const [fullName, setFullName] = useState("");
+  const nameOk = !nameNeeded || validName(fullName);
+  async function begin() {
+    if (!nameOk) { setError("Type your full name (first name and surname) first."); return; }
+    setError(""); setStarted(true); await cam.start();
+  }
   async function finish({ descriptor, photo }) {
-    try { await api.enroll(code, descriptor, photo); cam.stop(); onEnrolled(); }
+    try { await api.enroll(code, descriptor, photo, nameNeeded ? fullName.trim().replace(/\s+/g, " ") : null); cam.stop(); onEnrolled(); }
     catch (e) { setError(e.message); setStarted(false); cam.stop(); }
   }
   return (
@@ -82,10 +90,18 @@ function EnrollScreen({ name, code, cam, onEnrolled, onLogout }) {
           <li>Make sure you are alone in view.</li>
         </ul>
         {error && <div className="banner banner-bad">{error}</div>}
+        {nameNeeded && !started && (
+          <div className="field" style={{ marginBottom: 14 }}>
+            <label htmlFor="fullname">Your full name (as on your school records)</label>
+            <input id="fullname" value={fullName} onChange={e => setFullName(e.target.value)}
+              placeholder="e.g. Amina Bello" autoComplete="name" maxLength={80} />
+            <span className="faint" style={{ fontSize: 12.5 }}>First name and surname. You can't change it later, so check the spelling.</span>
+          </div>
+        )}
         {!started || cam.camera !== "on" ? (
           <>
             <PermissionHelp camera={cam.camera} mic={cam.mic} />
-            <button className="btn btn-primary btn-full" onClick={begin} disabled={cam.camera === "starting"}>
+            <button className="btn btn-primary btn-full" onClick={begin} disabled={cam.camera === "starting" || !nameOk}>
               <Video size={16} /> Turn on camera &amp; start
             </button>
           </>
@@ -308,7 +324,7 @@ export default function StudentApp() {
     return (
       <>
         {profile.face_status === "rejected" && <div className="wrap" style={{ paddingBottom: 0 }}><div className="banner banner-bad">Your last face registration wasn’t approved. Please register again in good light.</div></div>}
-        <EnrollScreen name={profile.name} code={code} cam={cam} onEnrolled={() => refresh()} onLogout={logout} />
+        <EnrollScreen name={profile.name} nameNeeded={!!profile.name_needed} code={code} cam={cam} onEnrolled={() => refresh()} onLogout={logout} />
       </>
     );
   }

@@ -136,6 +136,10 @@ alter table public.exam_sessions add column if not exists live_status jsonb;
 alter table public.exam_sessions drop constraint if exists exam_sessions_exam_id_candidate_id_key;
 -- One current attempt per student per exam; earlier attempts are archived.
 create unique index if not exists exam_sessions_current_idx on public.exam_sessions(exam_id, candidate_id) where not archived;
+-- Blank access codes: created in bulk without a name; the student types their
+-- own name when they register their face. "batch" is an optional label.
+alter table public.exam_candidates add column if not exists name_pending boolean not null default false;
+alter table public.exam_candidates add column if not exists batch text not null default '';
 create index if not exists exam_events_session_idx on public.exam_events(session_id, created_at);
 create index if not exists exam_events_exam_idx on public.exam_events(exam_id, created_at);
 create index if not exists exam_login_attempts_ip_idx on public.exam_login_attempts(ip, created_at);
@@ -363,7 +367,8 @@ begin
   c := exam__candidate(p_code);
   if c.id is null then return exam__err('invalid_code'); end if;
   return jsonb_build_object(
-    'name', c.full_name,
+    'name', case when c.name_pending then '' else c.full_name end,
+    'name_needed', c.name_pending,
     'face_status', c.face_status,
     'server_time', now(),
     'exams', coalesce((
@@ -390,19 +395,27 @@ begin
 end; $$;
 
 -- First-time face registration. An admin must approve it before exams open.
-create or replace function public.exam_enroll(p_code text, p_descriptor float8[], p_photo text) returns jsonb
+-- For a blank code, the student's full name is required and saved here.
+drop function if exists public.exam_enroll(text, float8[], text);
+create or replace function public.exam_enroll(p_code text, p_descriptor float8[], p_photo text, p_name text default null) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   c public.exam_candidates;
+  nm text := regexp_replace(trim(coalesce(p_name, '')), '\s+', ' ', 'g');
 begin
   if exam__throttled() then return exam__err('too_many_attempts'); end if;
   c := exam__candidate(p_code);
   if c.id is null then return exam__err('invalid_code'); end if;
   if c.face_status in ('pending', 'approved') then return exam__err('already_enrolled'); end if;
+  if c.name_pending and (char_length(nm) not between 3 and 80 or nm !~ '[[:alpha:]].*[[:space:]].*[[:alpha:]]') then
+    return exam__err('name_required');
+  end if;
   if not exam__valid_descriptor(p_descriptor) then return exam__err('bad_face_data'); end if;
   if exam__clean_photo(p_photo) is null then return exam__err('bad_photo'); end if;
   update exam_candidates
-     set face_descriptor = p_descriptor, face_photo = p_photo, face_status = 'pending', enrolled_at = now()
+     set face_descriptor = p_descriptor, face_photo = p_photo, face_status = 'pending', enrolled_at = now(),
+         full_name = case when name_pending then nm else full_name end,
+         name_pending = false
    where id = c.id;
   return jsonb_build_object('face_status', 'pending');
 end; $$;
@@ -684,7 +697,7 @@ revoke all on function
 
 grant execute on function
   public.exam_login(text),
-  public.exam_enroll(text, float8[], text),
+  public.exam_enroll(text, float8[], text, text),
   public.exam_start(text, uuid, float8[], text, text),
   public.exam_question(uuid),
   public.exam_answer(uuid, integer, integer),

@@ -8,6 +8,7 @@ export const MESSAGES = {
   invalid_code: "That access code isn't valid. Check it and try again, or ask your administrator.",
   too_many_attempts: "Too many wrong codes from this network. Wait 10 minutes and try again.",
   already_enrolled: "Your face is already registered.",
+  name_required: "Type your full name (first name and surname) before registering.",
   bad_face_data: "Your face couldn't be read clearly. Face the camera in good light and try again.",
   bad_photo: "The photo couldn't be taken. Try again.",
   exam_not_found: "This exam isn't available to you.",
@@ -65,7 +66,8 @@ export async function rpc(fn, args) {
 
 export const api = {
   login: code => rpc("exam_login", { p_code: code }),
-  enroll: (code, descriptor, photo) => rpc("exam_enroll", { p_code: code, p_descriptor: descriptor, p_photo: photo }),
+  enroll: (code, descriptor, photo, name = null) =>
+    rpc("exam_enroll", { p_code: code, p_descriptor: descriptor, p_photo: photo, p_name: name }),
   start: (code, examId, descriptor, photo) =>
     rpc("exam_start", { p_code: code, p_exam_id: examId, p_descriptor: descriptor, p_photo: photo, p_user_agent: navigator.userAgent }),
   question: token => rpc("exam_question", { p_token: token }),
