@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { User, Search, Mail, ShieldCheck, Ban, RotateCcw, Trash2, Crown, XCircle } from "lucide-react";
+import { User, Search, Mail, ShieldCheck, Ban, RotateCcw, Trash2, Crown, XCircle, KeyRound } from "lucide-react";
 import { Card, SectionHeader, EmptyState, Button, useApp } from "../ui/kit.jsx";
 import { supabase } from "../lib/supabase.js";
 
@@ -56,9 +56,27 @@ export default function AdminUsersScreen() {
     flash(error ? `Failed to email ${row.email}` : `Password reset email sent to ${row.email}`);
   }
 
-  function flash(msg) {
+  // For when the reset email never arrives: the admin picks a new password and tells the student.
+  async function setPassword(row) {
+    const who = row.name || row.email;
+    const pw = prompt(`New password for ${who} (at least 6 characters). Tell them this password privately, e.g. on WhatsApp.`);
+    if (pw === null) return;
+    if (pw.trim().length < 6) { flash("Password must be at least 6 characters."); return; }
+    setBusyId(row.id);
+    const { error } = await supabase.rpc("admin_set_user_password", { p_user_id: row.id, p_password: pw.trim() });
+    setBusyId(null);
+    if (error) {
+      flash(/function .* does not exist|could not find the function/i.test(error.message)
+        ? "Set Password isn't switched on yet: run supabase/schema_admin_set_password.sql in Supabase first."
+        : `Failed to set password: ${error.message}`, 8000);
+    } else {
+      flash(`Password changed for ${who}. They can now log in with ${row.email} and the new password.`, 8000);
+    }
+  }
+
+  function flash(msg, ms = 3500) {
     setNotice(msg);
-    setTimeout(() => setNotice(""), 3500);
+    setTimeout(() => setNotice(""), ms);
   }
 
   async function grantSubscription(row) {
@@ -130,7 +148,8 @@ export default function AdminUsersScreen() {
                   <div style={{ fontSize: 12, color: t.textFaint }}>{row.email}</div>
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  <Button size="sm" variant="ghost" icon={Mail} disabled={busyId === row.id} onClick={() => sendReset(row)}>Reset Password</Button>
+                  <Button size="sm" variant="ghost" icon={KeyRound} disabled={busyId === row.id} onClick={() => setPassword(row)}>Set Password</Button>
+                  <Button size="sm" variant="ghost" icon={Mail} disabled={busyId === row.id} onClick={() => sendReset(row)}>Email Reset Link</Button>
                   <Button size="sm" variant="ghost" icon={ShieldCheck} disabled={busyId === row.id || row.id === myId} onClick={() => toggleRole(row)}>
                     {row.role === "admin" ? "Demote" : "Make Admin"}
                   </Button>

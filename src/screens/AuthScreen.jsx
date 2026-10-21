@@ -64,7 +64,7 @@ export default function AuthScreen({ t, signOutNotice }) {
           redirectTo: window.location.origin,
         });
         if (error) throw error;
-        setNotice("Check your email for a password reset link.");
+        setNotice("If that email has an account, a reset link is on its way. Check your inbox and spam folder. No email after 10 minutes? Message your admin, who can set a new password for you.");
       }
     } catch (err) {
       setError(friendlyError(err));
@@ -157,6 +157,49 @@ export default function AuthScreen({ t, signOutNotice }) {
               </button>
             </div>
           )}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Shown after a student opens the link in a password-reset email: Supabase has
+// signed them in for recovery, and they must choose a new password now.
+export function NewPasswordScreen({ t, onDone }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(e) {
+    e.preventDefault();
+    setError("");
+    if (password.length < 6) return setError("Use at least 6 characters.");
+    if (password !== confirm) return setError("The two passwords don't match.");
+    setBusy(true);
+    const { error: err } = await supabase.auth.updateUser({ password });
+    setBusy(false);
+    if (err) return setError(err.message || "Couldn't save the new password. Try again.");
+    onDone();
+  }
+
+  return (
+    <div className="f-sans" style={{ minHeight: "100vh", background: t.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ width: "100%", maxWidth: 380 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 24 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 16, background: t.navy, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Lock size={24} color="#fff" />
+          </div>
+          <div className="f-serif" style={{ fontSize: 19, fontWeight: 700, color: t.text }}>Choose a new password</div>
+          <div style={{ fontSize: 12.5, color: t.textMuted, textAlign: "center" }}>You'll use it to log in from now on.</div>
+        </div>
+        <Card style={{ padding: 26 }}>
+          <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <Field label="New password" icon={Lock} value={password} onChange={setPassword} type="password" autoComplete="new-password" />
+            <Field label="Type it again" icon={Lock} value={confirm} onChange={setConfirm} type="password" autoComplete="new-password" />
+            {error && <div style={{ fontSize: 13, color: t.red, fontWeight: 600 }}>{error}</div>}
+            <Button variant="primary" full icon={ArrowRight} disabled={busy}>{busy ? "Saving…" : "Save new password"}</Button>
+          </form>
         </Card>
       </div>
     </div>
