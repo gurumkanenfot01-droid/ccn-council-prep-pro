@@ -3,7 +3,7 @@ import { AppCtx, useApp, Card, IconBadge, StatCard, Button, Chip, Modal, Section
 import { loadJSON, saveJSON, fetchQuestionBank, fetchStudyNotes, fetchSubscription, setCurrentUserId, applyPendingReferralCode } from "./lib/dataStore.js";
 import { supabase } from "./lib/supabase.js";
 import { clockIsWrong, CLOCK_WRONG_MESSAGE, SESSION_LOST_MESSAGE } from "./lib/authNotice.js";
-import AuthScreen from "./screens/AuthScreen.jsx";
+import AuthScreen, { NewPasswordScreen } from "./screens/AuthScreen.jsx";
 import AdminOverviewScreen from "./screens/AdminOverviewScreen.jsx";
 import AdminReviewScreen from "./screens/AdminReviewScreen.jsx";
 import AdminQuestionsScreen from "./screens/AdminQuestionsScreen.jsx";
@@ -1594,6 +1594,8 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [booted, setBooted] = useState(false);
   const [session, setSession] = useState(undefined); // undefined=checking, null=logged out, object=logged in
+  // True after opening a password-reset link, until the student saves a new password.
+  const [recovering, setRecovering] = useState(false);
   const [winWidth, setWinWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   const isMobile = winWidth < 900;
 
@@ -1662,6 +1664,7 @@ export default function App() {
         setSession(null);
         return;
       }
+      if (event === "PASSWORD_RECOVERY") setRecovering(true);
       if (event === "SIGNED_OUT" && hadSession.current && !userSignedOut.current) setAuthNotice(SESSION_LOST_MESSAGE);
       if (sess) { hadSession.current = true; userSignedOut.current = false; }
       setSession(sess);
@@ -1871,6 +1874,7 @@ export default function App() {
     );
   }
   if (!session) return <AppCtx.Provider value={{ t }}><AuthScreen t={t} signOutNotice={authNotice} /></AppCtx.Provider>;
+  if (recovering) return <AppCtx.Provider value={{ t }}><NewPasswordScreen t={t} onDone={() => setRecovering(false)} /></AppCtx.Provider>;
   if (profile.disabled) {
     return (
       <AppCtx.Provider value={{ t }}>
