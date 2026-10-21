@@ -1656,8 +1656,19 @@ export default function App() {
   const userSignedOut = useRef(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+    // Tokens that were not just issued by the server: the login saved on this
+    // device (Supabase re-sends it as INITIAL_SESSION or SIGNED_IN when the page
+    // opens, and again when the tab comes back into view) and any token already
+    // seen. Only a new token from a fresh sign-in or refresh can reveal a wrong clock.
+    const seenTokens = new Set();
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(supabase.auth.storageKey) || "null");
+      if (saved && saved.access_token) seenTokens.add(saved.access_token);
+    } catch (e) { /* storage blocked: nothing saved to reload */ }
     const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
-      if (sess && clockIsWrong(sess.access_token)) {
+      const fresh = !!sess && event !== "INITIAL_SESSION" && !seenTokens.has(sess.access_token);
+      if (sess) seenTokens.add(sess.access_token);
+      if (sess && clockIsWrong(sess.access_token, fresh)) {
         setAuthNotice(CLOCK_WRONG_MESSAGE);
         userSignedOut.current = true;
         supabase.auth.signOut().catch(() => {});
