@@ -24,11 +24,18 @@ export default function AuthScreen({ t, signOutNotice }) {
   useEffect(() => { if (signOutNotice && signOutNotice.text) setError(signOutNotice.text); }, [signOutNotice]);
   const [notice, setNotice] = useState("");
   const [unconfirmedEmail, setUnconfirmedEmail] = useState("");
+  // Browsers built into WhatsApp, Facebook, Instagram etc. often forget logins
+  // when closed, which looks like being logged out at random.
+  const inAppBrowser = typeof navigator !== "undefined" && /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(navigator.userAgent || "");
 
   // Turn Supabase/Safari error text into something a student can act on.
   function friendlyError(err) {
     const msg = (err && err.message) || "";
-    if (/invalid login credentials/i.test(msg)) return "Wrong email or password. Check for typos, or tap \"Forgot password?\" below to reset it.";
+    if (/invalid login credentials/i.test(msg)) return "Wrong email or password. Check the spelling of your email, or tap \"Forgot password?\" below. If the reset email doesn't come, message your admin, who can set a new password for you.";
+    if (/already registered|already been registered|user already exists/i.test(msg)) return "This email already has an account. Tap \"Log In\" above and use your password. Forgot it? Message your admin, who can set a new one for you.";
+    if (/rate limit|too many|security purposes/i.test(msg)) return "Too many attempts in a short time. Please wait about 5 minutes, then try again.";
+    if (/password should be at least|weak password/i.test(msg)) return "Choose a password with at least 6 characters.";
+    if (/invalid email|unable to validate email/i.test(msg)) return "That email address doesn't look right. Check it and try again.";
     if (/load failed|failed to fetch|networkerror|network request failed/i.test(msg)) return "Couldn't reach the server. Check your internet connection and try again.";
     return msg || "Something went wrong.";
   }
@@ -46,13 +53,18 @@ export default function AuthScreen({ t, signOutNotice }) {
         if (error) {
           if (/email not confirmed/i.test(error.message || "")) {
             setUnconfirmedEmail(email);
-            throw new Error("Please confirm your email before logging in — check your inbox for the link.");
+            throw new Error("Your email isn't confirmed yet. Check your inbox and spam for the confirmation link, or tap \"Resend confirmation email\" below. Still nothing? Message your admin, who can confirm your account.");
           }
           throw error;
         }
       } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
+        // With email confirmation on, Supabase answers a sign-up for an existing
+        // email with a fake success (no identities) instead of an error.
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          throw new Error("User already registered");
+        }
         if (!data.session) {
           setUnconfirmedEmail(email);
           setNotice("Account created — check your email for a confirmation link before logging in.");
@@ -99,6 +111,12 @@ export default function AuthScreen({ t, signOutNotice }) {
           <div style={{ fontSize: 12.5, color: t.textMuted }}>Critical Care Nursing</div>
         </div>
 
+        {inAppBrowser && (
+          <div role="note" style={{ fontSize: 12.5, fontWeight: 600, color: "#1a1400", background: t.amber, borderRadius: 12, padding: "10px 12px", marginBottom: 12 }}>
+            You opened this inside another app (like WhatsApp), which may not keep you logged in.
+            Tap the ⋮ menu and choose "Open in Chrome" (or "Open in browser"), then log in there.
+          </div>
+        )}
         <Card style={{ padding: 26 }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 20, background: t.bgAlt, borderRadius: 12, padding: 4 }}>
             {[

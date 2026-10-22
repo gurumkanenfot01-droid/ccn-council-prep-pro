@@ -1707,14 +1707,27 @@ export default function App() {
   }, [session]);
 
   const sessionUserKey = session === undefined ? "checking" : session ? session.user.id : "signed-out";
+  // Set when loading the student's data after login fails outright (no network
+  // and nothing saved), so they get a Retry button instead of an endless logo.
+  const [bootError, setBootError] = useState(false);
+  // Set when loading takes unusually long (a stalled mobile connection can hang
+  // for minutes), so the student isn't left staring at the logo.
+  const [bootSlow, setBootSlow] = useState(false);
+  const [bootAttempt, setBootAttempt] = useState(0);
   useEffect(() => {
     if (session === undefined) return; // still checking
     if (session === null) { setBooted(true); return; } // logged out, nothing to load
     setCurrentUserId(session.user.id);
     setBooted(false);
+    setBootError(false);
+    setBootSlow(false);
     applyPendingReferralCode();
+    let cancelled = false;
+    const slowTimer = setTimeout(() => { if (!cancelled) setBootSlow(true); }, 20000);
     (async () => {
-      const [bank, notes, p, sub, b, w, h, ip, th] = await Promise.all([
+      let loaded;
+      try {
+        loaded = await Promise.all([
         fetchQuestionBank(),
         fetchStudyNotes(),
         loadJSON("profile", defaultProfile, false),
@@ -1724,7 +1737,16 @@ export default function App() {
         loadJSON("exam-history", [], false),
         loadJSON("in-progress", null, false),
         loadJSON("theme-pref", "light", false),
-      ]);
+        ]);
+      } catch (e) {
+        loaded = null;
+      }
+      clearTimeout(slowTimer);
+      if (cancelled) return;
+      // No questions at all means the server couldn't be reached and nothing was
+      // saved on this device yet: offer Try again rather than an empty app.
+      if (!loaded || !loaded[0] || !loaded[0].length) { setBootError(true); return; }
+      const [bank, notes, p, sub, b, w, h, ip, th] = loaded;
       QUESTION_BANK = bank;
       STUDY_NOTES = notes;
       CATEGORY_LIST = computeCategoryList(bank);
@@ -1735,10 +1757,11 @@ export default function App() {
       if (!bootIsSubscribed && !bootIsExistingMember) setShowUpsell(true);
       setBooted(true);
     })();
+    return () => { cancelled = true; clearTimeout(slowTimer); };
     // Keyed on the user id, not the session object: Supabase hands over a new
     // session object on every hourly token refresh, which used to re-download
     // everything and flash the loading screen.
-  }, [sessionUserKey]);
+  }, [sessionUserKey, bootAttempt]);
 
   function signOut() {
     userSignedOut.current = true;
@@ -1873,6 +1896,23 @@ export default function App() {
   const streak = useMemo(() => computeStreak(history), [history]);
   const t = THEME[themeMode];
 
+  if (!booted && (bootError || bootSlow)) {
+    return (
+      <AppCtx.Provider value={{ t }}>
+      <div style={{ minHeight: "100vh", background: t.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <Card style={{ padding: 28, maxWidth: 360, textAlign: "center" }}>
+          <div className="f-serif" style={{ fontSize: 17, fontWeight: 700, color: t.text, marginBottom: 8 }}>
+            {bootError ? "Couldn't load your account" : "Taking longer than usual…"}
+          </div>
+          <div style={{ fontSize: 13.5, color: t.textMuted, marginBottom: 18 }}>
+            You're still logged in. This is usually a weak internet connection. Check your data or Wi-Fi and tap Try again.
+          </div>
+          <Button variant="primary" full onClick={() => setBootAttempt(n => n + 1)}>Try again</Button>
+        </Card>
+      </div>
+      </AppCtx.Provider>
+    );
+  }
   if (!booted) {
     return (
       <div style={{ minHeight: "100vh", background: t.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>

@@ -17,14 +17,31 @@ function requireUserId() {
 }
 
 // ---- profile ----
+// A failed request used to fall back to an empty profile, so a student on a weak
+// connection was sent to "complete your profile" and shown the Subscribe screen
+// as if their account were new. Now it uses the last profile loaded on this
+// device; only a student never seen here gets the blank one.
 async function loadProfile(fallback) {
   const userId = requireUserId();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("name, email, hospital, school, level, photo_url, role, disabled, created_at, referral_code, referred_by, show_score_on_dashboard")
-    .eq("id", userId)
-    .single();
-  if (error || !data) return fallback;
+  const cacheKey = `profile:${userId}`;
+  // One request: the Supabase client already retries network errors itself.
+  for (let attempt = 0; attempt < 1; attempt++) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("name, email, hospital, school, level, photo_url, role, disabled, created_at, referral_code, referred_by, show_score_on_dashboard")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!error && data) {
+      const profile = profileFromRow(data);
+      try { localStorage.setItem(cacheKey, JSON.stringify(profile)); } catch (e) { /* storage blocked */ }
+      return profile;
+    }
+    if (!error && !data) return fallback; // no profile row yet: genuinely new account
+  }
+  try { return JSON.parse(localStorage.getItem(cacheKey) || "null") || fallback; } catch (e) { return fallback; }
+}
+
+function profileFromRow(data) {
   return {
     name: data.name || "",
     email: data.email || "",
