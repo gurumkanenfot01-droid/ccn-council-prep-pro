@@ -438,9 +438,13 @@ function QuickTile({ icon: Icon, label, desc, color, bg, onClick }) {
   );
 }
 function SetupScreen({ go, startQuiz, presetCategory }) {
-  const { t, wrongBank } = useApp();
-  const [count, setCount] = useState(50);
-  const [category, setCategory] = useState(presetCategory || "All");
+  const { t, wrongBank, isAdmin, hasGrandfatheredAccess, freeTrialRemaining } = useApp();
+  // Free-trial students can only start free categories, so start them on one
+  // instead of "All Categories" (which sent them straight to Subscribe).
+  const onFreeTrial = !isAdmin && !hasGrandfatheredAccess;
+  const isFreeCategory = c => FREE_CATEGORIES.includes(c);
+  const [count, setCount] = useState(onFreeTrial ? 20 : 50);
+  const [category, setCategory] = useState(presetCategory || (onFreeTrial ? FREE_CATEGORIES[0] : "All"));
   const [topic, setTopic] = useState("All");
   const [weakOnly, setWeakOnly] = useState(false);
   const presets = [20, 50, 100, 150, 200, 250];
@@ -457,6 +461,16 @@ function SetupScreen({ go, startQuiz, presetCategory }) {
   return (
     <div className="fade-in">
       <SectionHeader icon={ClipboardList} title="Set Up Your Mock Exam" />
+      {onFreeTrial && (
+        <Card style={{ padding: 14, marginBottom: 16, background: t.emeraldSoft, border: `1px solid ${t.emerald}` }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text }}>
+            Free trial: {FREE_CATEGORIES.join(", ")} is free ({freeTrialRemaining} questions left).
+          </div>
+          <div style={{ fontSize: 12.5, color: t.textMuted, marginTop: 4 }}>
+            Topics with a 🔒 need a subscription. The Daily Challenge is free too.
+          </div>
+        </Card>
+      )}
 
       <Card style={{ padding: 20, marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 12 }}>Number of Questions</div>
@@ -489,10 +503,13 @@ function SetupScreen({ go, startQuiz, presetCategory }) {
           <div className="f-mono" style={{ fontSize: 12, color: t.textFaint }}>{weakOnly ? weakIds.length : poolSize} available</div>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: topicList.length > 1 ? 12 : 14 }}>
-          <Chip active={category === "All" && !weakOnly} onClick={() => { setCategory("All"); setWeakOnly(false); }}>📚 Mixed &middot; All Categories</Chip>
-          {CATEGORY_LIST.map(c => (
-            <Chip key={c.name} active={category === c.name && !weakOnly} onClick={() => { setCategory(c.name); setWeakOnly(false); }} icon={c.icon}>{c.name}</Chip>
-          ))}
+          <Chip active={category === "All" && !weakOnly} onClick={() => { if (onFreeTrial) { go("subscribe"); return; } setCategory("All"); setWeakOnly(false); }}>{onFreeTrial ? "🔒 " : "📚 "}Mixed &middot; All Categories</Chip>
+          {CATEGORY_LIST.map(c => {
+            const locked = onFreeTrial && !isFreeCategory(c.name);
+            return (
+              <Chip key={c.name} active={category === c.name && !weakOnly} onClick={() => { if (locked) { go("subscribe"); return; } setCategory(c.name); setWeakOnly(false); }} icon={locked ? "🔒" : c.icon}>{c.name}</Chip>
+            );
+          })}
         </div>
         {topicList.length > 1 && !weakOnly && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14, paddingLeft: 4 }}>
@@ -1808,7 +1825,9 @@ export default function App() {
 
   function startQuiz({ count, category, idPool, seedOverride, dailyKey }) {
     const isAdminAccount = profile.role === "admin";
-    const isFreePreview = FREE_QUIZ_LABELS.includes(category) || FREE_CATEGORIES.includes(category);
+    const poolIsFree = Array.isArray(idPool) && idPool.length > 0 &&
+      idPool.every(id => { const q = QUESTION_BANK.find(qq => qq.id === id); return q && FREE_CATEGORIES.includes(q.category); });
+    const isFreePreview = FREE_QUIZ_LABELS.includes(category) || FREE_CATEGORIES.includes(category) || poolIsFree;
     if (!isAdminAccount && !hasGrandfatheredAccess && !isFreePreview) { go("subscribe"); return; }
     if (!isAdminAccount && !hasGrandfatheredAccess) {
       if (freeTrialRemaining <= 0) { go("subscribe"); return; }
@@ -1826,7 +1845,15 @@ export default function App() {
     }
 
     const seed = seedOverride || Math.floor(Math.random() * 1e9);
-    const set = buildQuizSet(count, category === "All" ? "All" : category, seed, idPool);
+    // Labels like "Daily Challenge" aren't bank categories: without an idPool they
+    // draw from the whole bank (filtering by the label found nothing, and the
+    // quiz screen opened blank).
+    const filter = category === "All" || FREE_QUIZ_LABELS.includes(category) ? "All" : category;
+    const set = buildQuizSet(count, filter, seed, idPool);
+    if (!set.length) {
+      window.alert("No questions are available for this selection yet. Please choose another category.");
+      return;
+    }
     setQuiz(set); setAnswers({}); setFlagged({}); setIdx(0); setElapsed(0);
     setLastQuizMeta({ category, dailyKey: dailyKey || null });
     go("quiz");
