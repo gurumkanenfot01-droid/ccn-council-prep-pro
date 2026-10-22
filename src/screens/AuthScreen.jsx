@@ -16,7 +16,9 @@ export default function AuthScreen({ t, signOutNotice }) {
       if (ref) window.localStorage.setItem("pending-referral-code", ref.trim().toUpperCase());
     } catch (e) { /* storage blocked (e.g. Safari "Block All Cookies") — skip the referral */ }
   }, []);
-  const [rawEmail, setEmail] = useState("");
+  // The email used last time on this device is filled in, so a returning
+  // student only types their password.
+  const [rawEmail, setEmail] = useState(() => { try { return localStorage.getItem("last-login-email") || ""; } catch (e) { return ""; } });
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -48,6 +50,7 @@ export default function AuthScreen({ t, signOutNotice }) {
     setNotice("");
     setBusy(true);
     try {
+      try { localStorage.setItem("last-login-email", email); } catch (e) { /* storage blocked */ }
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {

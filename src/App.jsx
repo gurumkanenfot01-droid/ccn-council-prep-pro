@@ -237,8 +237,14 @@ function Toggle({ on, onClick, label }) {
 }
 function InstallAppBanner() {
   const { t, canInstall, isAppInstalled, promptInstall } = useApp();
+  // Closing it hides it for two weeks, not forever: an installed app keeps the
+  // login much longer (iPhone Safari wipes a website's saved login after about
+  // 7 days without a visit; Home Screen apps are exempt).
   const [dismissed, setDismissed] = useState(() => {
-    try { return localStorage.getItem("install-banner-dismissed") === "1"; } catch (e) { return false; }
+    try {
+      const v = localStorage.getItem("install-banner-dismissed");
+      return !!v && v !== "1" && Date.now() - Number(v) < 14 * 24 * 3600 * 1000;
+    } catch (e) { return false; }
   });
   const [showIOSHelp, setShowIOSHelp] = useState(false);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -248,7 +254,7 @@ function InstallAppBanner() {
 
   function dismiss() {
     setDismissed(true);
-    try { localStorage.setItem("install-banner-dismissed", "1"); } catch (e) { /* storage blocked */ }
+    try { localStorage.setItem("install-banner-dismissed", String(Date.now())); } catch (e) { /* storage blocked */ }
   }
 
   return (
@@ -258,7 +264,7 @@ function InstallAppBanner() {
           <IconBadge icon={Download} color={t.navy} bg={t.card} size={38} />
           <div>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text }}>Install this app</div>
-            <div style={{ fontSize: 11.5, color: t.textFaint }}>Add it to your home screen — faster, works offline</div>
+            <div style={{ fontSize: 11.5, color: t.textFaint }}>Add it to your home screen to stay logged in, open it faster and use it offline</div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
