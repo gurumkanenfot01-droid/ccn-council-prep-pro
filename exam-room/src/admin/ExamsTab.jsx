@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, PauseCircle, PlayCircle, Lock, Trash2, Save, Shuffle, Users, X } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
+import { adminDbMessage } from "../lib/api.js";
 import { Spinner, fmtDateTime } from "../ui.jsx";
 
 // <input type="datetime-local"> works in local time without a timezone.
@@ -114,7 +115,7 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
     const res = f.id
       ? await supabase.from("exam_exams").update(row).eq("id", f.id).select("id").single()
       : await supabase.from("exam_exams").insert(row).select("id").single();
-    if (res.error) { setSaving(false); return setError(res.error.message); }
+    if (res.error) { setSaving(false); return setError(adminDbMessage(res.error)); }
     const id = res.data.id;
     await supabase.from("exam_allowed").delete().eq("exam_id", id);
     if (!f.all_candidates) {
@@ -125,7 +126,7 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
       const rows = [...limits.entries()].filter(([cid]) => byId.has(cid))
         .map(([candidate_id, l]) => ({ exam_id: id, candidate_id, question_count: l.n, duration_minutes: l.minutes }));
       const { error: limErr } = rows.length ? await supabase.from("exam_question_limits").insert(rows) : { error: null };
-      if (limErr) { setSaving(false); return setError(limErr.message); }
+      if (limErr) { setSaving(false); return setError(adminDbMessage(limErr)); }
     }
     setSaving(false);
     onSaved();
@@ -301,7 +302,8 @@ export default function ExamsTab() {
         if (!data || data.length < 1000) break;
       }
       setBank(all);
-      const { data: c } = await supabase.from("exam_candidates").select("id, full_name, access_code, batch, name_pending").eq("active", true).order("full_name");
+      const { data: c, error: cErr } = await supabase.from("exam_candidates").select("id, full_name, access_code, batch, name_pending").eq("active", true).order("full_name");
+      if (cErr) setError(adminDbMessage(cErr));
       setCandidates(c || []);
     })();
   }, [load]);
