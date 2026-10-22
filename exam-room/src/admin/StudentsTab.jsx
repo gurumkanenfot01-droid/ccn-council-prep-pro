@@ -156,6 +156,12 @@ export default function StudentsTab() {
     if (error) flash(error.message); else { if (message) flash(message); load(); }
   }
 
+  async function approveAll() {
+    if (!confirm(`Approve all ${pending} waiting face registration${pending === 1 ? "" : "s"} without checking each photo?`)) return;
+    const { error } = await supabase.from("exam_candidates").update({ face_status: "approved" }).eq("face_status", "pending");
+    if (error) flash(adminDbMessage(error)); else { flash(`Approved ${pending} student${pending === 1 ? "" : "s"}.`); load(); }
+  }
+
   async function viewPhoto(row) {
     const { data } = await supabase.from("exam_candidates").select("face_photo").eq("id", row.id).maybeSingle();
     setPhoto({ name: row.full_name, src: data?.face_photo || null, row });
@@ -237,7 +243,11 @@ export default function StudentsTab() {
       </section>
 
       {loadError && <div className="banner banner-bad">{loadError}</div>}
-      {pending > 0 && <div className="banner banner-warn">{pending} face registration{pending === 1 ? "" : "s"} waiting for your approval. Tap “Photo” to check and approve.</div>}
+      {pending > 0 && <div className="banner banner-warn row" style={{ gap: 10 }}>
+        <span>{pending} face registration{pending === 1 ? "" : "s"} waiting for your approval. Tap “Photo” to check and approve, or approve them all at once.</span>
+        <span className="spacer" />
+        <button className="btn btn-sm btn-success" onClick={approveAll}><Check size={13} /> Approve all ({pending})</button>
+      </div>}
 
       <section>
         <div className="row" style={{ marginBottom: 10 }}>
