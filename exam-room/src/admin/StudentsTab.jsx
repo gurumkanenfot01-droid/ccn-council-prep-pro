@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
@@ -81,6 +81,46 @@ const FACE_PILL = {
   approved: ["pill-ok", "Approved"],
   rejected: ["pill-bad", "Rejected"],
 };
+
+const FACE_MODES = [
+  ["full", "Full", "Each student registers their face once and you approve it. The face is matched at the start of every exam and every minute during it."],
+  ["easy", "Easy", "One face photo at registration, approved automatically. No face matching during exams."],
+  ["off", "Off", "No face registration or matching. Students only enter their code (and their name if the code is blank). Camera checks during the exam still follow each exam's strictness setting."],
+];
+
+// Exam Room-wide face registration setting (exam_settings.face_mode).
+function FaceModeCard() {
+  const [faceMode, setFaceMode] = useState(null);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState("");
+  useEffect(() => {
+    supabase.from("exam_settings").select("face_mode").eq("id", 1).maybeSingle()
+      .then(({ data, error: err }) => { if (err) setError(adminDbMessage(err)); else setFaceMode(data?.face_mode || "full"); });
+  }, []);
+  async function choose(m) {
+    if (m === faceMode) return;
+    setError(""); setSaved("");
+    const { error: err } = await supabase.from("exam_settings").upsert({ id: 1, face_mode: m, updated_at: new Date().toISOString() });
+    if (err) setError(adminDbMessage(err)); else { setFaceMode(m); setSaved(`Saved: face registration is now ${FACE_MODES.find(x => x[0] === m)[1]}.`); }
+  }
+  return (
+    <section className="card">
+      <h2 style={{ fontSize: 16, marginTop: 0 }}><ScanFace size={17} /> Face registration</h2>
+      {error ? <div className="banner banner-bad">{error}</div> : faceMode === null ? <Spinner /> : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {FACE_MODES.map(([id, label, text]) => (
+            <label key={id} className="toggle-row" style={{ alignItems: "flex-start" }}>
+              <input type="radio" name="face-mode" checked={faceMode === id} onChange={() => choose(id)} style={{ marginTop: 3 }} />
+              <span><strong>{label}</strong> — <span className="muted">{text}</span></span>
+            </label>
+          ))}
+          <p className="faint" style={{ fontSize: 12.5, margin: 0 }}>Applies to all students straight away, including exams already open. Students who are mid-exam are not affected until they next start an exam.</p>
+          {saved && <div className="banner banner-ok">{saved}</div>}
+        </div>
+      )}
+    </section>
+  );
+}
 
 export default function StudentsTab() {
   const [rows, setRows] = useState(null);
@@ -189,6 +229,7 @@ export default function StudentsTab() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <FaceModeCard />
       <section className="card">
         <h2 style={{ fontSize: 16, marginTop: 0 }}><UserPlus size={17} /> Create access codes</h2>
         <div className="row" style={{ gap: 6, marginBottom: 12 }} role="tablist">

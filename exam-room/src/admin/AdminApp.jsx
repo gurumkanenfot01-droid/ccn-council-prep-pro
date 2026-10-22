@@ -55,8 +55,13 @@ export default function AdminApp() {
   const userId = session ? session.user.id : null;
   useEffect(() => {
     if (!userId) { setIsAdmin(null); return; }
-    supabase.from("profiles").select("role, disabled").eq("id", userId).maybeSingle()
-      .then(({ data }) => setIsAdmin(data?.role === "admin" && !data?.disabled));
+    // Full app admins and Exam Room admins (exam_admins table). Falls back to the
+    // profile role if the exam_is_admin function hasn't been installed yet.
+    supabase.rpc("exam_is_admin").then(({ data, error }) => {
+      if (!error) return setIsAdmin(!!data);
+      supabase.from("profiles").select("role, disabled").eq("id", userId).maybeSingle()
+        .then(({ data: p }) => setIsAdmin(p?.role === "admin" && !p?.disabled));
+    });
   }, [userId]);
 
   if (session === undefined || (session && isAdmin === null)) return <main className="wrap" style={{ textAlign: "center", paddingTop: 80 }}><Spinner size={28} /></main>;
