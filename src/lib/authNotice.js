@@ -18,10 +18,10 @@ export function clockIsWrong(accessToken, fresh = true) {
   }
 }
 
-export const CLOCK_WRONG_MESSAGE =
-  "Your password is correct, but this device's date and time are wrong, so the login can't be kept. " +
-  "Go to Settings → General → Date & Time, turn on \"Set Automatically\", then log in again.";
+// Shown as a banner while the student stays logged in. A wrong clock is never a
+// reason to log someone out: the server checks logins with its own clock.
+export const CLOCK_WARNING_MESSAGE =
+  "Your phone's date or time looks wrong. If pages stop loading, turn on automatic date & time " +
+  "(Settings → Date & time → Set automatically), then reopen the app.";
 export const SESSION_LOST_MESSAGE =
-  "You were logged out because the login couldn't be kept on this device. " +
-  "Check that Settings → General → Date & Time is set automatically, turn off Private Browsing, " +
-  "and make sure Settings → Safari → \"Block All Cookies\" is off. Then log in again.";
+  "Your login has ended. Please log in again with your email and password.";

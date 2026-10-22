@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { AppCtx, useApp, Card, IconBadge, StatCard, Button, Chip, Modal, SectionHeader, EmptyState, Field } from "./ui/kit.jsx";
 import { loadJSON, saveJSON, fetchQuestionBank, fetchStudyNotes, fetchSubscription, setCurrentUserId, applyPendingReferralCode } from "./lib/dataStore.js";
 import { supabase } from "./lib/supabase.js";
-import { clockIsWrong, CLOCK_WRONG_MESSAGE, SESSION_LOST_MESSAGE } from "./lib/authNotice.js";
+import { clockIsWrong, CLOCK_WARNING_MESSAGE, SESSION_LOST_MESSAGE } from "./lib/authNotice.js";
 import AuthScreen, { NewPasswordScreen } from "./screens/AuthScreen.jsx";
 import AdminOverviewScreen from "./screens/AdminOverviewScreen.jsx";
 import AdminReviewScreen from "./screens/AdminReviewScreen.jsx";
@@ -1653,6 +1653,7 @@ export default function App() {
   const [authNotice, setAuthNoticeState] = useState({ text: "", n: 0 });
   const setAuthNotice = text => setAuthNoticeState(prev => ({ text, n: prev.n + 1 }));
   const hadSession = useRef(false);
+  const [clockWarning, setClockWarning] = useState(false);
   const userSignedOut = useRef(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
@@ -1668,13 +1669,8 @@ export default function App() {
     const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       const fresh = !!sess && event !== "INITIAL_SESSION" && !seenTokens.has(sess.access_token);
       if (sess) seenTokens.add(sess.access_token);
-      if (sess && clockIsWrong(sess.access_token, fresh)) {
-        setAuthNotice(CLOCK_WRONG_MESSAGE);
-        userSignedOut.current = true;
-        supabase.auth.signOut().catch(() => {});
-        setSession(null);
-        return;
-      }
+      // A wrong device clock only earns a warning; the student stays logged in.
+      if (sess && clockIsWrong(sess.access_token, fresh)) setClockWarning(true);
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
       if (event === "SIGNED_OUT" && hadSession.current && !userSignedOut.current) setAuthNotice(SESSION_LOST_MESSAGE);
       if (sess) { hadSession.current = true; userSignedOut.current = false; }
@@ -1911,6 +1907,13 @@ export default function App() {
       {isOffline && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 60, background: t.amber, color: "#1a1400", padding: "8px 16px", textAlign: "center", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <WifiOff size={14} /> You're offline — showing saved content. Changes won't sync until you're back online.
+        </div>
+      )}
+      {clockWarning && !isOffline && (
+        <div role="status" style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 60, background: t.amber, color: "#1a1400", padding: "8px 40px 8px 16px", textAlign: "center", fontSize: 12.5, fontWeight: 700 }}>
+          {CLOCK_WARNING_MESSAGE}
+          <button type="button" aria-label="Dismiss" onClick={() => setClockWarning(false)}
+            style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", fontSize: 18, fontWeight: 700, cursor: "pointer", color: "#1a1400" }}>×</button>
         </div>
       )}
       {showBackOnline && (
