@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock, RotateCcw } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useCamera, enterFullscreen, exitFullscreen } from "../lib/proctor.js";
+import { snapshot } from "../lib/face.js";
 import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
 import Liveness from "./Liveness.jsx";
 import ExamScreen from "./ExamScreen.jsx";
@@ -52,7 +53,7 @@ function CodeScreen({ onLogin }) {
           </button>
           <p className="faint" style={{ fontSize: 12.5, margin: 0, display: "flex", gap: 6 }}>
             <Lock size={14} style={{ flex: "none", marginTop: 2 }} />
-            Your code only works with your face. Sharing it won’t let anyone else sit your exam.
+            Your code is personal. Don’t share it with anyone.
           </p>
         </form>
       </div>
@@ -63,7 +64,36 @@ function CodeScreen({ onLogin }) {
 // Full name typed by a student with a blank code: first name and surname.
 function validName(n) { return /\p{L}.*\s.*\p{L}/u.test(n.trim()) && n.trim().length >= 3 && n.trim().length <= 80; }
 
-function EnrollScreen({ name, nameNeeded, code, cam, onEnrolled, onLogout }) {
+// Blank code with face registration turned off: only the student's name is needed.
+function NameScreen({ code, onDone, onLogout }) {
+  const [fullName, setFullName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function save(e) {
+    e.preventDefault();
+    if (!validName(fullName)) { setError("Type your full name (first name and surname)."); return; }
+    setBusy(true); setError("");
+    try { await api.enroll(code, null, null, fullName.trim().replace(/\s+/g, " ")); onDone(); }
+    catch (err) { setError(err.message); } finally { setBusy(false); }
+  }
+  return (
+    <main className="wrap">
+      <Header onLogout={onLogout} />
+      <form className="narrow card" onSubmit={save} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <h1 className="serif" style={{ fontSize: 22, margin: 0 }}>Your name</h1>
+        <div className="field">
+          <label htmlFor="fullname-only">Your full name (as on your school records)</label>
+          <input id="fullname-only" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Amina Bello" autoComplete="name" maxLength={80} />
+          <span className="faint" style={{ fontSize: 12.5 }}>First name and surname. You can't change it later, so check the spelling.</span>
+        </div>
+        {error && <div className="error" role="alert">{error}</div>}
+        <button className="btn btn-primary btn-full" disabled={busy || !validName(fullName)}>{busy ? "Saving…" : "Continue"} {!busy && <ArrowRight size={16} />}</button>
+      </form>
+    </main>
+  );
+}
+
+function EnrollScreen({ name, nameNeeded, code, cam, faceMode, onEnrolled, onLogout }) {
   const [started, setStarted] = useState(false);
   const [error, setError] = useState("");
   const [fullName, setFullName] = useState("");
@@ -81,10 +111,16 @@ function EnrollScreen({ name, nameNeeded, code, cam, onEnrolled, onLogout }) {
       <Header name={name} onLogout={onLogout} />
       <div className="narrow">
         <h1 className="serif" style={{ fontSize: 22, margin: "0 0 6px" }}>Register your face</h1>
-        <p className="muted" style={{ marginTop: 0 }}>
-          This is done once. Your face will be checked at the start of every exam and every minute during it,
-          so nobody else can use your code. An administrator will approve your registration.
-        </p>
+        {faceMode === "easy" ? (
+          <p className="muted" style={{ marginTop: 0 }}>
+            This is done once: one quick photo of your face for your exam record. You can start your exams straight after.
+          </p>
+        ) : (
+          <p className="muted" style={{ marginTop: 0 }}>
+            This is done once. Your face will be checked at the start of every exam and every minute during it,
+            so nobody else can use your code. An administrator will approve your registration.
+          </p>
+        )}
         <ul className="muted" style={{ fontSize: 14, paddingLeft: 18 }}>
           <li>Sit in good light, facing the camera, with nothing covering your face.</li>
           <li>Make sure you are alone in view.</li>
@@ -178,9 +214,11 @@ function ExamCard({ exam, onStart }) {
   );
 }
 
-function rulesFor(level) {
+function rulesFor(level, faceMode = "full") {
   return [
-    "Stay alone and in view of the camera for the whole exam. Your face is checked every minute.",
+    faceMode === "full"
+      ? "Stay alone and in view of the camera for the whole exam. Your face is checked every minute."
+      : "Stay alone and in view of the camera for the whole exam.",
     "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
     "No phones in view of the camera — a phone seen by the camera counts as a warning.",
     level === "strict"
@@ -189,11 +227,13 @@ function rulesFor(level) {
         ? "Keep quiet. Talking, loud noise or looking away for a long time counts as a warning."
         : "Quiet murmuring and turning your head are fine. Loud talking or loud noise counts as a warning.",
     "Screenshots, copying and printing are blocked and count as warnings. Your name is shown across the screen.",
-    "If someone else appears in view, or your face doesn't match, the exam ends immediately.",
+    faceMode === "full"
+      ? "If someone else appears in view, or your face doesn't match, the exam ends immediately."
+      : "If someone else appears in view, the exam ends immediately.",
   ];
 }
 
-function PrepScreen({ exam, name, code, cam, onStarted, onBack }) {
+function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
   const [agreed, setAgreed] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
@@ -201,7 +241,19 @@ function PrepScreen({ exam, name, code, cam, onStarted, onBack }) {
     setError("");
     enterFullscreen(); // must happen straight from the tap
     await cam.start();
+    if (faceMode !== "full") { await startWithoutMatch(); return; }
     setChecking(true);
+  }
+  // Easy/Off: no face matching. Take one photo for the record (if the camera
+  // gives a frame in time) and open the exam.
+  async function startWithoutMatch() {
+    setChecking(true);
+    let photo = null;
+    for (let i = 0; i < 10 && !photo; i++) {
+      await new Promise(r => setTimeout(r, 300));
+      photo = snapshot(cam.getVideo());
+    }
+    await verified({ descriptor: null, photo });
   }
   async function verified({ descriptor, photo }) {
     try {
@@ -228,7 +280,7 @@ function PrepScreen({ exam, name, code, cam, onStarted, onBack }) {
         <div className="card" style={{ marginBottom: 12 }}>
           <strong>Exam rules</strong>
           <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 14 }}>
-            {rulesFor(exam.proctor_level).map(r => <li key={r} style={{ marginBottom: 4 }}>{r}</li>)}
+            {rulesFor(exam.proctor_level, faceMode).map(r => <li key={r} style={{ marginBottom: 4 }}>{r}</li>)}
             <li>You answer one question at a time and can’t go back.{exam.show_answers ? " The correct answer is shown right after you answer." : ""}</li>
             <li>Reaching {exam.max_warnings} warnings submits your exam automatically.</li>
           </ul>
@@ -242,11 +294,13 @@ function PrepScreen({ exam, name, code, cam, onStarted, onBack }) {
               I understand the rules and I am the person registered to code {code}.
             </label>
             <button className="btn btn-primary btn-full" disabled={!agreed || cam.camera === "starting"} onClick={begin}>
-              <ShieldCheck size={16} /> Verify my face &amp; begin
+              <ShieldCheck size={16} /> {faceMode === "full" ? <>Verify my face &amp; begin</> : "Begin exam"}
             </button>
           </>
-        ) : (
+        ) : faceMode === "full" ? (
           <div className="card"><Liveness cam={cam} onDone={verified} actionLabel="Matching your face and opening the exam" /></div>
+        ) : (
+          <div className="card" style={{ textAlign: "center" }}><Spinner size={24} /><p className="muted">Opening the exam…</p></div>
         )}
       </div>
     </main>
@@ -349,11 +403,15 @@ export default function StudentApp() {
   }
   if (!profile) return <CodeScreen onLogin={login} />;
 
-  if (profile.face_status === "none" || profile.face_status === "rejected") {
+  const faceMode = profile.face_mode || "full";
+  if (faceMode === "off" && profile.name_needed) {
+    return <NameScreen code={code} onDone={() => refresh()} onLogout={logout} />;
+  }
+  if (faceMode !== "off" && (profile.face_status === "none" || profile.face_status === "rejected")) {
     return (
       <>
         {profile.face_status === "rejected" && <div className="wrap" style={{ paddingBottom: 0 }}><div className="banner banner-bad">Your last face registration wasn’t approved. Please register again in good light.</div></div>}
-        <EnrollScreen name={profile.name} nameNeeded={!!profile.name_needed} code={code} cam={cam} onEnrolled={() => refresh()} onLogout={logout} />
+        <EnrollScreen name={profile.name} nameNeeded={!!profile.name_needed} code={code} cam={cam} faceMode={faceMode} onEnrolled={() => refresh()} onLogout={logout} />
       </>
     );
   }
@@ -366,7 +424,7 @@ export default function StudentApp() {
   }
   if (view === "done" && result) return <DoneScreen result={result} name={profile.name} onBack={() => setView("exams")} />;
   if (view === "prep" && exam) {
-    return <PrepScreen exam={exam} name={profile.name} code={code} cam={cam}
+    return <PrepScreen exam={exam} name={profile.name} code={code} cam={cam} faceMode={faceMode}
       onStarted={s => { setSession(s); setView("exam"); }} onBack={() => { setView("exams"); refresh().catch(() => {}); }} />;
   }
 
@@ -374,7 +432,7 @@ export default function StudentApp() {
     <main className="wrap">
       <Header name={profile.name} onLogout={logout} />
       <h1 className="serif" style={{ fontSize: 24, margin: "0 0 12px" }}>Welcome, {profile.name.split(" ")[0]}</h1>
-      {profile.face_status === "pending" && (
+      {faceMode === "full" && profile.face_status === "pending" && (
         <div className="banner banner-warn"><Hourglass size={16} /> Your face registration is waiting for approval. You can start exams once it’s approved.</div>
       )}
       {refreshError && <div className="banner banner-warn">{refreshError}</div>}
@@ -389,7 +447,7 @@ export default function StudentApp() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {profile.exams.map(e => (
             <ExamCard key={e.id} exam={e}
-              onStart={ex => { if (profile.face_status !== "approved") { setRefreshError("Your face registration must be approved first."); return; } setExam(ex); setView("prep"); }} />
+              onStart={ex => { if (faceMode === "full" && profile.face_status !== "approved") { setRefreshError("Your face registration must be approved first."); return; } setExam(ex); setView("prep"); }} />
           ))}
         </div>
       )}

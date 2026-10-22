@@ -13,6 +13,7 @@ export const MESSAGES = {
   bad_photo: "The photo couldn't be taken. Try again.",
   exam_not_found: "This exam isn't available to you.",
   face_not_approved: "Your face registration hasn't been approved yet. Ask your administrator.",
+  face_not_registered: "Register your face first, then start the exam.",
   face_mismatch: "Your face doesn't match the registered student for this code. This attempt has been recorded.",
   already_taken: "You have used all your attempts for this exam. Ask your administrator if you need another try.",
   retake_needs_admin: "Your last attempt was ended for breaking the rules. Only your administrator can allow a retake.",

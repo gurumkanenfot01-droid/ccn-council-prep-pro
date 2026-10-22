@@ -168,12 +168,63 @@ alter table public.exam_answers enable row level security;
 alter table public.exam_events enable row level security;
 alter table public.exam_login_attempts enable row level security;
 
+-- Exam Room admins: full app admins, plus people listed in exam_admins, who can
+-- run the Exam Room without being admins of the main app.
+create table if not exists public.exam_admins (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  added_at timestamptz not null default now()
+);
+alter table public.exam_admins enable row level security;
+drop policy if exists exam_admins_admin_all on public.exam_admins;
+create policy exam_admins_admin_all on public.exam_admins
+  for all using (public.is_admin()) with check (public.is_admin());
+drop policy if exists exam_admins_select_own on public.exam_admins;
+create policy exam_admins_select_own on public.exam_admins
+  for select using (user_id = auth.uid());
+grant select, insert, update, delete on public.exam_admins to authenticated;
+
+create or replace function public.exam_is_admin() returns boolean
+language sql security definer set search_path = public stable as $$
+  select public.is_admin() or exists (
+    select 1 from public.exam_admins a join public.profiles p on p.id = a.user_id
+    where a.user_id = auth.uid() and not p.disabled
+  );
+$$;
+grant execute on function public.exam_is_admin() to authenticated;
+
+-- Let Exam Room admins see the question bank when building exams.
+drop policy if exists questions_select_exam_admin on public.questions;
+create policy questions_select_exam_admin on public.questions
+  for select using (public.exam_is_admin());
+
+-- Exam Room settings (one row). face_mode:
+--   full — students register their face once, an admin approves it, and the face is matched
+--          at the start of every exam and every minute during it (default)
+--   easy — one face photo at registration, approved automatically, no face matching
+--   off  — no face registration or matching at all (camera checks during the exam still apply)
+create table if not exists public.exam_settings (
+  id integer primary key default 1 check (id = 1),
+  face_mode text not null default 'full' check (face_mode in ('full', 'easy', 'off')),
+  updated_at timestamptz not null default now()
+);
+insert into public.exam_settings (id) values (1) on conflict (id) do nothing;
+alter table public.exam_settings enable row level security;
+drop policy if exists exam_settings_admin_all on public.exam_settings;
+create policy exam_settings_admin_all on public.exam_settings
+  for all using (public.exam_is_admin()) with check (public.exam_is_admin());
+grant select, insert, update on public.exam_settings to authenticated;
+
+create or replace function public.exam__face_mode() returns text
+language sql stable security definer set search_path = public as $$
+  select coalesce((select face_mode from public.exam_settings where id = 1), 'full')
+$$;
+
 do $$
 declare t text;
 begin
   foreach t in array array['exam_candidates','exam_exams','exam_allowed','exam_question_limits','exam_sessions','exam_answers','exam_events','exam_login_attempts'] loop
     execute format('drop policy if exists %I on public.%I', t || '_admin_all', t);
-    execute format('create policy %I on public.%I for all using (public.is_admin()) with check (public.is_admin())', t || '_admin_all', t);
+    execute format('create policy %I on public.%I for all using (public.exam_is_admin()) with check (public.exam_is_admin())', t || '_admin_all', t);
   end loop;
 end $$;
 
@@ -318,7 +369,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   s public.exam_sessions;
 begin
-  if not public.is_admin() then raise exception 'admins_only'; end if;
+  if not public.exam_is_admin() then raise exception 'admins_only'; end if;
   select * into s from exam_sessions where id = p_session;
   if s.id is null then return exam__err('not_found'); end if;
   if s.status = 'in_progress' then
@@ -336,7 +387,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   s public.exam_sessions;
 begin
-  if not public.is_admin() then raise exception 'admins_only'; end if;
+  if not public.exam_is_admin() then raise exception 'admins_only'; end if;
   if p_minutes is null or p_minutes not between 1 and 240 then return exam__err('bad_minutes'); end if;
   update exam_sessions set deadline = deadline + make_interval(mins => p_minutes)
    where id = p_session and status = 'in_progress' returning * into s;
@@ -355,7 +406,7 @@ declare
   e public.exam_exams;
   reason text := coalesce(nullif(trim(left(p_reason, 200)), ''), 'Rule broken');
 begin
-  if not public.is_admin() then raise exception 'admins_only'; end if;
+  if not public.exam_is_admin() then raise exception 'admins_only'; end if;
   update exam_sessions set warnings = warnings + 1, admin_message = 'Warning from the administrator: ' || reason
    where id = p_session and status = 'in_progress' returning * into s;
   if s.id is null then return exam__err('not_in_progress'); end if;
@@ -393,6 +444,7 @@ begin
     'name', case when c.name_pending then '' else c.full_name end,
     'name_needed', c.name_pending,
     'face_status', c.face_status,
+    'face_mode', exam__face_mode(),
     'server_time', now(),
     'exams', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -417,7 +469,10 @@ begin
     ), '[]'::jsonb));
 end; $$;
 
--- First-time face registration. An admin must approve it before exams open.
+-- First-time registration. Depends on the face setting (exam_settings.face_mode):
+--   full — face photo + descriptor, waits for an admin to approve it
+--   easy — face photo + descriptor, approved at once
+--   off  — no face; only saves the full name for a blank code
 -- For a blank code, the student's full name is required and saved here.
 drop function if exists public.exam_enroll(text, float8[], text);
 create or replace function public.exam_enroll(p_code text, p_descriptor float8[], p_photo text, p_name text default null) returns jsonb
@@ -425,25 +480,37 @@ language plpgsql security definer set search_path = public as $$
 declare
   c public.exam_candidates;
   nm text := regexp_replace(trim(coalesce(p_name, '')), '\s+', ' ', 'g');
+  mode text := exam__face_mode();
+  new_status text;
 begin
   if exam__throttled() then return exam__err('too_many_attempts'); end if;
   c := exam__candidate(p_code);
   if c.id is null then return exam__err('invalid_code'); end if;
-  if c.face_status in ('pending', 'approved') then return exam__err('already_enrolled'); end if;
   if c.name_pending and (char_length(nm) not between 3 and 80 or nm !~ '[[:alpha:]].*[[:space:]].*[[:alpha:]]') then
     return exam__err('name_required');
   end if;
+  if mode = 'off' then
+    -- No face needed: just record the name for a blank code.
+    update exam_candidates
+       set full_name = case when name_pending then nm else full_name end, name_pending = false,
+           enrolled_at = coalesce(enrolled_at, now())
+     where id = c.id;
+    return jsonb_build_object('face_status', c.face_status);
+  end if;
+  if c.face_status = 'approved' or (c.face_status = 'pending' and mode = 'full') then return exam__err('already_enrolled'); end if;
   if not exam__valid_descriptor(p_descriptor) then return exam__err('bad_face_data'); end if;
   if exam__clean_photo(p_photo) is null then return exam__err('bad_photo'); end if;
+  new_status := case when mode = 'easy' then 'approved' else 'pending' end;
   update exam_candidates
-     set face_descriptor = p_descriptor, face_photo = p_photo, face_status = 'pending', enrolled_at = now(),
+     set face_descriptor = p_descriptor, face_photo = p_photo, face_status = new_status, enrolled_at = now(),
          full_name = case when name_pending then nm else full_name end,
          name_pending = false
    where id = c.id;
-  return jsonb_build_object('face_status', 'pending');
+  return jsonb_build_object('face_status', new_status);
 end; $$;
 
--- Start (or resume) an exam. Requires an approved face that matches now.
+-- Start (or resume) an exam. With face_mode 'full' this needs an approved face that
+-- matches now; 'easy' only needs the one-time registration; 'off' needs neither.
 create or replace function public.exam_start(p_code text, p_exam_id uuid, p_descriptor float8[], p_photo text, p_user_agent text default '')
 returns jsonb
 language plpgsql security definer set search_path = public as $$
@@ -454,6 +521,8 @@ declare
   dist float8;
   ord integer[];
   plan record;
+  mode text := exam__face_mode();
+  how text;
 begin
   if exam__throttled() then return exam__err('too_many_attempts'); end if;
   c := exam__candidate(p_code);
@@ -462,14 +531,22 @@ begin
   if e.id is null or not (e.all_candidates or exists (select 1 from exam_allowed a where a.exam_id = e.id and a.candidate_id = c.id)) then
     return exam__err('exam_not_found');
   end if;
-  if c.face_status <> 'approved' then return exam__err('face_not_approved'); end if;
-  if not exam__valid_descriptor(p_descriptor) or exam__clean_photo(p_photo) is null then return exam__err('bad_face_data'); end if;
-
-  dist := exam__face_distance(c.face_descriptor, p_descriptor);
-  if dist > exam__face_threshold() then
-    insert into exam_events(exam_id, candidate_id, type, detail, photo, counted)
-      values (e.id, c.id, 'start_face_mismatch', format('Face did not match at start (distance %s)', round(dist::numeric, 3)), exam__clean_photo(p_photo), false);
-    return exam__err('face_mismatch');
+  if c.name_pending then return exam__err('name_required'); end if;
+  if mode = 'full' then
+    if c.face_status <> 'approved' then return exam__err('face_not_approved'); end if;
+    if not exam__valid_descriptor(p_descriptor) or exam__clean_photo(p_photo) is null then return exam__err('bad_face_data'); end if;
+    dist := exam__face_distance(c.face_descriptor, p_descriptor);
+    if dist > exam__face_threshold() then
+      insert into exam_events(exam_id, candidate_id, type, detail, photo, counted)
+        values (e.id, c.id, 'start_face_mismatch', format('Face did not match at start (distance %s)', round(dist::numeric, 3)), exam__clean_photo(p_photo), false);
+      return exam__err('face_mismatch');
+    end if;
+    how := 'face matched';
+  elsif mode = 'easy' then
+    if c.face_status not in ('approved', 'pending') then return exam__err('face_not_registered'); end if;
+    how := 'face photo on file, no matching';
+  else
+    how := 'face checks off';
   end if;
 
   select * into s from exam_sessions where exam_id = e.id and candidate_id = c.id and not archived;
@@ -488,7 +565,7 @@ begin
   if s.id is not null then
     update exam_sessions set last_seen_at = now(), face_fail_streak = 0 where id = s.id;
     insert into exam_events(exam_id, candidate_id, session_id, type, detail, photo)
-      values (e.id, c.id, s.id, 'resume', 'Re-entered the exam (face matched)', exam__clean_photo(p_photo));
+      values (e.id, c.id, s.id, 'resume', format('Re-entered the exam (%s)', how), exam__clean_photo(p_photo));
   else
     if e.closed then return exam__err('exam_closed'); end if;
     if now() < e.starts_at then return exam__err('exam_not_started'); end if;
@@ -505,14 +582,14 @@ begin
               1 + (select count(*) from exam_sessions x where x.exam_id = e.id and x.candidate_id = c.id))
       returning * into s;
     insert into exam_events(exam_id, candidate_id, session_id, type, detail, photo)
-      values (e.id, c.id, s.id, 'start', format('Started attempt %s (face matched)', s.attempt), exam__clean_photo(p_photo));
+      values (e.id, c.id, s.id, 'start', format('Started attempt %s (%s)', s.attempt, how), exam__clean_photo(p_photo));
   end if;
 
   return jsonb_build_object(
     'token', s.token, 'title', e.title, 'deadline', s.deadline, 'server_time', now(),
     'total', s.total, 'per_question_seconds', e.per_question_seconds,
     'show_answers', e.show_answers, 'max_warnings', e.max_warnings, 'warnings', s.warnings,
-    'proctor_level', e.proctor_level,
+    'proctor_level', e.proctor_level, 'face_mode', mode,
     'name', c.full_name, 'code', c.access_code);
 end; $$;
 
@@ -629,7 +706,7 @@ begin
     return exam__result(s);
   end if;
 
-  if p_descriptor is not null and exam__valid_descriptor(p_descriptor) then
+  if p_descriptor is not null and exam__valid_descriptor(p_descriptor) and exam__face_mode() = 'full' then
     dist := exam__face_distance(c.face_descriptor, p_descriptor);
     if dist > exam__face_threshold() then
       update exam_sessions set face_fail_streak = face_fail_streak + 1 where id = s.id returning * into s;
