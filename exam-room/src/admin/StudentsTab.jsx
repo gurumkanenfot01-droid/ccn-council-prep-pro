@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
+import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
 
 // No look-alike characters (0/O, 1/I/L), so codes are easy to read out.
@@ -86,6 +87,7 @@ export default function StudentsTab() {
   const [names, setNames] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [photo, setPhoto] = useState(null); // { name, src }
   const [copied, setCopied] = useState("");
@@ -100,7 +102,7 @@ export default function StudentsTab() {
       .from("exam_candidates")
       .select(FIELDS)
       .order("created_at", { ascending: false });
-    if (error) setNotice(error.message); else setRows(data);
+    if (error) { setLoadError(adminDbMessage(error)); setRows([]); } else { setLoadError(""); setRows(data); }
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -116,7 +118,7 @@ export default function StudentsTab() {
       const rows = await insertCandidates(parsed.map(full_name => ({ full_name, access_code: newCode(), batch })));
       setNames(""); setCreated(rows);
       flash(`Created ${rows.length} access code${rows.length === 1 ? "" : "s"}.`);
-    } catch (e) { flash(e.message); }
+    } catch (e) { flash(adminDbMessage(e)); }
     setBusy(false); load();
   }
 
@@ -134,7 +136,7 @@ export default function StudentsTab() {
       const made = await insertCandidates(list);
       setCreated(made); setBatchFilter(batch);
       flash(`Created ${made.length} blank code${made.length === 1 ? "" : "s"} in “${batch}”.`);
-    } catch (e) { flash(e.message); }
+    } catch (e) { flash(adminDbMessage(e)); }
     setBusy(false); load();
   }
 
@@ -234,6 +236,7 @@ export default function StudentsTab() {
         )}
       </section>
 
+      {loadError && <div className="banner banner-bad">{loadError}</div>}
       {pending > 0 && <div className="banner banner-warn">{pending} face registration{pending === 1 ? "" : "s"} waiting for your approval. Tap “Photo” to check and approve.</div>}
 
       <section>

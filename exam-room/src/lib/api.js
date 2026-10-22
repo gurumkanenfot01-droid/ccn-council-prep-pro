@@ -66,8 +66,10 @@ export async function rpc(fn, args) {
 
 export const api = {
   login: code => rpc("exam_login", { p_code: code }),
+  // p_name is only sent for blank codes, so registration keeps working on a
+  // database that hasn't been updated with the blank-code version yet.
   enroll: (code, descriptor, photo, name = null) =>
-    rpc("exam_enroll", { p_code: code, p_descriptor: descriptor, p_photo: photo, p_name: name }),
+    rpc("exam_enroll", { p_code: code, p_descriptor: descriptor, p_photo: photo, ...(name ? { p_name: name } : {}) }),
   start: (code, examId, descriptor, photo) =>
     rpc("exam_start", { p_code: code, p_exam_id: examId, p_descriptor: descriptor, p_photo: photo, p_user_agent: navigator.userAgent }),
   question: token => rpc("exam_question", { p_token: token }),
@@ -79,6 +81,16 @@ export const api = {
     rpc("exam_report", { p_token: token, p_type: type, p_detail: detail, p_photo: photo }),
   submit: token => rpc("exam_submit", { p_token: token }),
 };
+
+// Admin pages read columns added by later versions of schema_exam_room.sql.
+// When that SQL hasn't been re-run yet, say so plainly instead of a raw error.
+export function adminDbMessage(error) {
+  const msg = (error && error.message) || "";
+  if (/does not exist|could not find the|schema cache/i.test(msg)) {
+    return "The Exam Room database needs updating. Open the Supabase SQL Editor, paste all of supabase/schema_exam_room.sql from GitHub and tap Run (it keeps all your data). Then reload this page.";
+  }
+  return msg || "Something went wrong.";
+}
 
 export function fmtClock(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
