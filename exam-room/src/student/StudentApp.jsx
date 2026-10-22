@@ -275,7 +275,13 @@ function DoneScreen({ result, name, onBack }) {
 }
 
 export default function StudentApp() {
-  const [code, setCode] = useState(() => { try { return sessionStorage.getItem(CODE_KEY) || ""; } catch (e) { return ""; } });
+  // The code is remembered on this device until the student taps Log out, so
+  // closing the browser doesn't mean typing it again. Their face is still
+  // checked before every exam, so a remembered code alone can't sit an exam.
+  const [code, setCode] = useState(() => {
+    try { return localStorage.getItem(CODE_KEY) || sessionStorage.getItem(CODE_KEY) || ""; } catch (e) { return ""; }
+  });
+  const [restoreError, setRestoreError] = useState("");
   const [profile, setProfile] = useState(null);
   const [view, setView] = useState("exams"); // exams | prep | exam | done
   const [exam, setExam] = useState(null);
@@ -295,19 +301,28 @@ export default function StudentApp() {
   async function login(c) {
     await refresh(c);
     setCode(c);
-    try { sessionStorage.setItem(CODE_KEY, c); } catch (e) { /* not kept across reloads */ }
+    try { localStorage.setItem(CODE_KEY, c); } catch (e) {
+      try { sessionStorage.setItem(CODE_KEY, c); } catch (e2) { /* not kept across reloads */ }
+    }
   }
 
   function logout() {
     cam.stop(); exitFullscreen();
-    try { sessionStorage.removeItem(CODE_KEY); } catch (e) { /* ignore */ }
+    try { localStorage.removeItem(CODE_KEY); sessionStorage.removeItem(CODE_KEY); } catch (e) { /* ignore */ }
     setCode(""); setProfile(null); setView("exams"); setSession(null);
   }
 
-  // Restore after a page reload (code kept for this tab only).
+  // Restore when the site is opened again. A connection problem keeps the code
+  // and offers Try again; only a code that's no longer valid logs out.
+  function restore() {
+    setLoading(true); setRestoreError("");
+    refresh(code)
+      .catch(e => { if (e && e.code === "network") setRestoreError(e.message); else logout(); })
+      .finally(() => setLoading(false));
+  }
   useEffect(() => {
     if (!code || profile) return;
-    refresh(code).catch(() => logout()).finally(() => setLoading(false));
+    restore();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the exam list current (start times, pauses, results).
@@ -318,6 +333,20 @@ export default function StudentApp() {
   }, [profile, view, refresh]);
 
   if (loading) return <main className="wrap" style={{ textAlign: "center", paddingTop: 80 }}><Spinner size={28} /></main>;
+  if (restoreError && !profile) {
+    return (
+      <main className="wrap" style={{ minHeight: "100vh", display: "flex", alignItems: "center" }}>
+        <div className="narrow card" style={{ width: "100%", textAlign: "center" }}>
+          <h1 className="serif" style={{ fontSize: 20, margin: "0 0 8px" }}>Couldn't connect</h1>
+          <p className="muted" style={{ marginTop: 0 }}>{restoreError}</p>
+          <div className="row" style={{ justifyContent: "center" }}>
+            <button className="btn btn-ghost" onClick={logout}>Use a different code</button>
+            <button className="btn btn-primary" onClick={restore}><RefreshCw size={16} /> Try again</button>
+          </div>
+        </div>
+      </main>
+    );
+  }
   if (!profile) return <CodeScreen onLogin={login} />;
 
   if (profile.face_status === "none" || profile.face_status === "rejected") {

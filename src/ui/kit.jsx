@@ -1,4 +1,5 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 // Shared UI primitives + the app context, extracted out of App.jsx so both
 // App.jsx and the newer screens (src/screens/*.jsx) can import them without
@@ -126,12 +127,22 @@ export function Field({ label, value, onChange, icon: Icon, type = "text", autoC
     ? { autoCapitalize: "none", autoCorrect: "off", spellCheck: false }
     : {};
   const { t } = useApp();
+  // Password fields get a show/hide button: mistyped passwords are the most
+  // common reason students can't log in.
+  const [shown, setShown] = useState(false);
+  const isPassword = type === "password";
   return (
     <div>
       <div style={{ fontSize: 11.5, fontWeight: 700, color: t.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>{label}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, border: `1px solid ${t.cardBorder}`, borderRadius: 10, padding: "9px 12px", background: t.bgAlt }}>
         <Icon size={14} color={t.textFaint} />
-        <input type={type} value={value || ""} onChange={e => onChange(e.target.value)} autoComplete={autoComplete} {...noAutoFix} style={{ border: "none", outline: "none", background: "transparent", fontSize: 14, color: t.text, width: "100%" }} />
+        <input type={isPassword && shown ? "text" : type} value={value || ""} onChange={e => onChange(e.target.value)} autoComplete={autoComplete} {...noAutoFix} style={{ border: "none", outline: "none", background: "transparent", fontSize: 14, color: t.text, width: "100%" }} />
+        {isPassword && (
+          <button type="button" onClick={() => setShown(v => !v)} aria-label={shown ? "Hide password" : "Show password"}
+            style={{ background: "none", border: "none", padding: 2, cursor: "pointer", display: "flex", color: t.textFaint }}>
+            {shown ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        )}
       </div>
     </div>
   );
