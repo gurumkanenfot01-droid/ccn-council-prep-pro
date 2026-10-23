@@ -30,10 +30,32 @@ export function useCamera() {
     setStream(null); setCamera("off"); setMic("off");
   }, []);
 
-  const start = useCallback(async () => {
+  // start({ video: false }) turns on the microphone only (no camera at all).
+  const start = useCallback(async ({ video: wantVideo = true } = {}) => {
     const s = ref.current;
     if (s.streams.length) return;
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setCamera("unavailable"); setMic("unavailable"); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setCamera(wantVideo ? "unavailable" : "skipped"); setMic("unavailable"); return; }
+    if (!wantVideo) {
+      setCamera("skipped"); setMic("starting");
+      const audioOnly = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+      try {
+        const a = await navigator.mediaDevices.getUserMedia({ audio: audioOnly });
+        s.streams.push(a);
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          const ctx = new AC();
+          try { await ctx.resume(); } catch (e) { /* resumes on next tap */ }
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 2048;
+          ctx.createMediaStreamSource(a).connect(analyser);
+          s.audioCtx = ctx; s.analyser = analyser;
+        }
+        const t = a.getAudioTracks()[0];
+        if (t) t.onended = () => { setMic("off"); s.onEnded && s.onEnded("mic_off"); };
+        setMic("on");
+      } catch (e) { setMic(mediaError(e)); }
+      return;
+    }
     setCamera("starting"); setMic("starting");
     const videoC = { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } };
     const audioC = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
@@ -140,7 +162,9 @@ export const VIOLATION_LABELS = {
 
 // Runs while `active`. Calls report(type, detail, photo) for each violation
 // and identity(descriptor, photo) about once a minute.
-export function useProctor({ cam, active, report, identity, level: strictness = "relaxed" }) {
+// video: false = microphone-only mode: no face, phone or camera checks, and no
+// face/phone models are downloaded (much lighter on a slow network).
+export function useProctor({ cam, active, report, identity, level: strictness = "relaxed", video = true }) {
   const L = PROCTOR_LEVELS[strictness] || PROCTOR_LEVELS.relaxed;
   const [face, setFace] = useState("checking"); // ok | none | multiple | away | dark | checking
   const [phone, setPhone] = useState(false);
@@ -159,7 +183,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
     let dark = false;
 
     const fire = (type, detail = "") => {
-      const photo = snapshot(cam.getVideo());
+      const photo = video ? snapshot(cam.getVideo()) : null;
       cb.current.report(type, detail, photo);
     };
     // A condition is reported once it has lasted HOLD ms, then re-arms only
@@ -176,7 +200,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
 
     // Faces: count + head direction.
     let faceBusy = false;
-    loadFaceModels().then(() => {
+    if (video) loadFaceModels().then(() => {
       if (!alive) return;
       timers.push(setInterval(async () => {
         if (faceBusy) return;
@@ -204,7 +228,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
     }).catch(() => setFace("checking"));
 
     // Phone in view.
-    loadPhoneDetector().then(detector => {
+    if (video) loadPhoneDetector().then(detector => {
       if (!alive) return;
       setPhoneModel("ready");
       timers.push(setInterval(() => {
@@ -218,7 +242,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
     const canvas = document.createElement("canvas");
     canvas.width = 32; canvas.height = 24;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    timers.push(setInterval(() => {
+    if (video) timers.push(setInterval(() => {
       const v = cam.getVideo();
       if (!v || v.readyState < 2) return;
       try {

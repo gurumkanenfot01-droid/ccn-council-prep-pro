@@ -5,7 +5,7 @@ import { useProctor, VIOLATION_LABELS, pauseSoundChecks } from "../lib/proctor.j
 import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinner } from "../ui.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
-const HEARTBEAT_MS = 15000;
+const HEARTBEAT_MS = 25000;
 
 // Two short beeps + a vibration so a warning can't be missed.
 let beepCtx = null;
@@ -115,7 +115,8 @@ export default function ExamScreen({ cam, session, onFinished }) {
     } catch (e) { onError(e); }
   }, [token, absorb, onError]);
 
-  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level });
+  const micOnly = session.face_mode === "mic";
+  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: !micOnly });
 
   // What the admin's live monitor shows for this student (sent with each heartbeat).
   const liveStatus = useRef(null);
@@ -287,15 +288,15 @@ export default function ExamScreen({ cam, session, onFinished }) {
         </section>
 
         <aside className="monitor card" style={{ padding: 12 }} aria-label="Proctoring">
-          <CameraView stream={cam.stream} status={cam.camera} label="Proctored" />
+          {!micOnly && <CameraView stream={cam.stream} status={cam.camera} label="Proctored" />}
           <div className="monitor-info" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div className="chip-row" style={{ gap: 6 }}>
-              <FacePill face={proctor.face} />
+              {!micOnly && <FacePill face={proctor.face} />}
               <MicPill mic={cam.mic} noisy={proctor.noisy} />
-              <PhonePill phone={proctor.phone} />
+              {!micOnly && <PhonePill phone={proctor.phone} />}
             </div>
             {cam.mic === "on" && <SoundMeter level={proctor.level} noisy={proctor.noisy} />}
-            <div className="faint" style={{ fontSize: 12 }}>Identity checked every minute. Video is not recorded.</div>
+            <div className="faint" style={{ fontSize: 12 }}>{micOnly ? "Microphone on. Nothing is recorded." : "Identity checked every minute. Video is not recorded."}</div>
           </div>
         </aside>
       </div>
