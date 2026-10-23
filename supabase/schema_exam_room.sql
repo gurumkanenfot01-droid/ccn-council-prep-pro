@@ -306,6 +306,22 @@ begin
    where id = p_session and status = 'in_progress';
 end; $$;
 
+-- Closing an exam submits everyone still writing straight away, so their
+-- scores appear in Results even if their page never reconnects.
+create or replace function public.exam__on_close() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.closed and not coalesce(old.closed, false) then
+    update exam_sessions
+       set status = 'auto_submitted', ended_reason = 'Exam closed by the administrator', ended_at = now()
+     where exam_id = new.id and status = 'in_progress';
+  end if;
+  return new;
+end; $$;
+drop trigger if exists exam_exams_on_close on public.exam_exams;
+create trigger exam_exams_on_close after update of closed on public.exam_exams
+  for each row execute function public.exam__on_close();
+
 -- Loads an active session by token and applies time rules: past the deadline
 -- or exam closed -> auto-submitted; per-question time over -> next question.
 create or replace function public.exam__session(p_token uuid) returns public.exam_sessions

@@ -37,7 +37,10 @@ export function useExamPicker() {
       setExams(data || []);
       const now = Date.now();
       const open = (data || []).find(e => !e.closed && new Date(e.starts_at) <= now && new Date(e.ends_at) > now);
-      setExamId((open || (data || [])[0] || {}).id || "");
+      // Otherwise the most recent exam that has already started (the one just
+      // closed), not a future one with no results yet.
+      const started = (data || []).find(e => new Date(e.starts_at) <= now);
+      setExamId((open || started || (data || [])[0] || {}).id || "");
     });
   }, []);
   return { exams, examId, setExamId, exam: (exams || []).find(e => e.id === examId) };
