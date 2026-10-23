@@ -758,6 +758,12 @@ begin
   if not (p_type = any(counted_types)) then return exam__err('unknown_event'); end if;
   select * into e from exam_exams where id = s.exam_id;
 
+  -- Microphone-only mode: camera/face reports (e.g. from a page opened before
+  -- the switch) are ignored and never count as warnings.
+  if exam__face_mode() = 'mic' and p_type in ('multiple_faces', 'no_face', 'looking_away', 'phone', 'dark', 'camera_off') then
+    return jsonb_build_object('status', s.status, 'warnings', s.warnings, 'max_warnings', e.max_warnings, 'ignored', true);
+  end if;
+
   -- One report per kind per 8 seconds, so a single moment isn't counted twice.
   if exists (select 1 from exam_events where session_id = s.id and type = p_type and created_at > now() - interval '8 seconds') then
     return jsonb_build_object('status', s.status, 'warnings', s.warnings, 'max_warnings', e.max_warnings, 'ignored', true);
