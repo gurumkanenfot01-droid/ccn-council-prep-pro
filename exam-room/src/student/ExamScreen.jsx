@@ -99,7 +99,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   // Proctoring: violations go straight to the server, which counts them.
   const report = useCallback(async (type, detail, photo) => {
     if (ended.current) return;
-    if (micOnlyRef.current && CAMERA_TYPES.includes(type)) return;
+    if (noFaceChecks.current && CAMERA_TYPES.includes(type)) return;
     setToast({ text: VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
     try {
       const data = absorb(await api.report(token, type, detail, photo));
@@ -112,7 +112,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   }, [token, absorb, onError]);
 
   const identity = useCallback(async (descriptor, photo) => {
-    if (ended.current || micOnlyRef.current) return;
+    if (ended.current || noFaceChecks.current) return;
     try {
       const data = absorb(await api.heartbeat(token, descriptor, photo, liveStatus.current));
       if (data && data.face_fail_streak > 0) {
@@ -122,9 +122,12 @@ export default function ExamScreen({ cam, session, onFinished }) {
   }, [token, absorb, onError]);
 
   const micOnly = faceMode === "mic";
-  const micOnlyRef = useRef(micOnly);
-  micOnlyRef.current = micOnly;
-  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: !micOnly });
+  // "Face at start": the camera picture stays on screen, but nothing is
+  // detected, captured or reported — only the microphone gives warnings.
+  const watchFace = faceMode !== "mic" && faceMode !== "start";
+  const noFaceChecks = useRef(!watchFace);
+  noFaceChecks.current = !watchFace;
+  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: watchFace });
 
   // Switched to microphone-only during the exam: turn the camera off.
   useEffect(() => {
@@ -309,12 +312,12 @@ export default function ExamScreen({ cam, session, onFinished }) {
           {!micOnly && <CameraView stream={cam.stream} status={cam.camera} label="Proctored" />}
           <div className="monitor-info" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div className="chip-row" style={{ gap: 6 }}>
-              {!micOnly && <FacePill face={proctor.face} />}
+              {watchFace && <FacePill face={proctor.face} />}
               <MicPill mic={cam.mic} noisy={proctor.noisy} />
-              {!micOnly && <PhonePill phone={proctor.phone} />}
+              {watchFace && <PhonePill phone={proctor.phone} />}
             </div>
             {cam.mic === "on" && <SoundMeter level={proctor.level} noisy={proctor.noisy} />}
-            <div className="faint" style={{ fontSize: 12 }}>{micOnly ? "Microphone on. Nothing is recorded." : "Identity checked every minute. Video is not recorded."}</div>
+            <div className="faint" style={{ fontSize: 12 }}>{micOnly ? "Microphone on. Nothing is recorded." : !watchFace ? "Camera preview only — nothing is captured. Microphone on." : "Identity checked every minute. Video is not recorded."}</div>
           </div>
         </aside>
       </div>
