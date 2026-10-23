@@ -86,6 +86,7 @@ const FACE_MODES = [
   ["full", "Full", "Each student registers their face once and you approve it. The face is matched at the start of every exam and every minute during it."],
   ["easy", "Easy", "One face photo at registration, approved automatically. No face matching during exams."],
   ["off", "Off", "No face registration or matching. Students only enter their code (and their name if the code is blank). Camera checks during the exam still follow each exam's strictness setting."],
+  ["mic", "Microphone only", "No face and no camera at all. Only the microphone (talking/noise) and screen rules (leaving the page, screenshots) are checked. Lightest on slow networks."],
 ];
 
 // Exam Room-wide face registration setting (exam_settings.face_mode).

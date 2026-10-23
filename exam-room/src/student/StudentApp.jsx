@@ -215,6 +215,18 @@ function ExamCard({ exam, onStart }) {
 }
 
 function rulesFor(level, faceMode = "full") {
+  if (faceMode === "mic") {
+    return [
+      "Your microphone stays on for the whole exam. The camera is not used.",
+      "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
+      level === "strict"
+        ? "Keep completely quiet. Any talking or noise counts as a warning."
+        : level === "normal"
+          ? "Keep quiet. Talking or loud noise counts as a warning."
+          : "Quiet murmuring is fine. Loud talking or loud noise counts as a warning.",
+      "Screenshots, copying and printing are blocked and count as warnings. Your name is shown across the screen.",
+    ];
+  }
   return [
     faceMode === "full"
       ? "Stay alone and in view of the camera for the whole exam. Your face is checked every minute."
@@ -240,7 +252,7 @@ function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
   async function begin() {
     setError("");
     enterFullscreen(); // must happen straight from the tap
-    await cam.start();
+    await cam.start({ video: faceMode !== "mic" });
     if (faceMode !== "full") { await startWithoutMatch(); return; }
     setChecking(true);
   }
@@ -249,7 +261,7 @@ function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
   async function startWithoutMatch() {
     setChecking(true);
     let photo = null;
-    for (let i = 0; i < 10 && !photo; i++) {
+    for (let i = 0; i < 10 && !photo && faceMode !== "mic"; i++) {
       await new Promise(r => setTimeout(r, 300));
       photo = snapshot(cam.getVideo());
     }
@@ -263,7 +275,7 @@ function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
       setError(e.message); setChecking(false); exitFullscreen();
     }
   }
-  const ready = cam.camera === "on" && cam.mic === "on";
+  const ready = (cam.camera === "on" || faceMode === "mic") && cam.mic === "on";
   return (
     <main className="wrap">
       <Header name={name} />
@@ -404,10 +416,11 @@ export default function StudentApp() {
   if (!profile) return <CodeScreen onLogin={login} />;
 
   const faceMode = profile.face_mode || "full";
-  if (faceMode === "off" && profile.name_needed) {
+  const noFace = faceMode === "off" || faceMode === "mic";
+  if (noFace && profile.name_needed) {
     return <NameScreen code={code} onDone={() => refresh()} onLogout={logout} />;
   }
-  if (faceMode !== "off" && (profile.face_status === "none" || profile.face_status === "rejected")) {
+  if (!noFace && (profile.face_status === "none" || profile.face_status === "rejected")) {
     return (
       <>
         {profile.face_status === "rejected" && <div className="wrap" style={{ paddingBottom: 0 }}><div className="banner banner-bad">Your last face registration wasn’t approved. Please register again in good light.</div></div>}

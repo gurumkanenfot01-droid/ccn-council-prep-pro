@@ -202,12 +202,16 @@ create policy questions_select_exam_admin on public.questions
 --          at the start of every exam and every minute during it (default)
 --   easy — one face photo at registration, approved automatically, no face matching
 --   off  — no face registration or matching at all (camera checks during the exam still apply)
+--   mic  — no face and no camera at all; only the microphone and screen rules are checked
 create table if not exists public.exam_settings (
   id integer primary key default 1 check (id = 1),
-  face_mode text not null default 'full' check (face_mode in ('full', 'easy', 'off')),
+  face_mode text not null default 'full',
   updated_at timestamptz not null default now()
 );
 insert into public.exam_settings (id) values (1) on conflict (id) do nothing;
+alter table public.exam_settings drop constraint if exists exam_settings_face_mode_check;
+alter table public.exam_settings add constraint exam_settings_face_mode_check
+  check (face_mode in ('full', 'easy', 'off', 'mic'));
 alter table public.exam_settings enable row level security;
 drop policy if exists exam_settings_admin_all on public.exam_settings;
 create policy exam_settings_admin_all on public.exam_settings
@@ -489,7 +493,7 @@ begin
   if c.name_pending and (char_length(nm) not between 3 and 80 or nm !~ '[[:alpha:]].*[[:space:]].*[[:alpha:]]') then
     return exam__err('name_required');
   end if;
-  if mode = 'off' then
+  if mode in ('off', 'mic') then
     -- No face needed: just record the name for a blank code.
     update exam_candidates
        set full_name = case when name_pending then nm else full_name end, name_pending = false,
@@ -546,7 +550,7 @@ begin
     if c.face_status not in ('approved', 'pending') then return exam__err('face_not_registered'); end if;
     how := 'face photo on file, no matching';
   else
-    how := 'face checks off';
+    how := case when mode = 'mic' then 'microphone only, no camera' else 'face checks off' end;
   end if;
 
   select * into s from exam_sessions where exam_id = e.id and candidate_id = c.id and not archived;
