@@ -30,6 +30,15 @@ export function useCamera() {
     setStream(null); setCamera("off"); setMic("off");
   }, []);
 
+  // Turns the camera off but keeps the microphone (switched to microphone-only
+  // during the exam). Not reported as "camera off".
+  const stopVideo = useCallback(() => {
+    const s = ref.current;
+    s.streams.forEach(st => st.getVideoTracks().forEach(t => { t.onended = null; t.stop(); }));
+    if (s.video) { s.video.srcObject = null; s.video.remove(); s.video = null; }
+    setStream(null); setCamera("skipped");
+  }, []);
+
   // start({ video: false }) turns on the microphone only (no camera at all).
   const start = useCallback(async ({ video: wantVideo = true } = {}) => {
     const s = ref.current;
@@ -102,7 +111,7 @@ export function useCamera() {
   useEffect(() => stop, [stop]);
 
   return {
-    camera, mic, stream, start, stop,
+    camera, mic, stream, start, stop, stopVideo,
     getVideo: () => ref.current.video,
     getAnalyser: () => ref.current.analyser,
     setOnEnded: fn => { ref.current.onEnded = fn; },
@@ -357,7 +366,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
       document.removeEventListener("contextmenu", block);
       window.removeEventListener("beforeprint", block);
     };
-  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active, video]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { face, phone, noisy, level, phoneModel };
 }

@@ -629,7 +629,7 @@ begin
     'explanation', case when a.session_id is not null and e.show_answers then v_q.exp end,
     'question_deadline', case when e.per_question_seconds is not null
                          then s.current_shown_at + make_interval(secs => e.per_question_seconds) end,
-    'deadline', s.deadline, 'server_time', now(), 'warnings', s.warnings);
+    'deadline', s.deadline, 'server_time', now(), 'warnings', s.warnings, 'face_mode', exam__face_mode());
 end; $$;
 
 -- Lock in an answer to the current question. The first answer counts.
@@ -683,7 +683,9 @@ begin
     return exam__result(s);
   end if;
   update exam_sessions set current_index = current_index + 1, current_shown_at = null where id = s.id;
-  return jsonb_build_object('ok', true);
+  -- Send the next question back straight away: one round trip instead of two
+  -- on a slow network.
+  return exam_question(p_token) || jsonb_build_object('ok', true);
 end; $$;
 
 -- Sent every ~15 seconds. Optionally carries a fresh face descriptor + photo
@@ -738,7 +740,7 @@ begin
   return jsonb_build_object(
     'status', 'in_progress', 'paused', e.paused, 'deadline', s.deadline, 'server_time', now(),
     'warnings', s.warnings, 'max_warnings', e.max_warnings, 'message', msg,
-    'face_fail_streak', s.face_fail_streak);
+    'face_fail_streak', s.face_fail_streak, 'face_mode', exam__face_mode());
 end; $$;
 
 -- Report a rule violation seen by the browser. Most count towards the
