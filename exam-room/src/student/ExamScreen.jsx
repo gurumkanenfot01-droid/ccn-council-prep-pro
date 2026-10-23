@@ -6,6 +6,7 @@ import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinne
 
 const LETTERS = ["A", "B", "C", "D"];
 const HEARTBEAT_MS = 25000;
+const CAMERA_TYPES = ["multiple_faces", "no_face", "looking_away", "phone", "dark", "camera_off"];
 
 // Two short beeps + a vibration so a warning can't be missed.
 let beepCtx = null;
@@ -43,6 +44,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const [hidden, setHidden] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [warning, setWarning] = useState(null); // { count, max, label } — must be acknowledged
+  const [faceMode, setFaceMode] = useState(session.face_mode || "full"); // admin can change it mid-exam
   const [, setTick] = useState(0);
   const ended = useRef(false);
   const maxWarnings = session.max_warnings;
@@ -61,6 +63,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
     if (typeof data.paused === "boolean") setPaused(data.paused);
     if (typeof data.warnings === "number") setWarnings(data.warnings);
     if (data.deadline) setDeadline(new Date(data.deadline).getTime());
+    if (data.face_mode) setFaceMode(data.face_mode);
     if (data.message) {
       if (data.message.startsWith("Warning from the administrator")) {
         setWarning({ count: data.warnings, max: maxWarnings, label: data.message.replace(/^Warning from the administrator:\s*/, ""), type: "admin" });
@@ -78,15 +81,17 @@ export default function ExamScreen({ cam, session, onFinished }) {
     else setToast({ text: e.message, n: Date.now() });
   }, [finish, session.total, warnings]);
 
+  const loading = useRef(false);
   const loadQuestion = useCallback(async () => {
-    if (ended.current) return;
+    if (ended.current || loading.current) return;
+    loading.current = true;
     try {
       const data = absorb(await api.question(token));
       if (!data || data.finished) return;
       if (data.paused) { setQ(null); return; }
       setQ(data);
       setFeedback(data.answered ? { chosen: data.chosen, correct: data.correct, correct_index: data.correct_index, explanation: data.explanation } : null);
-    } catch (e) { onError(e); }
+    } catch (e) { onError(e); } finally { loading.current = false; }
   }, [token, absorb, onError]);
 
   useEffect(() => { loadQuestion(); }, [loadQuestion]);
@@ -94,6 +99,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   // Proctoring: violations go straight to the server, which counts them.
   const report = useCallback(async (type, detail, photo) => {
     if (ended.current) return;
+    if (micOnlyRef.current && CAMERA_TYPES.includes(type)) return;
     setToast({ text: VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
     try {
       const data = absorb(await api.report(token, type, detail, photo));
@@ -106,7 +112,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   }, [token, absorb, onError]);
 
   const identity = useCallback(async (descriptor, photo) => {
-    if (ended.current) return;
+    if (ended.current || micOnlyRef.current) return;
     try {
       const data = absorb(await api.heartbeat(token, descriptor, photo, liveStatus.current));
       if (data && data.face_fail_streak > 0) {
@@ -115,8 +121,15 @@ export default function ExamScreen({ cam, session, onFinished }) {
     } catch (e) { onError(e); }
   }, [token, absorb, onError]);
 
-  const micOnly = session.face_mode === "mic";
+  const micOnly = faceMode === "mic";
+  const micOnlyRef = useRef(micOnly);
+  micOnlyRef.current = micOnly;
   const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: !micOnly });
+
+  // Switched to microphone-only during the exam: turn the camera off.
+  useEffect(() => {
+    if (micOnly && cam.camera === "on") cam.stopVideo();
+  }, [micOnly, cam]);
 
   // What the admin's live monitor shows for this student (sent with each heartbeat).
   const liveStatus = useRef(null);
@@ -188,7 +201,12 @@ export default function ExamScreen({ cam, session, onFinished }) {
     setBusy(true);
     try {
       const data = absorb(await api.next(token));
-      if (data && !data.finished) { setFeedback(null); setQ(null); await loadQuestion(); }
+      if (data && !data.finished) {
+        setFeedback(null);
+        // Newer databases send the next question with the reply.
+        if (data.question && !data.paused) setQ(data);
+        else { setQ(null); await loadQuestion(); }
+      }
     } catch (e) { onError(e); } finally { setBusy(false); }
   }
 

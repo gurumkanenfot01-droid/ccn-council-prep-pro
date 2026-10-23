@@ -47,13 +47,21 @@ function syncClock(data) {
   if (data && data.server_time) offsetMs = new Date(data.server_time).getTime() - Date.now();
 }
 
+const TIMEOUT_MS = 15000;
+
 export async function rpc(fn, args) {
   let res;
+  const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = ctl && setTimeout(() => ctl.abort(), TIMEOUT_MS);
   try {
-    res = await supabase.rpc(fn, args);
+    const call = supabase.rpc(fn, args);
+    res = await (ctl ? call.abortSignal(ctl.signal) : call);
   } catch (e) {
     throw new ExamError("network", e.message);
+  } finally {
+    if (timer) clearTimeout(timer);
   }
+  if (res.error && ctl && ctl.signal.aborted) throw new ExamError("network", "timed out");
   const { data, error } = res;
   if (error) {
     if (isNetwork(error.message)) throw new ExamError("network", error.message);
@@ -65,6 +73,20 @@ export async function rpc(fn, args) {
   return data;
 }
 
+// For calls that are safe to repeat (answering the same question twice, or
+// "next" before the new one is answered, changes nothing): on a weak network,
+// try again quietly a few times before showing an error.
+async function retry(fn, args) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await rpc(fn, args);
+    } catch (e) {
+      if (e.code !== "network" || attempt >= 3) throw e;
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
+}
+
 export const api = {
   login: code => rpc("exam_login", { p_code: code }),
   // p_name is only sent for blank codes, so registration keeps working on a
@@ -73,9 +95,9 @@ export const api = {
     rpc("exam_enroll", { p_code: code, p_descriptor: descriptor, p_photo: photo, ...(name ? { p_name: name } : {}) }),
   start: (code, examId, descriptor, photo) =>
     rpc("exam_start", { p_code: code, p_exam_id: examId, p_descriptor: descriptor, p_photo: photo, p_user_agent: navigator.userAgent }),
-  question: token => rpc("exam_question", { p_token: token }),
-  answer: (token, questionId, choice) => rpc("exam_answer", { p_token: token, p_question_id: questionId, p_choice: choice }),
-  next: token => rpc("exam_next", { p_token: token }),
+  question: token => retry("exam_question", { p_token: token }),
+  answer: (token, questionId, choice) => retry("exam_answer", { p_token: token, p_question_id: questionId, p_choice: choice }),
+  next: token => retry("exam_next", { p_token: token }),
   heartbeat: (token, descriptor = null, photo = null, status = null) =>
     rpc("exam_heartbeat", { p_token: token, p_descriptor: descriptor, p_photo: photo, p_status: status }),
   report: (token, type, detail = "", photo = null) =>
