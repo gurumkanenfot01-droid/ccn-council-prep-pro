@@ -84,6 +84,7 @@ const FACE_PILL = {
 
 const FACE_MODES = [
   ["full", "Full", "Each student registers their face once and you approve it. The face is matched at the start of every exam and every minute during it."],
+  ["start", "Face at start", "Each student registers their face once (approved automatically). The face is matched when they start each exam. During the exam the camera only shows the student their own picture: no face or phone detection, no photos. Only the microphone (talking/noise) and screen rules give warnings."],
   ["easy", "Easy", "One face photo at registration, approved automatically. No face matching during exams."],
   ["off", "Off", "No face registration or matching. Students only enter their code (and their name if the code is blank). Camera checks during the exam still follow each exam's strictness setting."],
   ["mic", "Microphone only", "No face and no camera at all. Only the microphone (talking/noise) and screen rules (leaving the page, screenshots) are checked. Lightest on slow networks."],

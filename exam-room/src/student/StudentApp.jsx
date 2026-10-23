@@ -111,7 +111,11 @@ function EnrollScreen({ name, nameNeeded, code, cam, faceMode, onEnrolled, onLog
       <Header name={name} onLogout={onLogout} />
       <div className="narrow">
         <h1 className="serif" style={{ fontSize: 22, margin: "0 0 6px" }}>Register your face</h1>
-        {faceMode === "easy" ? (
+        {faceMode === "start" ? (
+          <p className="muted" style={{ marginTop: 0 }}>
+            This is done once. Your face will be checked when you start each exam, so nobody else can use your code.
+          </p>
+        ) : faceMode === "easy" ? (
           <p className="muted" style={{ marginTop: 0 }}>
             This is done once: one quick photo of your face for your exam record. You can start your exams straight after.
           </p>
@@ -215,9 +219,10 @@ function ExamCard({ exam, onStart }) {
 }
 
 function rulesFor(level, faceMode = "full") {
-  if (faceMode === "mic") {
+  if (faceMode === "mic" || faceMode === "start") {
     return [
-      "Your microphone stays on for the whole exam. The camera is not used.",
+      ...(faceMode === "start" ? ["Your face is checked once when you begin. After that the camera only shows you your own picture — nothing is captured."] : []),
+      faceMode === "mic" ? "Your microphone stays on for the whole exam. The camera is not used." : "Your microphone stays on for the whole exam.",
       "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
       level === "strict"
         ? "Keep completely quiet. Any talking or noise counts as a warning."
@@ -253,7 +258,7 @@ function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
     setError("");
     enterFullscreen(); // must happen straight from the tap
     await cam.start({ video: faceMode !== "mic" });
-    if (faceMode !== "full") { await startWithoutMatch(); return; }
+    if (faceMode !== "full" && faceMode !== "start") { await startWithoutMatch(); return; }
     setChecking(true);
   }
   // Easy/Off: no face matching. Take one photo for the record (if the camera
@@ -306,10 +311,10 @@ function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
               I understand the rules and I am the person registered to code {code}.
             </label>
             <button className="btn btn-primary btn-full" disabled={!agreed || cam.camera === "starting"} onClick={begin}>
-              <ShieldCheck size={16} /> {faceMode === "full" ? <>Verify my face &amp; begin</> : "Begin exam"}
+              <ShieldCheck size={16} /> {faceMode === "full" || faceMode === "start" ? <>Verify my face &amp; begin</> : "Begin exam"}
             </button>
           </>
-        ) : faceMode === "full" ? (
+        ) : faceMode === "full" || faceMode === "start" ? (
           <div className="card"><Liveness cam={cam} onDone={verified} actionLabel="Matching your face and opening the exam" /></div>
         ) : (
           <div className="card" style={{ textAlign: "center" }}><Spinner size={24} /><p className="muted">Opening the exam…</p></div>

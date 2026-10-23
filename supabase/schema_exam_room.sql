@@ -201,6 +201,7 @@ create policy questions_select_exam_admin on public.questions
 --   full — students register their face once, an admin approves it, and the face is matched
 --          at the start of every exam and every minute during it (default)
 --   easy — one face photo at registration, approved automatically, no face matching
+--   start — face registered once (auto-approved) and matched when starting; no face checks during the exam
 --   off  — no face registration or matching at all (camera checks during the exam still apply)
 --   mic  — no face and no camera at all; only the microphone and screen rules are checked
 create table if not exists public.exam_settings (
@@ -211,7 +212,7 @@ create table if not exists public.exam_settings (
 insert into public.exam_settings (id) values (1) on conflict (id) do nothing;
 alter table public.exam_settings drop constraint if exists exam_settings_face_mode_check;
 alter table public.exam_settings add constraint exam_settings_face_mode_check
-  check (face_mode in ('full', 'easy', 'off', 'mic'));
+  check (face_mode in ('full', 'easy', 'start', 'off', 'mic'));
 alter table public.exam_settings enable row level security;
 drop policy if exists exam_settings_admin_all on public.exam_settings;
 create policy exam_settings_admin_all on public.exam_settings
@@ -501,10 +502,10 @@ begin
      where id = c.id;
     return jsonb_build_object('face_status', c.face_status);
   end if;
-  if c.face_status = 'approved' or (c.face_status = 'pending' and mode = 'full') then return exam__err('already_enrolled'); end if;
+  if c.face_status = 'approved' or (c.face_status = 'pending' and mode in ('full', 'start')) then return exam__err('already_enrolled'); end if;
   if not exam__valid_descriptor(p_descriptor) then return exam__err('bad_face_data'); end if;
   if exam__clean_photo(p_photo) is null then return exam__err('bad_photo'); end if;
-  new_status := case when mode = 'easy' then 'approved' else 'pending' end;
+  new_status := case when mode in ('easy', 'start') then 'approved' else 'pending' end;
   update exam_candidates
      set face_descriptor = p_descriptor, face_photo = p_photo, face_status = new_status, enrolled_at = now(),
          full_name = case when name_pending then nm else full_name end,
@@ -514,7 +515,9 @@ begin
 end; $$;
 
 -- Start (or resume) an exam. With face_mode 'full' this needs an approved face that
--- matches now; 'easy' only needs the one-time registration; 'off' needs neither.
+-- matches now; 'start' matches the registered face now (no approval needed) but
+-- does no face checks during the exam; 'easy' only needs the one-time
+-- registration; 'off' needs neither.
 create or replace function public.exam_start(p_code text, p_exam_id uuid, p_descriptor float8[], p_photo text, p_user_agent text default '')
 returns jsonb
 language plpgsql security definer set search_path = public as $$
@@ -536,8 +539,9 @@ begin
     return exam__err('exam_not_found');
   end if;
   if c.name_pending then return exam__err('name_required'); end if;
-  if mode = 'full' then
-    if c.face_status <> 'approved' then return exam__err('face_not_approved'); end if;
+  if mode in ('full', 'start') then
+    if mode = 'full' and c.face_status <> 'approved' then return exam__err('face_not_approved'); end if;
+    if mode = 'start' and c.face_status not in ('approved', 'pending') then return exam__err('face_not_registered'); end if;
     if not exam__valid_descriptor(p_descriptor) or exam__clean_photo(p_photo) is null then return exam__err('bad_face_data'); end if;
     dist := exam__face_distance(c.face_descriptor, p_descriptor);
     if dist > exam__face_threshold() then
@@ -760,9 +764,9 @@ begin
   if not (p_type = any(counted_types)) then return exam__err('unknown_event'); end if;
   select * into e from exam_exams where id = s.exam_id;
 
-  -- Microphone-only or face-off mode: camera/face reports (e.g. from a page opened before
+  -- Microphone-only, face-off or face-at-start mode: camera/face reports (e.g. from a page opened before
   -- the switch) are ignored and never count as warnings.
-  if exam__face_mode() in ('mic', 'off') and p_type in ('multiple_faces', 'no_face', 'looking_away', 'phone', 'dark', 'camera_off') then
+  if exam__face_mode() in ('mic', 'off', 'start') and p_type in ('multiple_faces', 'no_face', 'looking_away', 'phone', 'dark', 'camera_off') then
     return jsonb_build_object('status', s.status, 'warnings', s.warnings, 'max_warnings', e.max_warnings, 'ignored', true);
   end if;
 
