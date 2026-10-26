@@ -418,6 +418,37 @@ begin
   return jsonb_build_object('ok', true);
 end; $$;
 
+-- Let a student carry on the SAME attempt from where it stopped (same answers,
+-- same question) after it ended, e.g. they were logged out or auto-submitted.
+-- They get back the time they had left (at least 5 minutes) and their warning
+-- count starts again from zero (the earlier warnings stay on record).
+create or replace function public.exam_admin_resume(p_session uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  s public.exam_sessions;
+  e public.exam_exams;
+  time_left interval;
+begin
+  if not public.exam_is_admin() then raise exception 'admins_only'; end if;
+  select * into s from exam_sessions where id = p_session;
+  if s.id is null then return exam__err('not_found'); end if;
+  if s.status = 'in_progress' then return jsonb_build_object('ok', true, 'already', true); end if;
+  if s.archived then return exam__err('newer_attempt'); end if;
+  select * into e from exam_exams where id = s.exam_id;
+  if e.closed then return exam__err('exam_closed'); end if;
+  time_left := greatest(coalesce(s.deadline - s.ended_at, interval '0'), interval '5 minutes');
+  delete from exam_blocked where exam_id = s.exam_id and candidate_id = s.candidate_id;
+  update exam_sessions
+     set status = 'in_progress', ended_at = null, ended_reason = null, warnings = 0, face_fail_streak = 0,
+         current_shown_at = null, deadline = now() + time_left,
+         admin_message = 'The administrator let you continue from where you stopped.'
+   where id = s.id returning * into s;
+  insert into exam_events(exam_id, candidate_id, session_id, type, detail)
+    values (s.exam_id, s.candidate_id, s.id, 'resumed_by_admin',
+            format('Administrator let the student continue (question %s, %s min left)', s.current_index + 1, ceil(extract(epoch from time_left) / 60)));
+  return jsonb_build_object('ok', true, 'deadline', s.deadline, 'question', s.current_index + 1, 'minutes', ceil(extract(epoch from time_left) / 60));
+end; $$;
+
 -- Give a student extra time (e.g. after a power or network problem).
 create or replace function public.exam_admin_extend(p_session uuid, p_minutes integer) returns jsonb
 language plpgsql security definer set search_path = public as $$
@@ -892,9 +923,9 @@ end; $$;
 -- ===================== PERMISSIONS =====================
 
 revoke all on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text),
-  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean) from public, anon;
+  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean), public.exam_admin_resume(uuid) from public, anon;
 grant execute on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text),
-  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean) to authenticated;
+  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean), public.exam_admin_resume(uuid) to authenticated;
 
 revoke all on function
   public.exam__can_self_retake(public.exam_exams, public.exam_sessions), public.exam__can_access(public.exam_exams, uuid),

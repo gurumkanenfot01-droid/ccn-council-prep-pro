@@ -19,6 +19,7 @@ export const EVENT_TEXT = {
   tab_away: "Left the exam screen", window_blur: "Opened another app or panel", fullscreen_exit: "Left full screen",
   screenshot_key: "Screenshot attempt", copy_attempt: "Copy / print / right-click", camera_off: "Camera turned off",
   mic_off: "Microphone turned off", admin_warning: "Warning from administrator", time_added: "Extra time added",
+  resumed_by_admin: "Allowed to continue by administrator",
 };
 
 export function statusPill(s) {
@@ -277,6 +278,9 @@ export default function MonitorTab() {
     const n = parseInt(mins, 10);
     if (n > 0) act("exam_admin_extend", { p_session: s.id, p_minutes: n });
   }
+  function letContinue(s, name) {
+    if (confirm(`Let ${name} continue from where they stopped? Their answers are kept, they get back the time they had left (at least 5 minutes) and their warnings start from zero.`)) act("exam_admin_resume", { p_session: s.id });
+  }
   function allowRetake(s, name) {
     if (confirm(`Allow ${name} to take this exam again? Their current attempt is kept on record.`)) act("exam_admin_allow_retake", { p_session: s.id });
   }
@@ -304,7 +308,10 @@ export default function MonitorTab() {
           <button className="btn btn-sm btn-ghost" onClick={() => addTime(s, name)} aria-label="Add time"><Clock size={13} />{!compact && " +Time"}</button>
           <button className="btn btn-sm btn-ghost" style={{ color: "var(--red)" }} onClick={() => endSession(s, name)} aria-label="End exam"><XCircle size={13} />{!compact && " End"}</button>
         </> : (
-          <button className="btn btn-sm btn-ghost" onClick={() => allowRetake(s, name)}><RotateCcw size={13} /> Allow retake</button>
+          <>
+            <button className="btn btn-sm btn-primary" onClick={() => letContinue(s, name)}><PlayCircle size={13} /> Continue</button>
+            <button className="btn btn-sm btn-ghost" onClick={() => allowRetake(s, name)}><RotateCcw size={13} /> Fresh retake</button>
+          </>
         )}
       </div>
     );

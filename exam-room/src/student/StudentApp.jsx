@@ -193,6 +193,13 @@ function ExamCard({ exam, onStart }) {
       )}
       </div>
     );
+  } else if (exam.session_status === "in_progress" && !exam.paused) {
+    // Already started (or the administrator let them continue): always resumable.
+    action = (
+      <button className="btn btn-primary" onClick={() => onStart(exam)}>
+        <PlayCircle size={16} /> Continue exam
+      </button>
+    );
   } else if (now < starts) {
     action = <span className="pill pill-off"><Hourglass size={13} /> Opens in {fmtClock(starts - now)}</span>;
   } else if (now >= ends) {
