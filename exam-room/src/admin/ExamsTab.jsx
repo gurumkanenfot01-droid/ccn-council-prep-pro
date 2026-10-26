@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, PauseCircle, PlayCircle, Lock, Trash2, Save, Shuffle, Users, X } from "lucide-react";
+import { Plus, Pencil, PauseCircle, PlayCircle, Lock, Trash2, Save, Shuffle, Users, X, Clock, UserMinus, UserPlus } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner, fmtDateTime } from "../ui.jsx";
@@ -120,6 +120,8 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
     await supabase.from("exam_allowed").delete().eq("exam_id", id);
     if (!f.all_candidates) {
       await supabase.from("exam_allowed").insert([...allowed].map(candidate_id => ({ exam_id: id, candidate_id })));
+      // Ticked here = allowed, even if they were taken off with the Students button.
+      await supabase.from("exam_blocked").delete().eq("exam_id", id).in("candidate_id", [...allowed]);
     }
     await supabase.from("exam_question_limits").delete().eq("exam_id", id);
     if (limits.size) {
@@ -280,11 +282,93 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
   );
 }
 
+// Add a student to one exam or take them off it, at any time (also while it's
+// running: taking off someone who is writing ends their attempt).
+function StudentsPanel({ exam, candidates, onClose }) {
+  const [allowed, setAllowed] = useState(null);
+  const [blocked, setBlocked] = useState(new Set());
+  const [writing, setWriting] = useState(new Set());
+  const [search, setSearch] = useState("");
+  const [busy, setBusy] = useState(null);
+  const [error, setError] = useState("");
+  const nameOf = c => c.name_pending ? `Blank code ${c.access_code}` : c.full_name;
+
+  useEffect(() => {
+    (async () => {
+      const [a, b, s] = await Promise.all([
+        supabase.from("exam_allowed").select("candidate_id").eq("exam_id", exam.id),
+        supabase.from("exam_blocked").select("candidate_id").eq("exam_id", exam.id),
+        supabase.from("exam_sessions").select("candidate_id").eq("exam_id", exam.id).eq("status", "in_progress").eq("archived", false),
+      ]);
+      const err = a.error || b.error || s.error;
+      if (err) setError(adminDbMessage(err));
+      setAllowed(new Set((a.data || []).map(r => r.candidate_id)));
+      setBlocked(new Set((b.data || []).map(r => r.candidate_id)));
+      setWriting(new Set((s.data || []).map(r => r.candidate_id)));
+    })();
+  }, [exam.id]);
+
+  const isIn = c => (exam.all_candidates || allowed.has(c.id)) && !blocked.has(c.id);
+
+  async function toggle(c) {
+    const add = !isIn(c);
+    if (!add && writing.has(c.id) && !confirm(`${nameOf(c)} is writing this exam now. Taking them off ends their attempt straight away. Continue?`)) return;
+    setBusy(c.id); setError("");
+    const { data, error: err } = await supabase.rpc("exam_admin_set_access", { p_exam: exam.id, p_candidate: c.id, p_allowed: add });
+    setBusy(null);
+    if (err || (data && data.error)) { setError(err ? adminDbMessage(err) : data.error); return; }
+    const without = (set, id) => { const n = new Set(set); n.delete(id); return n; };
+    const withId = (set, id) => new Set(set).add(id);
+    if (add) { setBlocked(b => without(b, c.id)); setAllowed(a => withId(a, c.id)); }
+    else { setBlocked(b => withId(b, c.id)); setAllowed(a => without(a, c.id)); setWriting(w => without(w, c.id)); }
+  }
+
+  const q = search.trim().toLowerCase();
+  const list = candidates.filter(c => !q || nameOf(c).toLowerCase().includes(q) || c.access_code.toLowerCase().includes(q));
+  const count = allowed ? candidates.filter(isIn).length : 0;
+
+  return (
+    <section className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="row">
+        <h2 style={{ fontSize: 16, margin: 0 }}><Users size={16} /> Students in “{exam.title}”</h2>
+        <span className="spacer" />
+        <button className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /> Close</button>
+      </div>
+      <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+        {allowed ? `${count} of ${candidates.length} students can take this exam.` : "Loading…"} Changes apply straight away.
+      </p>
+      <input placeholder="Search name or code" value={search} onChange={e => setSearch(e.target.value)}
+        style={{ padding: "9px 12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)" }} />
+      {error && <div className="error" role="alert">{error}</div>}
+      {!allowed ? <Spinner /> : (
+        <div style={{ maxHeight: 420, overflowY: "auto" }}>
+          {list.map(c => {
+            const inExam = isIn(c);
+            return (
+              <div key={c.id} className="row" style={{ padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ flex: 1 }}>
+                  <strong>{nameOf(c)}</strong> <span className="faint num" style={{ fontSize: 12 }}>{c.access_code}</span>
+                  {writing.has(c.id) && <span className="pill pill-ok" style={{ marginLeft: 6 }}>Writing</span>}
+                </span>
+                {inExam
+                  ? <button className="btn btn-sm btn-ghost" disabled={busy === c.id} onClick={() => toggle(c)}><UserMinus size={13} /> Remove</button>
+                  : <button className="btn btn-sm btn-primary" disabled={busy === c.id} onClick={() => toggle(c)}><UserPlus size={13} /> Add</button>}
+              </div>
+            );
+          })}
+          {list.length === 0 && <p className="muted">No students match.</p>}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function ExamsTab() {
   const [exams, setExams] = useState(null);
   const [bank, setBank] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [managing, setManaging] = useState(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -312,12 +396,24 @@ export default function ExamsTab() {
     const { error: err } = await supabase.from("exam_exams").update(values).eq("id", id);
     if (err) setError(err.message); else load();
   }
+  async function extraTime(e) {
+    const text = prompt(`Extra minutes for everyone in "${e.title}"?\nThe closing time moves later and everyone writing now gets the same extra time.`, "15");
+    const n = parseInt(text, 10);
+    if (!(n > 0)) return;
+    const { data, error: err } = await supabase.rpc("exam_admin_extend_exam", { p_exam: e.id, p_minutes: n });
+    if (err || (data && data.error)) { setError(err ? adminDbMessage(err) : (data.error === "bad_minutes" ? "Use 1 to 240 minutes." : data.error)); return; }
+    alert(`Added ${n} minutes. ${data.students} student(s) writing now got the extra time. The exam now closes at ${fmtDateTime(data.ends_at)}.`);
+    load();
+  }
   async function remove(e) {
     if (!confirm(`Delete "${e.title}" and all its results? This can't be undone.`)) return;
     const { error: err } = await supabase.from("exam_exams").delete().eq("id", e.id);
     if (err) setError(err.message); else load();
   }
 
+  if (managing) {
+    return <StudentsPanel exam={managing} candidates={candidates} onClose={() => setManaging(null)} />;
+  }
   if (editing) {
     return <ExamForm initial={editing} bank={bank} candidates={candidates} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />;
   }
@@ -353,6 +449,8 @@ export default function ExamsTab() {
                     <td>
                       <div className="row" style={{ gap: 6 }}>
                         <button className="btn btn-sm btn-ghost" onClick={() => setEditing(e)}><Pencil size={13} /> Edit</button>
+                        <button className="btn btn-sm btn-ghost" onClick={() => setManaging(e)}><Users size={13} /> Students</button>
+                        {!e.closed && <button className="btn btn-sm btn-ghost" onClick={() => extraTime(e)}><Clock size={13} /> Extra time</button>}
                         {!e.closed && (e.paused
                           ? <button className="btn btn-sm btn-success" onClick={() => patch(e.id, { paused: false })}><PlayCircle size={13} /> Resume</button>
                           : <button className="btn btn-sm btn-ghost" onClick={() => patch(e.id, { paused: true })}><PauseCircle size={13} /> Pause</button>)}
