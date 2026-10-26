@@ -50,9 +50,9 @@ export function useExamPicker() {
 
 const LIVE_TEXT = {
   connecting: "Connecting to the student's phone…",
-  offline: "The student's page didn't answer. They may be offline or their exam page isn't open.",
-  failed: "Couldn't connect — the network between you and the student blocks a direct video link. Try again, or ask them to switch from mobile data to Wi-Fi.",
-  unavailable: "The student's camera and microphone are off (for example, they haven't started yet).",
+  offline: "The student's page didn't answer. They may be offline, or they need to refresh their exam page once to get the latest version.",
+  failed: "Couldn't connect to the student's phone. Tap Try again.",
+  unavailable: "This student's camera is off (Microphone only mode). Switch Face registration to “Face at start” and ask them to refresh to see their camera.",
 };
 
 // Live camera + sound from the student's phone, only while this is open.
@@ -64,7 +64,7 @@ function LiveView({ sessionId, onStop }) {
   useEffect(() => {
     supabase.from("exam_sessions").select("token").eq("id", sessionId).maybeSingle().then(({ data }) => setToken(data?.token || ""));
   }, [sessionId]);
-  const { status, hasVideo } = useLiveWatch({ token, attempt, videoRef });
+  const { status, hasVideo, frame } = useLiveWatch({ token, attempt, videoRef });
   function toggleSound() {
     const v = videoRef.current;
     if (!v) return;
@@ -75,13 +75,14 @@ function LiveView({ sessionId, onStop }) {
   return (
     <div className="card" style={{ padding: 10, boxShadow: "none" }}>
       <div style={{ position: "relative", background: "#000", borderRadius: 10, overflow: "hidden", aspectRatio: "4 / 3" }}>
-        <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", display: hasVideo ? "block" : "none" }} />
-        {(!hasVideo || status !== "live") && (
+        <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", display: hasVideo && status === "live" ? "block" : "none" }} />
+        {status === "pictures" && frame && <img src={frame} alt="Live camera" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
+        {(status === "live" ? !hasVideo : status !== "pictures") && (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textAlign: "center", padding: 16, fontSize: 13.5 }}>
-            {status === "connecting" || token === null ? <Spinner /> : status === "live" ? <span><Mic size={16} /> Listening live (no camera on this student)</span> : LIVE_TEXT[status]}
+            {status === "connecting" || token === null ? <span><Spinner /><br />Connecting to the student's phone…</span> : status === "live" ? <span><Mic size={16} /> Listening live (no camera on this student)</span> : LIVE_TEXT[status]}
           </div>
         )}
-        {status === "live" && <span className="pill pill-bad" style={{ position: "absolute", top: 8, left: 8 }}>● LIVE</span>}
+        {(status === "live" || status === "pictures") && <span className="pill pill-bad" style={{ position: "absolute", top: 8, left: 8 }}>● LIVE{status === "pictures" ? " · pictures (no sound)" : ""}</span>}
       </div>
       <div className="row" style={{ gap: 6, marginTop: 8 }}>
         <button className="btn btn-sm btn-ghost" onClick={toggleSound} disabled={status !== "live"}>

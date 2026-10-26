@@ -131,7 +131,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: watchFace });
 
   // The administrator can watch (and listen) live; nothing is recorded.
-  const watchers = useLiveShare({ token, getTracks: cam.getTracks });
+  const watchers = useLiveShare({ token, getTracks: cam.getTracks, getVideo: cam.getVideo });
 
   // Switched to microphone-only during the exam: turn the camera off.
   useEffect(() => {
