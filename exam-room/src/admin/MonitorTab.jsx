@@ -319,6 +319,16 @@ export default function MonitorTab() {
       .eq("id", s.id).eq("status", "in_progress");
     poll();
   }
+  // One message on the screen of everyone writing this exam (picked up with their next heartbeat).
+  async function messageAll() {
+    const writing = sessions.filter(x => x.status === "in_progress").length;
+    if (!writing) { alert("Nobody is writing this exam right now."); return; }
+    const text = prompt(`Message to all ${writing} student(s) writing now (shown on their screen within about 25 seconds):`);
+    if (!text || !text.trim()) return;
+    const { error: err } = await supabase.from("exam_sessions").update({ admin_message: text.trim().slice(0, 300) })
+      .eq("exam_id", examId).eq("status", "in_progress").eq("archived", false);
+    if (err) setError(err.message); else alert(`Sent to ${writing} student(s).`);
+  }
   async function message(s, name) {
     const text = prompt(`Message to ${name} (shown on their screen within 15 seconds):`);
     if (text && text.trim()) await supabase.from("exam_sessions").update({ admin_message: text.trim().slice(0, 300) }).eq("id", s.id);
@@ -384,6 +394,7 @@ export default function MonitorTab() {
         {examRow && !examRow.closed && (examRow.paused
           ? <button className="btn btn-sm btn-success" onClick={() => setExam({ paused: false })}><PlayCircle size={14} /> Resume questions</button>
           : <button className="btn btn-sm btn-ghost" onClick={() => setExam({ paused: true })}><PauseCircle size={14} /> Pause (hide questions)</button>)}
+        {examRow && !examRow.closed && <button className="btn btn-sm btn-primary" onClick={messageAll}><MessageSquare size={14} /> Message everyone</button>}
         {examRow && !examRow.closed && <button className="btn btn-sm btn-ghost" onClick={() => confirm("Close this exam for everyone now?") && setExam({ closed: true })}><Lock size={14} /> Close exam</button>}
       </div>
 
