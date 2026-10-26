@@ -38,23 +38,56 @@ function candidateQueue(pc) {
   };
 }
 
-// Student side: answer "watch" requests with the current camera/mic tracks.
-// Returns how many admins are watching right now.
-export function useLiveShare({ token, getTracks, enabled = true }) {
+// Picture fallback: when a direct video link can't be made (common on mobile
+// data), the student's page sends small JPEG frames over the Realtime channel
+// instead — about 2 a second, ~10 KB each, only while an admin keeps asking.
+const FRAME_MS = 500;
+const FRAME_WIDTH = 240;
+const FRAME_KEEPALIVE_MS = 5000;
+
+// Student side: answer "watch" requests with the current camera/mic tracks,
+// or "frames" requests with pictures. Returns how many admins are watching.
+export function useLiveShare({ token, getTracks, getVideo, enabled = true }) {
   const [watchers, setWatchers] = useState(0);
 
   useEffect(() => {
     if (!enabled || !token || !liveSupported()) return undefined;
     const peers = new Map(); // viewer id -> { pc, queue }
+    const framers = new Map(); // viewer id -> { timer, last }
     const ch = supabase.channel(channelName(token), { config: { broadcast: { self: false } } });
     const send = (event, payload) => ch.send({ type: "broadcast", event, payload }).catch(() => {});
+    const count = () => setWatchers(peers.size + framers.size);
     const close = id => {
       const p = peers.get(id);
-      if (!p) return;
-      p.pc.close();
-      peers.delete(id);
-      setWatchers(peers.size);
+      if (p) { p.pc.close(); peers.delete(id); }
+      const f = framers.get(id);
+      if (f) { clearInterval(f.timer); framers.delete(id); }
+      count();
     };
+
+    const canvas = document.createElement("canvas");
+    ch.on("broadcast", { event: "frames" }, ({ payload }) => {
+      const id = payload && payload.viewer;
+      if (!id) return;
+      const known = framers.get(id);
+      if (known) { known.last = Date.now(); return; } // keep-alive
+      const video = getVideo && getVideo();
+      if (!video) { send("unavailable", { viewer: id }); return; }
+      const f = { last: Date.now(), timer: null };
+      f.timer = setInterval(() => {
+        if (Date.now() - f.last > FRAME_KEEPALIVE_MS * 3) { close(id); return; } // admin went away
+        const v = getVideo && getVideo();
+        if (!v || v.readyState < 2 || !v.videoWidth) return;
+        canvas.width = FRAME_WIDTH;
+        canvas.height = Math.round(FRAME_WIDTH * v.videoHeight / v.videoWidth);
+        try {
+          canvas.getContext("2d").drawImage(v, 0, 0, canvas.width, canvas.height);
+          send("frame", { viewer: id, img: canvas.toDataURL("image/jpeg", 0.5) });
+        } catch (e) { /* skip this frame */ }
+      }, FRAME_MS);
+      framers.set(id, f);
+      count();
+    });
 
     ch.on("broadcast", { event: "watch" }, async ({ payload }) => {
       const id = payload && payload.viewer;
@@ -65,7 +98,7 @@ export function useLiveShare({ token, getTracks, enabled = true }) {
       const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
       const queue = candidateQueue(pc);
       peers.set(id, { pc, queue });
-      setWatchers(peers.size);
+      count();
       const stream = new MediaStream(tracks);
       tracks.forEach(t => pc.addTransceiver(t, {
         direction: "sendonly",
@@ -104,6 +137,8 @@ export function useLiveShare({ token, getTracks, enabled = true }) {
     return () => {
       peers.forEach(p => p.pc.close());
       peers.clear();
+      framers.forEach(f => clearInterval(f.timer));
+      framers.clear();
       setWatchers(0);
       supabase.removeChannel(ch);
     };
@@ -112,25 +147,46 @@ export function useLiveShare({ token, getTracks, enabled = true }) {
   return watchers;
 }
 
-// Admin side: ask the student's page for a live stream and play it.
-// status: connecting | live | offline | failed | unavailable
+// Admin side: ask the student's page for a live stream and play it. If a
+// direct video link isn't up within a few seconds (or fails), switch to the
+// picture fallback, which works on any network the exam itself works on.
+// status: connecting | live | pictures | offline | failed | unavailable
+const DIRECT_WAIT_MS = 10000;
+const OFFLINE_MS = 25000;
+
 export function useLiveWatch({ token, attempt, videoRef }) {
   const [status, setStatus] = useState("connecting");
   const [hasVideo, setHasVideo] = useState(false);
+  const [frame, setFrame] = useState(null);
 
   useEffect(() => {
     if (!token || !liveSupported()) { setStatus("failed"); return undefined; }
     setStatus("connecting");
     setHasVideo(false);
+    setFrame(null);
     const viewer = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()).slice(2);
+    const picViewer = `${viewer}-p`;
     const ch = supabase.channel(channelName(token), { config: { broadcast: { self: false } } });
     const send = (event, payload) => ch.send({ type: "broadcast", event, payload }).catch(() => {});
     let pc = null;
     let queue = null;
     let live = false;
+    let pictures = false;
+    let heard = false; // the student's page answered at all
+    let keepAlive = null;
+
+    const usePictures = () => {
+      if (live || pictures) return;
+      pictures = true;
+      send("stop", { viewer });
+      if (pc) { pc.close(); pc = null; }
+      send("frames", { viewer: picViewer });
+      keepAlive = setInterval(() => send("frames", { viewer: picViewer }), FRAME_KEEPALIVE_MS);
+    };
 
     ch.on("broadcast", { event: "offer" }, async ({ payload }) => {
-      if (!payload || payload.viewer !== viewer) return;
+      if (!payload || payload.viewer !== viewer || pictures) return;
+      heard = true;
       if (pc) pc.close();
       pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
       queue = candidateQueue(pc);
@@ -143,7 +199,7 @@ export function useLiveWatch({ token, attempt, videoRef }) {
       conn.onicecandidate = e => { if (e.candidate) send("ice", { viewer, from: "admin", candidate: e.candidate.toJSON() }); };
       conn.onconnectionstatechange = () => {
         if (conn.connectionState === "connected") { live = true; setStatus("live"); }
-        if (conn.connectionState === "failed") { live = false; setStatus("failed"); }
+        if (conn.connectionState === "failed") { live = false; usePictures(); }
         if (conn.connectionState === "disconnected") setStatus("connecting");
       };
       try {
@@ -151,26 +207,38 @@ export function useLiveWatch({ token, attempt, videoRef }) {
         queue.flush();
         await conn.setLocalDescription(await conn.createAnswer());
         send("answer", { viewer, sdp: conn.localDescription.toJSON() });
-      } catch (e) { setStatus("failed"); }
+      } catch (e) { usePictures(); }
     });
     ch.on("broadcast", { event: "ice" }, ({ payload }) => {
       if (!payload || payload.viewer !== viewer || payload.from !== "student" || !queue) return;
       queue.add(payload.candidate);
     });
+    ch.on("broadcast", { event: "frame" }, ({ payload }) => {
+      if (!payload || payload.viewer !== picViewer || !pictures) return;
+      heard = true;
+      setFrame(payload.img);
+      setStatus("pictures");
+    });
     ch.on("broadcast", { event: "unavailable" }, ({ payload }) => {
-      if (payload && payload.viewer === viewer) setStatus("unavailable");
+      if (payload && (payload.viewer === viewer || payload.viewer === picViewer)) { heard = true; setStatus("unavailable"); }
     });
     // The student's page (re)joined: ask again if we're not watching yet.
-    ch.on("broadcast", { event: "ready" }, () => { if (!live) send("watch", { viewer }); });
+    ch.on("broadcast", { event: "ready" }, () => {
+      if (live) return;
+      if (pictures) send("frames", { viewer: picViewer }); else send("watch", { viewer });
+    });
     ch.subscribe(st => { if (st === "SUBSCRIBED") send("watch", { viewer }); });
 
-    const timer = setTimeout(() => setStatus(s => (s === "connecting" ? "offline" : s)), 25000);
-    const bye = () => send("stop", { viewer });
+    const direct = setTimeout(usePictures, DIRECT_WAIT_MS);
+    const offline = setTimeout(() => { if (!heard) setStatus("offline"); }, OFFLINE_MS);
+    const bye = () => { send("stop", { viewer }); send("stop", { viewer: picViewer }); };
     window.addEventListener("pagehide", bye);
     return () => {
-      clearTimeout(timer);
+      clearTimeout(direct);
+      clearTimeout(offline);
+      clearInterval(keepAlive);
       window.removeEventListener("pagehide", bye);
-      send("stop", { viewer });
+      bye();
       if (pc) pc.close();
       const v = videoRef.current;
       if (v) v.srcObject = null;
@@ -178,5 +246,5 @@ export function useLiveWatch({ token, attempt, videoRef }) {
     };
   }, [token, attempt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { status, hasVideo };
+  return { status, hasVideo, frame };
 }
