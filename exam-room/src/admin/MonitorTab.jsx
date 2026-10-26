@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Eye, MessageSquare, XCircle, PauseCircle, PlayCircle, Camera, AlertTriangle, X, Lock, RotateCcw,
-  LayoutGrid, List, Bell, BellOff, Clock, ScanFace, EyeOff, Users, Moon, Mic, Volume2, Smartphone, WifiOff, Maximize, Flag,
+  LayoutGrid, List, Bell, BellOff, Clock, ScanFace, EyeOff, Users, Moon, Mic, Volume2, VolumeX, Smartphone, WifiOff, Maximize, Flag, Video, RefreshCw,
 } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { fmtClock } from "../lib/api.js";
+import { useLiveWatch, liveSupported } from "../lib/live.js";
 import { Spinner } from "../ui.jsx";
 import { examState } from "./ExamsTab.jsx";
 
@@ -19,6 +20,7 @@ export const EVENT_TEXT = {
   tab_away: "Left the exam screen", window_blur: "Opened another app or panel", fullscreen_exit: "Left full screen",
   screenshot_key: "Screenshot attempt", copy_attempt: "Copy / print / right-click", camera_off: "Camera turned off",
   mic_off: "Microphone turned off", admin_warning: "Warning from administrator", time_added: "Extra time added",
+  resumed_by_admin: "Allowed to continue by administrator",
 };
 
 export function statusPill(s) {
@@ -46,7 +48,55 @@ export function useExamPicker() {
   return { exams, examId, setExamId, exam: (exams || []).find(e => e.id === examId) };
 }
 
+const LIVE_TEXT = {
+  connecting: "Connecting to the student's phone…",
+  offline: "The student's page didn't answer. They may be offline or their exam page isn't open.",
+  failed: "Couldn't connect — the network between you and the student blocks a direct video link. Try again, or ask them to switch from mobile data to Wi-Fi.",
+  unavailable: "The student's camera and microphone are off (for example, they haven't started yet).",
+};
+
+// Live camera + sound from the student's phone, only while this is open.
+function LiveView({ sessionId, onStop }) {
+  const videoRef = useRef(null);
+  const [token, setToken] = useState(null);
+  const [attempt, setAttempt] = useState(0);
+  const [muted, setMuted] = useState(true);
+  useEffect(() => {
+    supabase.from("exam_sessions").select("token").eq("id", sessionId).maybeSingle().then(({ data }) => setToken(data?.token || ""));
+  }, [sessionId]);
+  const { status, hasVideo } = useLiveWatch({ token, attempt, videoRef });
+  function toggleSound() {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    setMuted(v.muted);
+    v.play().catch(() => {});
+  }
+  return (
+    <div className="card" style={{ padding: 10, boxShadow: "none" }}>
+      <div style={{ position: "relative", background: "#000", borderRadius: 10, overflow: "hidden", aspectRatio: "4 / 3" }}>
+        <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", display: hasVideo ? "block" : "none" }} />
+        {(!hasVideo || status !== "live") && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textAlign: "center", padding: 16, fontSize: 13.5 }}>
+            {status === "connecting" || token === null ? <Spinner /> : status === "live" ? <span><Mic size={16} /> Listening live (no camera on this student)</span> : LIVE_TEXT[status]}
+          </div>
+        )}
+        {status === "live" && <span className="pill pill-bad" style={{ position: "absolute", top: 8, left: 8 }}>● LIVE</span>}
+      </div>
+      <div className="row" style={{ gap: 6, marginTop: 8 }}>
+        <button className="btn btn-sm btn-ghost" onClick={toggleSound} disabled={status !== "live"}>
+          {muted ? <><VolumeX size={13} /> Sound off — tap to listen</> : <><Volume2 size={13} /> Sound on</>}
+        </button>
+        {status !== "live" && status !== "connecting" && <button className="btn btn-sm btn-ghost" onClick={() => setAttempt(a => a + 1)}><RefreshCw size={13} /> Try again</button>}
+        <span className="spacer" />
+        <button className="btn btn-sm btn-ghost" onClick={onStop}><X size={13} /> Stop watching</button>
+      </div>
+    </div>
+  );
+}
+
 function Drawer({ session, candidate, onClose }) {
+  const [watching, setWatching] = useState(false);
   const [events, setEvents] = useState(null);
   const [photos, setPhotos] = useState({});
   useEffect(() => {
@@ -74,6 +124,11 @@ function Drawer({ session, candidate, onClose }) {
         <span className="spacer" />
         <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close"><X size={14} /></button>
       </div>
+      {session.status === "in_progress" && liveSupported() && (
+        watching
+          ? <div style={{ marginBottom: 12 }}><LiveView sessionId={session.id} onStop={() => setWatching(false)} /></div>
+          : <button className="btn btn-primary btn-full" style={{ marginBottom: 12 }} onClick={() => setWatching(true)}><Video size={15} /> Watch live</button>
+      )}
       <div className="two-col" style={{ gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <figure style={{ margin: 0 }}>
           {photos.registered ? <img src={photos.registered} alt="Registered face" style={{ width: "100%", borderRadius: 10 }} /> : <div className="cam" />}
@@ -264,6 +319,16 @@ export default function MonitorTab() {
       .eq("id", s.id).eq("status", "in_progress");
     poll();
   }
+  // One message on the screen of everyone writing this exam (picked up with their next heartbeat).
+  async function messageAll() {
+    const writing = sessions.filter(x => x.status === "in_progress").length;
+    if (!writing) { alert("Nobody is writing this exam right now."); return; }
+    const text = prompt(`Message to all ${writing} student(s) writing now (shown on their screen within about 25 seconds):`);
+    if (!text || !text.trim()) return;
+    const { error: err } = await supabase.from("exam_sessions").update({ admin_message: text.trim().slice(0, 300) })
+      .eq("exam_id", examId).eq("status", "in_progress").eq("archived", false);
+    if (err) setError(err.message); else alert(`Sent to ${writing} student(s).`);
+  }
   async function message(s, name) {
     const text = prompt(`Message to ${name} (shown on their screen within 15 seconds):`);
     if (text && text.trim()) await supabase.from("exam_sessions").update({ admin_message: text.trim().slice(0, 300) }).eq("id", s.id);
@@ -276,6 +341,9 @@ export default function MonitorTab() {
     const mins = prompt(`Extra minutes for ${name}:`, "5");
     const n = parseInt(mins, 10);
     if (n > 0) act("exam_admin_extend", { p_session: s.id, p_minutes: n });
+  }
+  function letContinue(s, name) {
+    if (confirm(`Let ${name} continue from where they stopped? Their answers are kept, they get back the time they had left (at least 5 minutes) and their warnings start from zero.`)) act("exam_admin_resume", { p_session: s.id });
   }
   function allowRetake(s, name) {
     if (confirm(`Allow ${name} to take this exam again? Their current attempt is kept on record.`)) act("exam_admin_allow_retake", { p_session: s.id });
@@ -304,7 +372,10 @@ export default function MonitorTab() {
           <button className="btn btn-sm btn-ghost" onClick={() => addTime(s, name)} aria-label="Add time"><Clock size={13} />{!compact && " +Time"}</button>
           <button className="btn btn-sm btn-ghost" style={{ color: "var(--red)" }} onClick={() => endSession(s, name)} aria-label="End exam"><XCircle size={13} />{!compact && " End"}</button>
         </> : (
-          <button className="btn btn-sm btn-ghost" onClick={() => allowRetake(s, name)}><RotateCcw size={13} /> Allow retake</button>
+          <>
+            <button className="btn btn-sm btn-primary" onClick={() => letContinue(s, name)}><PlayCircle size={13} /> Continue</button>
+            <button className="btn btn-sm btn-ghost" onClick={() => allowRetake(s, name)}><RotateCcw size={13} /> Fresh retake</button>
+          </>
         )}
       </div>
     );
@@ -323,6 +394,7 @@ export default function MonitorTab() {
         {examRow && !examRow.closed && (examRow.paused
           ? <button className="btn btn-sm btn-success" onClick={() => setExam({ paused: false })}><PlayCircle size={14} /> Resume questions</button>
           : <button className="btn btn-sm btn-ghost" onClick={() => setExam({ paused: true })}><PauseCircle size={14} /> Pause (hide questions)</button>)}
+        {examRow && !examRow.closed && <button className="btn btn-sm btn-primary" onClick={messageAll}><MessageSquare size={14} /> Message everyone</button>}
         {examRow && !examRow.closed && <button className="btn btn-sm btn-ghost" onClick={() => confirm("Close this exam for everyone now?") && setExam({ closed: true })}><Lock size={14} /> Close exam</button>}
       </div>
 

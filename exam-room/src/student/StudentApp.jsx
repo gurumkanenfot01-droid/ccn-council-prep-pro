@@ -193,6 +193,13 @@ function ExamCard({ exam, onStart }) {
       )}
       </div>
     );
+  } else if (exam.session_status === "in_progress" && !exam.paused) {
+    // Already started (or the administrator let them continue): always resumable.
+    action = (
+      <button className="btn btn-primary" onClick={() => onStart(exam)}>
+        <PlayCircle size={16} /> Continue exam
+      </button>
+    );
   } else if (now < starts) {
     action = <span className="pill pill-off"><Hourglass size={13} /> Opens in {fmtClock(starts - now)}</span>;
   } else if (now >= ends) {
@@ -230,6 +237,7 @@ function rulesFor(level, faceMode = "full") {
           ? "Keep quiet. Talking or loud noise counts as a warning."
           : "Quiet murmuring is fine. Loud talking or loud noise counts as a warning.",
       "Screenshots, copying and printing are blocked and count as warnings. Your name is shown across the screen.",
+      faceMode === "mic" ? "Your administrator may listen live during the exam. Nothing is recorded." : "Your administrator may watch your camera and listen live during the exam. Nothing is recorded.",
     ];
   }
   return [
@@ -244,6 +252,7 @@ function rulesFor(level, faceMode = "full") {
         ? "Keep quiet. Talking, loud noise or looking away for a long time counts as a warning."
         : "Quiet murmuring and turning your head are fine. Loud talking or loud noise counts as a warning.",
     "Screenshots, copying and printing are blocked and count as warnings. Your name is shown across the screen.",
+    "Your administrator may watch your camera and listen live during the exam. Nothing is recorded.",
     faceMode === "full"
       ? "If someone else appears in view, or your face doesn't match, the exam ends immediately."
       : "If someone else appears in view, the exam ends immediately.",

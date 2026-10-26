@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, FileText, RotateCcw } from "lucide-react";
+import { Download, FileText, PlayCircle, RotateCcw } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { Spinner } from "../ui.jsx";
 import { useExamPicker, statusPill, EVENT_TEXT } from "./MonitorTab.jsx";
@@ -52,6 +52,14 @@ export default function ResultsTab() {
       .select("id, candidate_id, status, ended_reason, answered, score, total, warnings, started_at, ended_at, attempt")
       .eq("exam_id", examId).eq("archived", false).then(({ data }) => setSessions(data || []));
   }, [examId, reload]);
+
+  async function letContinue(r) {
+    if (!confirm(`Let ${r.c.full_name} continue from where they stopped (question ${r.answered + 1})? Their answers are kept, they get back the time they had left (at least 5 minutes) and their warnings start from zero.`)) return;
+    const { data, error } = await supabase.rpc("exam_admin_resume", { p_session: r.id });
+    if (error) alert(error.message);
+    else if (data && data.error) alert(data.error === "exam_closed" ? "This exam is closed. Reopen it on the Exams page first." : data.error);
+    else { alert(`${r.c.full_name} can continue now with ${data.minutes} minutes. Ask them to log in again and tap Continue exam.`); setReload(x => x + 1); }
+  }
 
   async function allowRetake(r) {
     if (!confirm(`Allow ${r.c.full_name} to take this exam again? This attempt is kept on record.`)) return;
@@ -141,7 +149,7 @@ export default function ResultsTab() {
       {!sessions ? <Spinner /> : (
         <div className="table-wrap">
           <table className="data">
-            <thead><tr><th>#</th><th>Student</th><th>Status</th><th>Score</th><th>Answered</th><th>Warnings</th><th>Finished</th><th>Retake</th></tr></thead>
+            <thead><tr><th>#</th><th>Student</th><th>Status</th><th>Score</th><th>Answered</th><th>Warnings</th><th>Finished</th><th>Continue / retake</th></tr></thead>
             <tbody>
               {rows.map((r, i) => (
                 <tr key={r.id}>
@@ -152,7 +160,12 @@ export default function ResultsTab() {
                   <td className="num">{r.answered}</td>
                   <td className="num">{r.warnings}</td>
                   <td style={{ fontSize: 12.5 }}>{r.ended_at ? new Date(r.ended_at).toLocaleString() : "Writing…"}</td>
-                  <td>{r.status !== "in_progress" && <button className="btn btn-sm btn-ghost" onClick={() => allowRetake(r)}><RotateCcw size={13} /> Allow</button>}</td>
+                  <td>{r.status !== "in_progress" && (
+                    <div className="row" style={{ gap: 6 }}>
+                      <button className="btn btn-sm btn-primary" onClick={() => letContinue(r)}><PlayCircle size={13} /> Continue</button>
+                      <button className="btn btn-sm btn-ghost" onClick={() => allowRetake(r)}><RotateCcw size={13} /> Fresh</button>
+                    </div>
+                  )}</td>
                 </tr>
               ))}
               {rows.length === 0 && <tr><td colSpan={8} className="muted">Nobody has taken this exam yet.</td></tr>}
