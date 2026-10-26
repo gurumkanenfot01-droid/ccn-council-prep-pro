@@ -67,6 +67,14 @@ create table if not exists public.exam_allowed (
   primary key (exam_id, candidate_id)
 );
 
+-- Students the admin took off an exam (works whether the exam is open to all
+-- students or only to chosen ones).
+create table if not exists public.exam_blocked (
+  exam_id uuid not null references public.exam_exams(id) on delete cascade,
+  candidate_id uuid not null references public.exam_candidates(id) on delete cascade,
+  primary key (exam_id, candidate_id)
+);
+
 -- How many questions (and minutes) a particular student gets in an exam. Each
 -- student draws their own random set of that size from the exam's question pool.
 create table if not exists public.exam_question_limits (
@@ -162,6 +170,7 @@ create index if not exists exam_login_attempts_ip_idx on public.exam_login_attem
 alter table public.exam_candidates enable row level security;
 alter table public.exam_exams enable row level security;
 alter table public.exam_allowed enable row level security;
+alter table public.exam_blocked enable row level security;
 alter table public.exam_question_limits enable row level security;
 alter table public.exam_sessions enable row level security;
 alter table public.exam_answers enable row level security;
@@ -227,19 +236,26 @@ $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['exam_candidates','exam_exams','exam_allowed','exam_question_limits','exam_sessions','exam_answers','exam_events','exam_login_attempts'] loop
+  foreach t in array array['exam_candidates','exam_exams','exam_allowed','exam_blocked','exam_question_limits','exam_sessions','exam_answers','exam_events','exam_login_attempts'] loop
     execute format('drop policy if exists %I on public.%I', t || '_admin_all', t);
     execute format('create policy %I on public.%I for all using (public.exam_is_admin()) with check (public.exam_is_admin())', t || '_admin_all', t);
   end loop;
 end $$;
 
 grant select, insert, update, delete on
-  public.exam_candidates, public.exam_exams, public.exam_allowed, public.exam_question_limits, public.exam_sessions,
+  public.exam_candidates, public.exam_exams, public.exam_allowed, public.exam_blocked, public.exam_question_limits, public.exam_sessions,
   public.exam_answers, public.exam_events, public.exam_login_attempts
   to authenticated;
 grant usage, select on sequence public.exam_events_id_seq, public.exam_login_attempts_id_seq to authenticated;
 
 -- ===================== HELPERS (not callable by students) =====================
+
+-- May this student sit this exam? (open to all or chosen, and not taken off it)
+create or replace function public.exam__can_access(e public.exam_exams, p_candidate uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select (e.all_candidates or exists (select 1 from exam_allowed a where a.exam_id = e.id and a.candidate_id = p_candidate))
+     and not exists (select 1 from exam_blocked b where b.exam_id = e.id and b.candidate_id = p_candidate)
+$$;
 
 -- Face descriptors closer than this are the same person. face-api.js uses 0.6;
 -- 0.5 is stricter and still tolerant of phone cameras and normal lighting.
@@ -419,6 +435,61 @@ begin
   return jsonb_build_object('ok', true, 'deadline', s.deadline);
 end; $$;
 
+-- Extra time for everyone in an exam: the closing time moves later and
+-- everyone still writing gets the same extra minutes.
+create or replace function public.exam_admin_extend_exam(p_exam uuid, p_minutes integer) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  e public.exam_exams;
+  n integer;
+begin
+  if not public.exam_is_admin() then raise exception 'admins_only'; end if;
+  if p_minutes is null or p_minutes not between 1 and 240 then return exam__err('bad_minutes'); end if;
+  update exam_exams set ends_at = ends_at + make_interval(mins => p_minutes) where id = p_exam returning * into e;
+  if e.id is null then return exam__err('exam_not_found'); end if;
+  with x as (
+    update exam_sessions
+       set deadline = deadline + make_interval(mins => p_minutes),
+           admin_message = format('The administrator gave everyone %s extra minutes.', p_minutes)
+     where exam_id = e.id and status = 'in_progress' and not archived
+    returning id, candidate_id)
+  insert into exam_events(exam_id, candidate_id, session_id, type, detail)
+    select e.id, x.candidate_id, x.id, 'time_added', format('Administrator added %s minutes for everyone', p_minutes) from x;
+  get diagnostics n = row_count;
+  return jsonb_build_object('ok', true, 'students', n, 'ends_at', e.ends_at);
+end; $$;
+
+-- Add a student to an exam or take them off it. Taking off someone who is
+-- writing ends their attempt straight away; adding them back lets them start again.
+create or replace function public.exam_admin_set_access(p_exam uuid, p_candidate uuid, p_allowed boolean) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  e public.exam_exams;
+  s public.exam_sessions;
+begin
+  if not public.exam_is_admin() then raise exception 'admins_only'; end if;
+  select * into e from exam_exams where id = p_exam;
+  if e.id is null then return exam__err('exam_not_found'); end if;
+  if p_allowed then
+    delete from exam_blocked where exam_id = e.id and candidate_id = p_candidate;
+    if not e.all_candidates then
+      insert into exam_allowed(exam_id, candidate_id) values (e.id, p_candidate) on conflict do nothing;
+    end if;
+    update exam_sessions set archived = true
+     where exam_id = e.id and candidate_id = p_candidate and not archived
+       and status = 'terminated' and ended_reason = 'Removed from the exam by the administrator';
+  else
+    insert into exam_blocked(exam_id, candidate_id) values (e.id, p_candidate) on conflict do nothing;
+    delete from exam_allowed where exam_id = e.id and candidate_id = p_candidate;
+    select * into s from exam_sessions
+     where exam_id = e.id and candidate_id = p_candidate and not archived and status = 'in_progress';
+    if s.id is not null then
+      perform exam__finish(s.id, 'terminated', 'Removed from the exam by the administrator');
+    end if;
+  end if;
+  return jsonb_build_object('ok', true);
+end; $$;
+
 -- Give a student a warning by hand (counts towards the limit like any other).
 create or replace function public.exam_admin_warn(p_session uuid, p_reason text) returns jsonb
 language plpgsql security definer set search_path = public as $$
@@ -484,7 +555,7 @@ begin
       ) order by e.starts_at)
       from exam_exams e
       left join exam_sessions s on s.exam_id = e.id and s.candidate_id = c.id and not s.archived
-      where (e.all_candidates or exists (select 1 from exam_allowed a where a.exam_id = e.id and a.candidate_id = c.id))
+      where exam__can_access(e, c.id)
         and ((not e.closed and e.ends_at > now()) or s.id is not null)
         and e.ends_at > now() - interval '7 days'
     ), '[]'::jsonb));
@@ -551,7 +622,7 @@ begin
   c := exam__candidate(p_code);
   if c.id is null then return exam__err('invalid_code'); end if;
   select * into e from exam_exams where id = p_exam_id;
-  if e.id is null or not (e.all_candidates or exists (select 1 from exam_allowed a where a.exam_id = e.id and a.candidate_id = c.id)) then
+  if e.id is null or not exam__can_access(e, c.id) then
     return exam__err('exam_not_found');
   end if;
   if c.name_pending then return exam__err('name_required'); end if;
@@ -820,11 +891,13 @@ end; $$;
 
 -- ===================== PERMISSIONS =====================
 
-revoke all on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text) from public, anon;
-grant execute on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text) to authenticated;
+revoke all on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text),
+  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean) from public, anon;
+grant execute on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text),
+  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean) to authenticated;
 
 revoke all on function
-  public.exam__can_self_retake(public.exam_exams, public.exam_sessions),
+  public.exam__can_self_retake(public.exam_exams, public.exam_sessions), public.exam__can_access(public.exam_exams, uuid),
   public.exam__throttled(), public.exam__candidate(text), public.exam__finish(uuid, text, text), public.exam__session(uuid),
   public.exam__result(public.exam_sessions), public.exam__client_ip(),
   public.exam__plan(public.exam_exams, uuid)
