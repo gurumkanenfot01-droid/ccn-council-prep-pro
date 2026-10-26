@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, Eye, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX } from "lucide-react";
+import { AlertTriangle, Calculator as CalcIcon, Eye, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useProctor, VIOLATION_LABELS, pauseSoundChecks } from "../lib/proctor.js";
 import { useLiveShare } from "../lib/live.js";
+import Calculator from "./Calculator.jsx";
 import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinner } from "../ui.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
@@ -44,6 +45,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const [offline, setOffline] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [showCalc, setShowCalc] = useState(false);
   const [warning, setWarning] = useState(null); // { count, max, label } — must be acknowledged
   const [faceMode, setFaceMode] = useState(session.face_mode || "full"); // admin can change it mid-exam
   const [, setTick] = useState(0);
@@ -240,6 +242,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
         <div className="row">
           <span className={`timer ${left < 5 * 60000 ? "low" : ""}`} aria-label="Time left"><Clock size={16} /> {fmtClock(left)}</span>
           <span className={`pill ${warnings ? "pill-warn" : "pill-ok"}`}><AlertTriangle size={13} /> {warnings}/{maxWarnings}</span>
+          <button className={`btn btn-sm ${showCalc ? "btn-primary" : "btn-ghost"}`} onClick={() => setShowCalc(v => !v)} aria-pressed={showCalc}><CalcIcon size={14} /> Calculator</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setConfirmSubmit(true)}><Send size={14} /> Submit</button>
         </div>
       </header>
@@ -326,6 +329,8 @@ export default function ExamScreen({ cam, session, onFinished }) {
           </div>
         </aside>
       </div>
+
+      {showCalc && <Calculator onClose={() => setShowCalc(false)} />}
 
       {toast && <div className="toast" role="alert" key={toast.n}><AlertTriangle size={16} /> {toast.text}</div>}
 
