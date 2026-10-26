@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX } from "lucide-react";
+import { AlertTriangle, Eye, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useProctor, VIOLATION_LABELS, pauseSoundChecks } from "../lib/proctor.js";
+import { useLiveShare } from "../lib/live.js";
 import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinner } from "../ui.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
@@ -128,6 +129,9 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const noFaceChecks = useRef(!watchFace);
   noFaceChecks.current = !watchFace;
   const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: watchFace });
+
+  // The administrator can watch (and listen) live; nothing is recorded.
+  const watchers = useLiveShare({ token, getTracks: cam.getTracks });
 
   // Switched to microphone-only during the exam: turn the camera off.
   useEffect(() => {
@@ -317,7 +321,8 @@ export default function ExamScreen({ cam, session, onFinished }) {
               {watchFace && <PhonePill phone={proctor.phone} />}
             </div>
             {cam.mic === "on" && <SoundMeter level={proctor.level} noisy={proctor.noisy} />}
-            <div className="faint" style={{ fontSize: 12 }}>{micOnly ? "Microphone on. Nothing is recorded." : !watchFace ? "Camera preview only — nothing is captured. Microphone on." : "Identity checked every minute. Video is not recorded."}</div>
+            {watchers > 0 && <span className="pill pill-warn" style={{ alignSelf: "flex-start" }}><Eye size={13} /> Administrator is watching live</span>}
+            <div className="faint" style={{ fontSize: 12 }}>{micOnly ? "Microphone on. Your administrator may listen live. Nothing is recorded." : !watchFace ? "Camera and microphone on. Your administrator may watch live. Nothing is recorded." : "Identity checked every minute. Your administrator may watch live. Video is not recorded."}</div>
           </div>
         </aside>
       </div>
