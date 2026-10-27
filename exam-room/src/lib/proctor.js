@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadFaceModels, scanFaces, readDescriptor, snapshot } from "./face.js";
 import { loadPhoneDetector, phoneInView } from "./phone.js";
+import { IN_APP } from "./app.js";
 
 // ---------------------------------------------------------------------------
 // Camera + microphone
@@ -349,6 +350,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
     const onBlur = () => { blurTimer = setTimeout(() => fire("window_blur"), 1500); };
     const onFocus = () => { clearTimeout(blurTimer); };
     const onFullscreen = () => {
+      if (IN_APP) return; // the app is always full screen
       if (!document.fullscreenElement && !document.webkitFullscreenElement) fire("fullscreen_exit");
     };
     const onKey = e => {
@@ -395,6 +397,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
 
 // Full screen where the browser allows it (not on iPhone Safari).
 export function enterFullscreen() {
+  if (IN_APP) return; // the app is already full screen
   const el = document.documentElement;
   const req = el.requestFullscreen || el.webkitRequestFullscreen;
   if (req) { try { const p = req.call(el); if (p && p.catch) p.catch(() => {}); } catch (e) { /* not allowed */ } }

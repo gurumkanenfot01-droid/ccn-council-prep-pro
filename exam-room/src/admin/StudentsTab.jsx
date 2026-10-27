@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
+import { APP_DOWNLOAD_URL } from "../lib/app.js";
 
 // No look-alike characters (0/O, 1/I/L), so codes are easy to read out.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -124,6 +125,34 @@ function FaceModeCard() {
   );
 }
 
+// Android phones must use the CCN Exam Room app (screenshots and screen recording blocked).
+function AppRequiredCard() {
+  const [on, setOn] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    supabase.from("exam_settings").select("require_app").eq("id", 1).maybeSingle()
+      .then(({ data, error: err }) => { if (err) setError(adminDbMessage(err)); else setOn(!!data?.require_app); });
+  }, []);
+  async function toggle(v) {
+    setError("");
+    const { error: err } = await supabase.from("exam_settings").upsert({ id: 1, require_app: v, updated_at: new Date().toISOString() });
+    if (err) setError(adminDbMessage(err)); else setOn(v);
+  }
+  return (
+    <section className="card">
+      <h2 style={{ fontSize: 16, marginTop: 0 }}><Smartphone size={17} /> Android app</h2>
+      <p className="muted" style={{ marginTop: 0 }}>Inside the CCN Exam Room app, Android blocks screenshots and screen recording.</p>
+      {error ? <div className="banner banner-bad">{error}</div> : on === null ? <Spinner /> : (
+        <label className="toggle-row">
+          <input type="checkbox" checked={on} onChange={e => toggle(e.target.checked)} />
+          <span><strong>Android phones must use the app</strong> — <span className="muted">students on Android can only start exams inside the app. iPhones and computers still use the website.</span></span>
+        </label>
+      )}
+      <p style={{ fontSize: 13.5, marginBottom: 0 }}>Download link for students: <a href={APP_DOWNLOAD_URL}>{APP_DOWNLOAD_URL}</a></p>
+    </section>
+  );
+}
+
 export default function StudentsTab() {
   const [rows, setRows] = useState(null);
   const [names, setNames] = useState("");
@@ -232,6 +261,7 @@ export default function StudentsTab() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <FaceModeCard />
+      <AppRequiredCard />
       <section className="card">
         <h2 style={{ fontSize: 16, marginTop: 0 }}><UserPlus size={17} /> Create access codes</h2>
         <div className="row" style={{ gap: 6, marginBottom: 12 }} role="tablist">

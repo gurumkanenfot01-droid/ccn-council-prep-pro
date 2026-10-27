@@ -227,6 +227,8 @@ create table if not exists public.exam_settings (
   updated_at timestamptz not null default now()
 );
 insert into public.exam_settings (id) values (1) on conflict (id) do nothing;
+-- Android phones must take exams in the CCN Exam Room app (android-app/), which blocks screenshots.
+alter table public.exam_settings add column if not exists require_app boolean not null default false;
 alter table public.exam_settings drop constraint if exists exam_settings_face_mode_check;
 alter table public.exam_settings add constraint exam_settings_face_mode_check
   check (face_mode in ('full', 'easy', 'start', 'off', 'mic'));
@@ -292,6 +294,14 @@ language sql stable as $$
     nullif(split_part(coalesce(current_setting('request.headers', true)::json ->> 'x-forwarded-for', ''), ',', 1), ''),
     current_setting('request.headers', true)::json ->> 'cf-connecting-ip',
     'unknown')
+$$;
+
+-- Is this an Android phone outside the CCN Exam Room app, while the app is required?
+create or replace function public.exam__needs_app(p_user_agent text default '') returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((select require_app from public.exam_settings where id = 1), false)
+     and ua ~* 'android' and ua !~ 'CCNExamApp'
+  from (select coalesce(nullif(current_setting('request.headers', true)::json ->> 'user-agent', ''), p_user_agent, '') as ua) h
 $$;
 
 -- Too many wrong codes from this address in the last 10 minutes?
@@ -576,6 +586,7 @@ begin
     'name_needed', c.name_pending,
     'face_status', c.face_status,
     'face_mode', exam__face_mode(),
+    'require_app', coalesce((select require_app from exam_settings where id = 1), false),
     'server_time', now(),
     'exams', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -665,6 +676,7 @@ begin
     return exam__err('exam_not_found');
   end if;
   if c.name_pending then return exam__err('name_required'); end if;
+  if exam__needs_app(p_user_agent) then return exam__err('app_required'); end if;
   if mode in ('full', 'start') then
     if mode = 'full' and c.face_status <> 'approved' then return exam__err('face_not_approved'); end if;
     if mode = 'start' and c.face_status not in ('approved', 'pending') then return exam__err('face_not_registered'); end if;

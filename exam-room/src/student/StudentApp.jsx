@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { reloadNow } from "../lib/update.js";
-import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock, RotateCcw } from "lucide-react";
+import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock, RotateCcw, Smartphone, Download } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useCamera, enterFullscreen, exitFullscreen } from "../lib/proctor.js";
 import { snapshot } from "../lib/face.js";
+import { APP_DOWNLOAD_URL, isAndroidBrowser } from "../lib/app.js";
 import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
 import Liveness from "./Liveness.jsx";
 import ExamScreen from "./ExamScreen.jsx";
@@ -57,6 +58,11 @@ function CodeScreen({ onLogin }) {
             Your code is personal. Don’t share it with anyone.
           </p>
         </form>
+        {isAndroidBrowser() && (
+          <p className="muted" style={{ textAlign: "center", fontSize: 13.5, marginTop: 14 }}>
+            On Android? <a href={APP_DOWNLOAD_URL}><Download size={13} /> Download the CCN Exam Room app</a>
+          </p>
+        )}
       </div>
     </main>
   );
@@ -260,6 +266,22 @@ function rulesFor(level, faceMode = "full") {
   ];
 }
 
+// Android phones must take exams in the app when the administrator requires it.
+function AppRequired() {
+  return (
+    <div className="card" style={{ marginBottom: 12, borderColor: "#0B3C5D" }}>
+      <h2 style={{ fontSize: 16, marginTop: 0 }}><Smartphone size={17} /> Use the CCN Exam Room app</h2>
+      <p style={{ margin: "0 0 10px" }}>On Android phones, exams must be taken in the CCN Exam Room app.</p>
+      <ol style={{ margin: "0 0 12px", paddingLeft: 20 }}>
+        <li>Tap <strong>Download the app</strong> below.</li>
+        <li>Open the downloaded file. If asked, allow <strong>Install unknown apps</strong> for your browser, then tap <strong>Install</strong>.</li>
+        <li>Open <strong>CCN Exam Room</strong> from your apps, log in with your code and start the exam there.</li>
+      </ol>
+      <a className="btn btn-primary" href={APP_DOWNLOAD_URL}><Download size={16} /> Download the app</a>
+    </div>
+  );
+}
+
 function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
   const [agreed, setAgreed] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -444,6 +466,7 @@ export default function StudentApp({ updateReady = false }) {
   if (!profile) return <CodeScreen onLogin={login} />;
 
   const faceMode = profile.face_mode || "full";
+  const needApp = !!profile.require_app && isAndroidBrowser();
   const noFace = faceMode === "off" || faceMode === "mic";
   if (noFace && profile.name_needed) {
     return <NameScreen code={code} onDone={() => refresh()} onLogout={logout} />;
@@ -477,6 +500,7 @@ export default function StudentApp({ updateReady = false }) {
         <div className="banner banner-warn"><Hourglass size={16} /> Your face registration is waiting for approval. You can start exams once it’s approved.</div>
       )}
       {refreshError && <div className="banner banner-warn">{refreshError}</div>}
+      {needApp && <AppRequired />}
       <div className="row" style={{ marginBottom: 10 }}>
         <h2 style={{ fontSize: 16, margin: 0 }}>Your exams</h2>
         <span className="spacer" />
@@ -488,7 +512,7 @@ export default function StudentApp({ updateReady = false }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {profile.exams.map(e => (
             <ExamCard key={e.id} exam={e}
-              onStart={ex => { if (faceMode === "full" && profile.face_status !== "approved") { setRefreshError("Your face registration must be approved first."); return; } setExam(ex); setView("prep"); }} />
+              onStart={ex => { if (needApp) { setRefreshError("Install and open the CCN Exam Room app to start this exam."); return; } if (faceMode === "full" && profile.face_status !== "approved") { setRefreshError("Your face registration must be approved first."); return; } setExam(ex); setView("prep"); }} />
           ))}
         </div>
       )}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Eye, MessageSquare, XCircle, PauseCircle, PlayCircle, Camera, AlertTriangle, X, Lock, RotateCcw,
-  LayoutGrid, List, Bell, BellOff, Clock, ScanFace, EyeOff, Users, Moon, Mic, Volume2, VolumeX, Smartphone, WifiOff, Maximize, Flag, Video, RefreshCw,
+  LayoutGrid, List, Bell, BellOff, Clock, ScanFace, EyeOff, Users, Moon, Mic, Volume2, VolumeX, Smartphone, WifiOff, Maximize, Flag, Video, RefreshCw, ShieldCheck,
 } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { fmtClock } from "../lib/api.js";
@@ -263,6 +263,7 @@ function LiveStatus({ s, online }) {
       {st.camera === false && <span className="pill pill-bad">Camera off</span>}
       {st.mic === false && <span className="pill pill-bad">Mic off</span>}
       {st.locked && <span className="pill pill-bad"><Lock size={12} /> Locked — camera/mic off</span>}
+      {st.app && <span className="pill pill-ok"><ShieldCheck size={12} /> In app</span>}
     </div>
   );
 }
