@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, Calculator as CalcIcon, Eye, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX } from "lucide-react";
+import { AlertTriangle, Calculator as CalcIcon, Eye, VideoOff, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useProctor, VIOLATION_LABELS, pauseSoundChecks } from "../lib/proctor.js";
 import { useLiveShare } from "../lib/live.js";
@@ -198,8 +198,32 @@ export default function ExamScreen({ cam, session, onFinished }) {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // Camera and microphone must stay on for the whole exam (camera not needed in
+  // microphone-only mode). If either goes off — switched off, permission
+  // removed, or the phone's privacy toggle — the questions are locked until it's
+  // back on. A short grace period ignores brief glitches.
+  const needCamera = !micOnly;
+  const devicesOff = cam.mic !== "on" || (needCamera && cam.camera !== "on");
+  const [locked, setLocked] = useState(false);
+  const [relockMsg, setRelockMsg] = useState("");
+  useEffect(() => {
+    if (!devicesOff) { setLocked(false); setRelockMsg(""); return undefined; }
+    const t = setTimeout(() => setLocked(true), 2000);
+    return () => clearTimeout(t);
+  }, [devicesOff]);
+  async function turnBackOn() {
+    setRelockMsg("");
+    await cam.restart({ video: needCamera });
+  }
+  useEffect(() => {
+    if (!locked) return;
+    if (["denied", "unavailable", "error"].includes(cam.camera) || ["denied", "unavailable", "error"].includes(cam.mic)) {
+      setRelockMsg("Your browser is blocking the camera or microphone. Tap the lock (🔒) or ⓘ icon beside the website address → Permissions → allow Camera and Microphone, then tap the button again.");
+    }
+  }, [locked, cam.camera, cam.mic]);
+
   async function choose(i) {
-    if (!q || feedback || busy) return;
+    if (!q || feedback || busy || locked) return;
     setBusy(true);
     try {
       const data = absorb(await api.answer(token, q.question.id, i));
@@ -208,6 +232,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   }
 
   async function next() {
+    if (locked) return;
     setBusy(true);
     try {
       const data = absorb(await api.next(token));
@@ -262,7 +287,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
       )}
 
       <div className="session">
-        <section className={`card ${hidden ? "shield" : ""}`} aria-live="polite">
+        <section className={`card ${hidden || locked ? "shield" : ""}`} aria-live="polite">
           {paused ? (
             <div style={{ textAlign: "center", padding: "30px 0" }}>
               <PauseCircle size={36} color="var(--amber)" />
@@ -332,6 +357,24 @@ export default function ExamScreen({ cam, session, onFinished }) {
       </div>
 
       {showCalc && <Calculator onClose={() => setShowCalc(false)} />}
+
+      {locked && (
+        <div className="overlay" role="alertdialog" aria-modal="true" aria-labelledby="dev-h">
+          <div className="card" style={{ borderColor: "var(--red)", textAlign: "center" }}>
+            <VideoOff size={40} color="var(--red)" />
+            <h2 id="dev-h" style={{ fontSize: 20, margin: "8px 0 4px", color: "var(--red)" }}>
+              {cam.mic !== "on" && needCamera && cam.camera !== "on" ? "Camera and microphone are off" : cam.mic !== "on" ? "Microphone is off" : "Camera is off"}
+            </h2>
+            <p className="muted" style={{ marginTop: 0 }}>
+              The exam is locked until your {needCamera ? "camera and microphone are" : "microphone is"} back on. <strong>Your time is still running.</strong> Your administrator can see this.
+            </p>
+            {relockMsg && <div className="banner banner-warn" style={{ textAlign: "left" }}>{relockMsg}</div>}
+            <button className="btn btn-primary btn-full" onClick={turnBackOn} disabled={cam.camera === "starting" || cam.mic === "starting"}>
+              {cam.camera === "starting" || cam.mic === "starting" ? "Turning on…" : <>Turn {needCamera ? "camera and microphone" : "microphone"} back on</>}
+            </button>
+          </div>
+        </div>
+      )}
 
       {toast && <div className="toast" role="alert" key={toast.n}><AlertTriangle size={16} /> {toast.text}</div>}
 

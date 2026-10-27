@@ -19,11 +19,12 @@ export function useCamera() {
   const [camera, setCamera] = useState("off"); // off | starting | on | denied | unavailable | error
   const [mic, setMic] = useState("off");
   const [stream, setStream] = useState(null);
+  const [version, setVersion] = useState(0); // bumps on every (re)start so checks re-attach
   const ref = useRef({ streams: [], video: null, audioCtx: null, analyser: null, onEnded: null });
 
   const stop = useCallback(() => {
     const s = ref.current;
-    s.streams.forEach(st => st.getTracks().forEach(t => { t.onended = null; t.stop(); }));
+    s.streams.forEach(st => st.getTracks().forEach(t => { t.onended = null; t.onmute = null; t.onunmute = null; t.stop(); }));
     s.streams = [];
     if (s.audioCtx) { s.audioCtx.close().catch(() => {}); s.audioCtx = null; s.analyser = null; }
     if (s.video) { s.video.srcObject = null; s.video.remove(); s.video = null; }
@@ -38,6 +39,15 @@ export function useCamera() {
     if (s.video) { s.video.srcObject = null; s.video.remove(); s.video = null; }
     setStream(null); setCamera("skipped");
   }, []);
+
+  // Ended (stopped/unplugged/permission revoked) or muted (phone privacy
+  // switch, another app took the camera) both count as OFF.
+  const watchTrack = (t, setState, type) => {
+    const s = ref.current;
+    t.onended = () => { setState("off"); s.onEnded && s.onEnded(type); };
+    t.onmute = () => setState("off");
+    t.onunmute = () => { if (t.readyState === "live") setState("on"); };
+  };
 
   // start({ video: false }) turns on the microphone only (no camera at all).
   const start = useCallback(async ({ video: wantVideo = true } = {}) => {
@@ -60,8 +70,8 @@ export function useCamera() {
           s.audioCtx = ctx; s.analyser = analyser;
         }
         const t = a.getAudioTracks()[0];
-        if (t) t.onended = () => { setMic("off"); s.onEnded && s.onEnded("mic_off"); };
-        setMic("on");
+        if (t) watchTrack(t, setMic, "mic_off");
+        setMic("on"); setVersion(n => n + 1);
       } catch (e) { setMic(mediaError(e)); }
       return;
     }
@@ -89,7 +99,7 @@ export function useCamera() {
       try { await video.play(); } catch (e) { /* muted autoplay normally works */ }
       s.video = video;
       const t = v.getVideoTracks()[0];
-      if (t) t.onended = () => { setCamera("off"); s.onEnded && s.onEnded("camera_off"); };
+      if (t) watchTrack(t, setCamera, "camera_off");
       setStream(v); setCamera("on");
     }
     if (a) {
@@ -103,15 +113,23 @@ export function useCamera() {
         s.audioCtx = ctx; s.analyser = analyser;
       }
       const t = a.getAudioTracks()[0];
-      if (t) t.onended = () => { setMic("off"); s.onEnded && s.onEnded("mic_off"); };
+      if (t) watchTrack(t, setMic, "mic_off");
       setMic("on");
     }
+    setVersion(n => n + 1);
   }, []);
+
+  // Turn the camera/microphone back on after the student (or the phone's
+  // privacy switch) turned it off.
+  const restart = useCallback(async ({ video = true } = {}) => {
+    stop();
+    await start({ video });
+  }, [stop, start]);
 
   useEffect(() => stop, [stop]);
 
   return {
-    camera, mic, stream, start, stop, stopVideo,
+    camera, mic, stream, version, start, stop, stopVideo, restart,
     getVideo: () => ref.current.video,
     getAnalyser: () => ref.current.analyser,
     getTracks: () => ref.current.streams.flatMap(st => st.getTracks()),
@@ -367,7 +385,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
       document.removeEventListener("contextmenu", block);
       window.removeEventListener("beforeprint", block);
     };
-  }, [active, video]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active, video, cam.version]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { face, phone, noisy, level, phoneModel };
 }
