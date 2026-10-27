@@ -8,7 +8,7 @@ import { isReloading } from "../lib/update.js";
 import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinner } from "../ui.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
-const HEARTBEAT_MS = 25000;
+const HEARTBEAT_MS = 15000;
 const CAMERA_TYPES = ["multiple_faces", "no_face", "looking_away", "phone", "dark", "camera_off"];
 
 // Two short beeps + a vibration so a warning can't be missed.
@@ -49,6 +49,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const [showCalc, setShowCalc] = useState(false);
   const [warning, setWarning] = useState(null); // { count, max, label } — must be acknowledged
   const [faceMode, setFaceMode] = useState(session.face_mode || "full"); // admin can change it mid-exam
+  const [dbWatch, setDbWatch] = useState(false); // an admin asked for live pictures (database route)
   const [, setTick] = useState(0);
   const ended = useRef(false);
   const maxWarnings = session.max_warnings;
@@ -68,6 +69,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
     if (typeof data.warnings === "number") setWarnings(data.warnings);
     if (data.deadline) setDeadline(new Date(data.deadline).getTime());
     if (data.face_mode) setFaceMode(data.face_mode);
+    if (data.watch) setDbWatch(true);
     if (data.message) {
       if (data.message.startsWith("Warning from the administrator")) {
         setWarning({ count: data.warnings, max: maxWarnings, label: data.message.replace(/^Warning from the administrator:\s*/, ""), type: "admin" });
@@ -135,6 +137,33 @@ export default function ExamScreen({ cam, session, onFinished }) {
 
   // The administrator can watch (and listen) live; nothing is recorded.
   const watchers = useLiveShare({ token, getTracks: cam.getTracks, getVideo: cam.getVideo });
+
+  // Live pictures through the database: works even when the Realtime live link
+  // can't connect. While an admin is watching, send a small picture every 2 s.
+  useEffect(() => {
+    if (!dbWatch) return undefined;
+    let busy = false;
+    const canvas = document.createElement("canvas");
+    const tick = async () => {
+      if (busy || ended.current) return;
+      busy = true;
+      let img = "";
+      const v = cam.getVideo();
+      if (v && v.readyState >= 2 && v.videoWidth) {
+        canvas.width = 240;
+        canvas.height = Math.round(240 * v.videoHeight / v.videoWidth);
+        try { canvas.getContext("2d").drawImage(v, 0, 0, canvas.width, canvas.height); img = canvas.toDataURL("image/jpeg", 0.5); } catch (e) { img = ""; }
+      }
+      try {
+        const r = await api.liveFrame(token, img);
+        if (r && r.watch === false) setDbWatch(false);
+      } catch (e) { /* network blip — try again next tick */ }
+      busy = false;
+    };
+    tick();
+    const t = setInterval(tick, 2000);
+    return () => clearInterval(t);
+  }, [dbWatch, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Switched to microphone-only during the exam: turn the camera off.
   useEffect(() => {
@@ -350,7 +379,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
               {watchFace && <PhonePill phone={proctor.phone} />}
             </div>
             {cam.mic === "on" && <SoundMeter level={proctor.level} noisy={proctor.noisy} />}
-            {watchers > 0 && <span className="pill pill-warn" style={{ alignSelf: "flex-start" }}><Eye size={13} /> Administrator is watching live</span>}
+            {(watchers > 0 || dbWatch) && <span className="pill pill-warn" style={{ alignSelf: "flex-start" }}><Eye size={13} /> Administrator is watching live</span>}
             <div className="faint" style={{ fontSize: 12 }}>{micOnly ? "Microphone on. Your administrator may listen live. Nothing is recorded." : !watchFace ? "Camera and microphone on. Your administrator may watch live. Nothing is recorded." : "Identity checked every minute. Your administrator may watch live. Video is not recorded."}</div>
           </div>
         </aside>

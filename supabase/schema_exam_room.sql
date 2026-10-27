@@ -151,6 +151,12 @@ alter table public.exam_exams add column if not exists proctor_level text not nu
 -- Live status sent by the student's browser with each heartbeat, for the admin's monitor:
 -- { face: ok|none|multiple|away|dark, noise: false|talking|noise, phone: bool, fullscreen: bool }
 alter table public.exam_sessions add column if not exists live_status jsonb;
+-- Live view through the database (works even when Realtime isn't available):
+-- the admin keeps watch_until in the future while watching; the student's page
+-- then uploads a small picture every couple of seconds into live_frame.
+alter table public.exam_sessions add column if not exists watch_until timestamptz;
+alter table public.exam_sessions add column if not exists live_frame text;
+alter table public.exam_sessions add column if not exists live_frame_at timestamptz;
 alter table public.exam_sessions drop constraint if exists exam_sessions_exam_id_candidate_id_key;
 -- One current attempt per student per exam; earlier attempts are archived.
 create unique index if not exists exam_sessions_current_idx on public.exam_sessions(exam_id, candidate_id) where not archived;
@@ -862,7 +868,33 @@ begin
   return jsonb_build_object(
     'status', 'in_progress', 'paused', e.paused, 'deadline', s.deadline, 'server_time', now(),
     'warnings', s.warnings, 'max_warnings', e.max_warnings, 'message', msg,
-    'face_fail_streak', s.face_fail_streak, 'face_mode', exam__face_mode());
+    'face_fail_streak', s.face_fail_streak, 'face_mode', exam__face_mode(),
+    'watch', coalesce(s.watch_until > now(), false));
+end; $$;
+
+-- Student page: upload one live picture while an admin is watching. Returns
+-- watch = false once nobody is watching, so the page stops sending.
+create or replace function public.exam_live_frame(p_token uuid, p_frame text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  s public.exam_sessions := exam__session(p_token);
+begin
+  if s.status <> 'in_progress' or s.watch_until is null or s.watch_until <= now() then
+    return jsonb_build_object('watch', false);
+  end if;
+  if p_frame like 'data:image/jpeg;base64,%' and length(p_frame) < 120000 then
+    update exam_sessions set live_frame = p_frame, live_frame_at = now() where id = s.id;
+  end if;
+  return jsonb_build_object('watch', true);
+end; $$;
+
+-- Admin: ask a student's page for live pictures (call again every ~10 s).
+create or replace function public.exam_admin_watch(p_session uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.exam_is_admin() then raise exception 'admins_only'; end if;
+  update exam_sessions set watch_until = now() + interval '30 seconds' where id = p_session and status = 'in_progress';
+  return jsonb_build_object('ok', true);
 end; $$;
 
 -- Report a rule violation seen by the browser. Most count towards the
@@ -923,9 +955,11 @@ end; $$;
 -- ===================== PERMISSIONS =====================
 
 revoke all on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text),
-  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean), public.exam_admin_resume(uuid) from public, anon;
+  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean), public.exam_admin_resume(uuid),
+  public.exam_admin_watch(uuid) from public, anon;
 grant execute on function public.exam_admin_allow_retake(uuid), public.exam_admin_extend(uuid, integer), public.exam_admin_warn(uuid, text),
-  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean), public.exam_admin_resume(uuid) to authenticated;
+  public.exam_admin_extend_exam(uuid, integer), public.exam_admin_set_access(uuid, uuid, boolean), public.exam_admin_resume(uuid),
+  public.exam_admin_watch(uuid) to authenticated;
 
 revoke all on function
   public.exam__can_self_retake(public.exam_exams, public.exam_sessions), public.exam__can_access(public.exam_exams, uuid),
@@ -943,5 +977,6 @@ grant execute on function
   public.exam_next(uuid),
   public.exam_heartbeat(uuid, float8[], text, jsonb),
   public.exam_report(uuid, text, text, text),
-  public.exam_submit(uuid)
+  public.exam_submit(uuid),
+  public.exam_live_frame(uuid, text)
   to anon, authenticated;
