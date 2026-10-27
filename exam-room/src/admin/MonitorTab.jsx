@@ -56,7 +56,7 @@ const LIVE_TEXT = {
 };
 
 // Live camera + sound from the student's phone, only while this is open.
-function LiveView({ sessionId, onStop }) {
+function LiveView({ sessionId, onStop, compact = false }) {
   const videoRef = useRef(null);
   const [token, setToken] = useState(null);
   const [attempt, setAttempt] = useState(0);
@@ -73,7 +73,7 @@ function LiveView({ sessionId, onStop }) {
     v.play().catch(() => {});
   }
   return (
-    <div className="card" style={{ padding: 10, boxShadow: "none" }}>
+    <div className={compact ? "" : "card"} style={{ padding: compact ? 0 : 10, boxShadow: "none" }}>
       <div style={{ position: "relative", background: "#000", borderRadius: 10, overflow: "hidden", aspectRatio: "4 / 3" }}>
         <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", display: hasVideo && status === "live" ? "block" : "none" }} />
         {status === "pictures" && frame && <img src={frame} alt="Live camera" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
@@ -86,18 +86,18 @@ function LiveView({ sessionId, onStop }) {
       </div>
       <div className="row" style={{ gap: 6, marginTop: 8 }}>
         <button className="btn btn-sm btn-ghost" onClick={toggleSound} disabled={status !== "live"}>
-          {muted ? <><VolumeX size={13} /> Sound off — tap to listen</> : <><Volume2 size={13} /> Sound on</>}
+          {muted ? <><VolumeX size={13} />{!compact && " Sound off — tap to listen"}</> : <><Volume2 size={13} />{!compact && " Sound on"}</>}
         </button>
-        {status !== "live" && status !== "connecting" && <button className="btn btn-sm btn-ghost" onClick={() => setAttempt(a => a + 1)}><RefreshCw size={13} /> Try again</button>}
+        {status !== "live" && status !== "connecting" && <button className="btn btn-sm btn-ghost" onClick={() => setAttempt(a => a + 1)}><RefreshCw size={13} />{!compact && " Try again"}</button>}
         <span className="spacer" />
-        <button className="btn btn-sm btn-ghost" onClick={onStop}><X size={13} /> Stop watching</button>
+        <button className="btn btn-sm btn-ghost" onClick={onStop}><X size={13} />{compact ? " Stop" : " Stop watching"}</button>
       </div>
     </div>
   );
 }
 
-function Drawer({ session, candidate, onClose }) {
-  const [watching, setWatching] = useState(false);
+function Drawer({ session, candidate, onClose, startWatching = false }) {
+  const [watching, setWatching] = useState(startWatching);
   const [events, setEvents] = useState(null);
   const [photos, setPhotos] = useState({});
   useEffect(() => {
@@ -178,6 +178,7 @@ function LiveStatus({ s, online }) {
         : <span className="pill pill-ok"><Mic size={12} /> Quiet</span>}
       {st.phone && <span className="pill pill-bad"><Smartphone size={12} /> Phone</span>}
       {st.camera === false && <span className="pill pill-bad">Camera off</span>}
+      {st.mic === false && <span className="pill pill-bad">Mic off</span>}
     </div>
   );
 }
@@ -212,6 +213,8 @@ export default function MonitorTab() {
   const [livePhotos, setLivePhotos] = useState(false);
   const [photos, setPhotos] = useState({});
   const [open, setOpen] = useState(null);
+  const [watchingIds, setWatchingIds] = useState(() => new Set()); // live tiles on the camera wall
+  const toggleWatch = id => setWatchingIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [examRow, setExamRow] = useState(null);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
@@ -368,6 +371,7 @@ export default function MonitorTab() {
       <div className="row" style={{ gap: 6 }}>
         <button className="btn btn-sm btn-ghost" onClick={() => setOpen({ s, c })}><Eye size={13} />{!compact && " View"}</button>
         {s.status === "in_progress" ? <>
+          {!compact && liveSupported() && <button className="btn btn-sm btn-primary" onClick={() => setOpen({ s, c, live: true })} aria-label="Watch live"><Video size={13} /> Live</button>}
           <button className="btn btn-sm btn-ghost" onClick={() => message(s, name)} aria-label="Message"><MessageSquare size={13} />{!compact && " Message"}</button>
           <button className="btn btn-sm btn-ghost" style={{ color: "var(--amber)" }} onClick={() => warn(s, name)} aria-label="Give warning"><Flag size={13} />{!compact && " Warn"}</button>
           <button className="btn btn-sm btn-ghost" onClick={() => addTime(s, name)} aria-label="Add time"><Clock size={13} />{!compact && " +Time"}</button>
@@ -404,6 +408,15 @@ export default function MonitorTab() {
           <button className="chip" aria-pressed={view === "table"} onClick={() => setView("table")}><List size={13} /> Table</button>
           <button className="chip" aria-pressed={view === "wall"} onClick={() => setView("wall")}><LayoutGrid size={13} /> Camera wall</button>
         </div>
+        {view === "wall" && liveSupported() && (() => {
+          const writing = shown.filter(r => r.s && r.s.status === "in_progress").map(r => r.s.id);
+          return watchingIds.size
+            ? <button className="btn btn-sm btn-ghost" onClick={() => setWatchingIds(new Set())}><X size={14} /> Stop all live ({watchingIds.size})</button>
+            : <button className="btn btn-sm btn-primary" disabled={!writing.length}
+                onClick={() => (writing.length <= 12 || confirm(`Watch all ${writing.length} students live? This uses a lot of data on your phone — consider watching a few at a time.`)) && setWatchingIds(new Set(writing))}>
+                <Video size={14} /> Watch all live
+              </button>;
+        })()}
         {view === "table" && <label className="toggle-row"><input type="checkbox" checked={livePhotos} onChange={e => setLivePhotos(e.target.checked)} /> <Camera size={14} /> Photos</label>}
         <span className="spacer" />
         <button className="btn btn-sm btn-ghost" onClick={() => { setAlertsOn(a => !a); if (!alertsOn) chime(); }}>
@@ -450,10 +463,17 @@ export default function MonitorTab() {
             const on = isOnline(s);
             return (
               <div key={s.id} className="card wall-card" style={{ borderColor: !on ? "var(--red)" : s.warnings ? "var(--amber)" : undefined }}>
-                <button className="wall-photo" onClick={() => setOpen({ s, c })} aria-label={`View ${c?.full_name}`}>
-                  {photos[s.id] ? <img src={photos[s.id]} alt={`Live photo of ${c?.full_name}`} /> : <div className="cam" />}
-                  <span className="cam-badge"><span className="dot" style={{ background: on ? "var(--emerald)" : "var(--red)" }} /> {on ? "Live" : "Offline"}</span>
-                </button>
+                {watchingIds.has(s.id) && liveSupported() ? (
+                  <LiveView sessionId={s.id} compact onStop={() => toggleWatch(s.id)} />
+                ) : (
+                  <div style={{ position: "relative" }}>
+                    <button className="wall-photo" onClick={() => setOpen({ s, c })} aria-label={`View ${c?.full_name}`}>
+                      {photos[s.id] ? <img src={photos[s.id]} alt={`Live photo of ${c?.full_name}`} /> : <div className="cam" />}
+                      <span className="cam-badge"><span className="dot" style={{ background: on ? "var(--emerald)" : "var(--red)" }} /> {on ? "Online" : "Offline"}</span>
+                    </button>
+                    {liveSupported() && <button className="btn btn-sm btn-primary" style={{ position: "absolute", right: 8, bottom: 8 }} onClick={() => toggleWatch(s.id)}><Video size={13} /> Watch live</button>}
+                  </div>
+                )}
                 <div className="row" style={{ gap: 6, marginTop: 8 }}>
                   <strong style={{ fontSize: 14 }}>{c?.full_name}</strong>
                   <span className="spacer" />
@@ -524,7 +544,7 @@ export default function MonitorTab() {
         </section>
       )}
 
-      {open && <Drawer session={open.s} candidate={open.c} onClose={() => setOpen(null)} />}
+      {open && <Drawer key={`${open.s.id}-${open.live ? "live" : "view"}`} session={open.s} candidate={open.c} startWatching={!!open.live} onClose={() => setOpen(null)} />}
     </div>
   );
 }
