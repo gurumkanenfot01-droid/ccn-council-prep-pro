@@ -4,6 +4,7 @@ import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useProctor, VIOLATION_LABELS, pauseSoundChecks } from "../lib/proctor.js";
 import { useLiveShare } from "../lib/live.js";
 import Calculator from "./Calculator.jsx";
+import { isReloading } from "../lib/update.js";
 import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinner } from "../ui.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
@@ -101,7 +102,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
 
   // Proctoring: violations go straight to the server, which counts them.
   const report = useCallback(async (type, detail, photo) => {
-    if (ended.current) return;
+    if (ended.current || isReloading()) return; // refreshing for an update isn't leaving the exam
     if (noFaceChecks.current && CAMERA_TYPES.includes(type)) return;
     setToast({ text: VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
     try {

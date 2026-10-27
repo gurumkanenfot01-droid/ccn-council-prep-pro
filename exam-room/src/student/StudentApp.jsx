@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { reloadNow } from "../lib/update.js";
 import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock, RotateCcw } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useCamera, enterFullscreen, exitFullscreen } from "../lib/proctor.js";
@@ -354,7 +355,7 @@ function DoneScreen({ result, name, onBack }) {
   );
 }
 
-export default function StudentApp() {
+export default function StudentApp({ updateReady = false }) {
   // The code is remembered on this device until the student taps Log out, so
   // closing the browser doesn't mean typing it again. Their face is still
   // checked before every exam, so a remembered code alone can't sit an exam.
@@ -366,6 +367,12 @@ export default function StudentApp() {
   const [view, setView] = useState("exams"); // exams | prep | exam | done
   const [exam, setExam] = useState(null);
   const [session, setSession] = useState(null);
+
+  // A newer version went live: reload straight away when the student isn't
+  // in the middle of an exam (the update bar asks them otherwise).
+  useEffect(() => {
+    if (updateReady && profile && (view === "exams" || view === "done")) reloadNow();
+  }, [updateReady, profile, view]);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(!!code);
   const [refreshError, setRefreshError] = useState("");
