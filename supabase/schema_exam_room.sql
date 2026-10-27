@@ -920,7 +920,9 @@ begin
 
   -- Microphone-only, face-off or face-at-start mode: camera/face reports (e.g. from a page opened before
   -- the switch) are ignored and never count as warnings.
-  if exam__face_mode() in ('mic', 'off', 'start') and p_type in ('multiple_faces', 'no_face', 'looking_away', 'phone', 'dark', 'camera_off') then
+  -- (A phone held up to the camera still counts whenever the camera is on.)
+  if (exam__face_mode() in ('mic', 'off', 'start') and p_type in ('multiple_faces', 'no_face', 'looking_away', 'dark', 'camera_off'))
+     or (exam__face_mode() = 'mic' and p_type = 'phone') then
     return jsonb_build_object('status', s.status, 'warnings', s.warnings, 'max_warnings', e.max_warnings, 'ignored', true);
   end if;
 

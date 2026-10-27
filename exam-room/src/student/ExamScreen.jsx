@@ -9,7 +9,7 @@ import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinne
 
 const LETTERS = ["A", "B", "C", "D"];
 const HEARTBEAT_MS = 15000;
-const CAMERA_TYPES = ["multiple_faces", "no_face", "looking_away", "phone", "dark", "camera_off"];
+const CAMERA_TYPES = ["multiple_faces", "no_face", "looking_away", "dark", "camera_off"];
 
 // Two short beeps + a vibration so a warning can't be missed.
 let beepCtx = null;
@@ -120,6 +120,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const report = useCallback(async (type, detail, photo) => {
     if (ended.current || isReloading()) return; // refreshing for an update isn't leaving the exam
     if (noFaceChecks.current && CAMERA_TYPES.includes(type)) return;
+    if (type === "phone" && micOnlyRef.current) return; // no camera in microphone-only mode
     setToast({ text: VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
     try {
       const data = absorb(await api.report(token, type, detail, photo));
@@ -147,7 +148,9 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const watchFace = faceMode !== "mic" && faceMode !== "start";
   const noFaceChecks = useRef(!watchFace);
   noFaceChecks.current = !watchFace;
-  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: watchFace });
+  const micOnlyRef = useRef(micOnly);
+  micOnlyRef.current = micOnly;
+  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: watchFace, phoneCheck: !micOnly });
 
   // The administrator can watch (and listen) live; nothing is recorded.
   const watchers = useLiveShare({ token, getTracks: cam.getTracks, getVideo: cam.getVideo });
@@ -436,7 +439,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
             <div className="chip-row" style={{ gap: 6 }}>
               {watchFace && <FacePill face={proctor.face} />}
               <MicPill mic={cam.mic} noisy={proctor.noisy} />
-              {watchFace && <PhonePill phone={proctor.phone} />}
+              {!micOnly && <PhonePill phone={proctor.phone} />}
             </div>
             {cam.mic === "on" && <SoundMeter level={proctor.level} noisy={proctor.noisy} />}
             {(watchers > 0 || dbWatch) && <span className="pill pill-warn" style={{ alignSelf: "flex-start" }}><Eye size={13} /> Administrator is watching live</span>}
