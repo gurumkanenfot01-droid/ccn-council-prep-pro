@@ -25,6 +25,7 @@ export const MESSAGES = {
   not_current_question: "That question is no longer active.",
   bad_choice: "Choose one of the options.",
   answer_first: "Answer this question before moving on.",
+  app_required: "On this device, exams must be taken in the CCN Exam Room app. Download it from your exam list.",
   devices_off: "Turn your camera and microphone back on to continue.",
   invalid_session: "Your exam session has ended. Log in again.",
   network: "Connection problem. Check your internet — your answers so far are saved.",

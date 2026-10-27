@@ -1,0 +1,76 @@
+# Builds the CCN Exam Room Android app (android-app/).
+# On main it publishes the APK to the "android-app" release, so students can download
+#   https://github.com/<owner>/<repo>/releases/download/android-app/ccn-exam-room.apk
+# Other branches only build it (the APK is attached to the workflow run).
+#
+# Signing: add repository secrets ANDROID_KEYSTORE_B64 (base64 of a .jks file) and
+# ANDROID_KEYSTORE_PASSWORD to sign every build with the same key (so new versions
+# install over old ones). Without them each build gets a new key, and students must
+# uninstall the old app before installing a new version.
+name: Android app
+
+on:
+  push:
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/android-app.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PW" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            PW="$KEYSTORE_PW"
+          else
+            echo "::warning::No ANDROID_KEYSTORE_B64 secret: signing with a one-off key."
+            PW="$(openssl rand -hex 16)"
+            keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -storepass "$PW" -keypass "$PW" \
+              -alias ccn -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=CCN Exam Room"
+          fi
+          echo "::add-mask::$PW"
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PASSWORD=$PW" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=ccn" >> "$GITHUB_ENV"
+
+      - name: Build APK
+        working-directory: android-app
+        run: |
+          gradle --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/ccn-exam-room.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccn-exam-room-apk
+          path: ${{ runner.temp }}/ccn-exam-room.apk
+
+      - name: Publish download (main only)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete android-app --yes --cleanup-tag || true
+          gh release create android-app "$RUNNER_TEMP/ccn-exam-room.apk" \
+            --target "$GITHUB_SHA" \
+            --title "CCN Exam Room Android app" \
+            --notes "Install on Android: open this file on the phone, allow 'Install unknown apps' when asked, then open CCN Exam Room. Screenshots and screen recording are blocked inside the app."

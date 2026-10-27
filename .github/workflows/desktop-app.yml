@@ -1,0 +1,52 @@
+# Builds the CCN Exam Room Windows app (desktop-app/).
+# On main it publishes the installer to the "desktop-app" release:
+#   https://github.com/<owner>/<repo>/releases/download/desktop-app/ccn-exam-room-setup.exe
+# Other branches only build it (attached to the workflow run).
+name: Windows app
+
+on:
+  push:
+    paths:
+      - 'desktop-app/**'
+      - '.github/workflows/desktop-app.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build installer
+        working-directory: desktop-app
+        run: |
+          npm install --no-audit --no-fund
+          npm run dist
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccn-exam-room-windows
+          path: desktop-app/dist/ccn-exam-room-setup.exe
+
+      - name: Publish download (main only)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete desktop-app --yes --cleanup-tag || true
+          gh release create desktop-app desktop-app/dist/ccn-exam-room-setup.exe \
+            --target "$GITHUB_SHA" \
+            --latest=false \
+            --title "CCN Exam Room Windows app" \
+            --notes "Install on a Windows laptop: run the file. If Windows shows 'Windows protected your PC', click 'More info' then 'Run anyway'. Screenshots, screen recording and screen sharing are blocked inside the app."

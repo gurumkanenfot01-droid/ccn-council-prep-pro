@@ -5,6 +5,7 @@ import { useProctor, VIOLATION_LABELS, pauseSoundChecks } from "../lib/proctor.j
 import { useLiveShare } from "../lib/live.js";
 import Calculator from "./Calculator.jsx";
 import { isReloading } from "../lib/update.js";
+import { IN_APP } from "../lib/app.js";
 import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinner } from "../ui.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
@@ -311,7 +312,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const liveStatus = useRef(null);
   liveStatus.current = {
     face: proctor.face, noise: proctor.noisy || false, phone: proctor.phone,
-    fullscreen: !!(document.fullscreenElement || document.webkitFullscreenElement),
+    fullscreen: IN_APP || !!(document.fullscreenElement || document.webkitFullscreenElement), app: IN_APP,
     camera: cam.camera === "on" && !camBlocked, mic: cam.mic === "on" && !micBlocked, locked,
   };
   // The server refuses answers while the camera/mic is reported off, so tell it
