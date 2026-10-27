@@ -373,6 +373,13 @@ export default function StudentApp({ updateReady = false }) {
   useEffect(() => {
     if (updateReady && profile && (view === "exams" || view === "done")) reloadNow();
   }, [updateReady, profile, view]);
+  // During an exam, give them a minute to tap Refresh, then refresh anyway so
+  // nobody stays on an old version (answers and time are kept on the server).
+  useEffect(() => {
+    if (!updateReady || view !== "exam") return undefined;
+    const t = setTimeout(reloadNow, 60000);
+    return () => clearTimeout(t);
+  }, [updateReady, view]);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(!!code);
   const [refreshError, setRefreshError] = useState("");

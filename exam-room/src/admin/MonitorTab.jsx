@@ -262,6 +262,7 @@ function LiveStatus({ s, online }) {
       {st.phone && <span className="pill pill-bad"><Smartphone size={12} /> Phone</span>}
       {st.camera === false && <span className="pill pill-bad">Camera off</span>}
       {st.mic === false && <span className="pill pill-bad">Mic off</span>}
+      {st.locked && <span className="pill pill-bad"><Lock size={12} /> Locked — camera/mic off</span>}
     </div>
   );
 }

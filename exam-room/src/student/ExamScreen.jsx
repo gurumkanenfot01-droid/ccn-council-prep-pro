@@ -184,13 +184,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
     if (micOnly && cam.camera === "on") cam.stopVideo();
   }, [micOnly, cam]);
 
-  // What the admin's live monitor shows for this student (sent with each heartbeat).
-  const liveStatus = useRef(null);
-  liveStatus.current = {
-    face: proctor.face, noise: proctor.noisy || false, phone: proctor.phone,
-    fullscreen: !!(document.fullscreenElement || document.webkitFullscreenElement),
-    camera: cam.camera === "on", mic: cam.mic === "on",
-  };
+
 
   // Heartbeat: keeps the admin's live view current and picks up admin actions.
   useEffect(() => {
@@ -246,7 +240,51 @@ export default function ExamScreen({ cam, session, onFinished }) {
   // removed, or the phone's privacy toggle — the questions are locked until it's
   // back on. A short grace period ignores brief glitches.
   const needCamera = !micOnly;
-  const devicesOff = cam.mic !== "on" || (needCamera && cam.camera !== "on");
+  // Phones' privacy switches often keep the camera/mic "on" but send black
+  // pictures / pure digital silence. Detect that too: ~5 s of completely black
+  // video, or 15 s of exact-zero audio (a working mic always has some noise,
+  // even in a silent room), counts as switched off.
+  const [camBlocked, setCamBlocked] = useState(false);
+  const [micBlocked, setMicBlocked] = useState(false);
+  useEffect(() => {
+    let blackSecs = 0;
+    let silentSecs = 0;
+    const canvas = document.createElement("canvas");
+    canvas.width = 16; canvas.height = 12;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let buf = null;
+    let audioPeak = 0; // loudest sample seen this second (checked 4× a second)
+    const sampleAudio = () => {
+      const analyser = cam.getAnalyser();
+      if (cam.mic !== "on" || !analyser || cam.getAudioState() !== "running" || !analyser.getFloatTimeDomainData) { audioPeak = 1; return; }
+      buf = buf && buf.length === analyser.fftSize ? buf : new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(buf);
+      for (let i = 0; i < buf.length; i++) { const a = Math.abs(buf[i]); if (a > audioPeak) audioPeak = a; }
+    };
+    const a = setInterval(sampleAudio, 250);
+    const t = setInterval(() => {
+      if (document.visibilityState !== "visible") { audioPeak = 1; return; }
+      if (needCamera && cam.camera === "on") {
+        const v = cam.getVideo();
+        if (v && v.readyState >= 2 && v.videoWidth) {
+          try {
+            ctx.drawImage(v, 0, 0, 16, 12);
+            const px = ctx.getImageData(0, 0, 16, 12).data;
+            let sum = 0; let max = 0;
+            for (let i = 0; i < px.length; i += 4) { const l = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]; sum += l; if (l > max) max = l; }
+            blackSecs = sum / (px.length / 4) < 3 && max < 10 ? blackSecs + 1 : 0;
+          } catch (e) { blackSecs = 0; }
+        }
+      } else blackSecs = 0;
+      setCamBlocked(blackSecs >= 5);
+      silentSecs = audioPeak < 1e-6 ? silentSecs + 1 : 0;
+      audioPeak = 0;
+      setMicBlocked(silentSecs >= 15);
+    }, 1000);
+    return () => { clearInterval(t); clearInterval(a); };
+  }, [needCamera, cam.camera, cam.mic, cam.version]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const devicesOff = cam.mic !== "on" || micBlocked || (needCamera && (cam.camera !== "on" || camBlocked));
   const [locked, setLocked] = useState(false);
   const [relockMsg, setRelockMsg] = useState("");
   useEffect(() => {
@@ -256,6 +294,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   }, [devicesOff]);
   async function turnBackOn() {
     setRelockMsg("");
+    setCamBlocked(false); setMicBlocked(false);
     await cam.restart({ video: needCamera });
   }
   useEffect(() => {
@@ -265,6 +304,13 @@ export default function ExamScreen({ cam, session, onFinished }) {
     }
   }, [locked, cam.camera, cam.mic]);
 
+  // What the admin's live monitor shows for this student (sent with each heartbeat).
+  const liveStatus = useRef(null);
+  liveStatus.current = {
+    face: proctor.face, noise: proctor.noisy || false, phone: proctor.phone,
+    fullscreen: !!(document.fullscreenElement || document.webkitFullscreenElement),
+    camera: cam.camera === "on" && !camBlocked, mic: cam.mic === "on" && !micBlocked, locked,
+  };
   async function choose(i) {
     if (!q || feedback || busy || locked) return;
     setBusy(true);
@@ -406,11 +452,13 @@ export default function ExamScreen({ cam, session, onFinished }) {
           <div className="card" style={{ borderColor: "var(--red)", textAlign: "center" }}>
             <VideoOff size={40} color="var(--red)" />
             <h2 id="dev-h" style={{ fontSize: 20, margin: "8px 0 4px", color: "var(--red)" }}>
-              {cam.mic !== "on" && needCamera && cam.camera !== "on" ? "Camera and microphone are off" : cam.mic !== "on" ? "Microphone is off" : "Camera is off"}
+              {(cam.mic !== "on" || micBlocked) && needCamera && (cam.camera !== "on" || camBlocked) ? "Camera and microphone are off"
+                : cam.mic !== "on" || micBlocked ? "Microphone is off or blocked" : "Camera is off, covered or blocked"}
             </h2>
             <p className="muted" style={{ marginTop: 0 }}>
               The exam is locked until your {needCamera ? "camera and microphone are" : "microphone is"} back on. <strong>Your time is still running.</strong> Your administrator can see this.
             </p>
+            {(camBlocked || micBlocked) && <div className="banner banner-warn" style={{ textAlign: "left" }}>Your {camBlocked && micBlocked ? "camera shows only black and your microphone is silent" : camBlocked ? "camera shows only black" : "microphone is completely silent"}. Check your phone's quick settings (swipe down) and turn ON camera access and microphone access, and make sure nothing is covering the camera.</div>}
             {relockMsg && <div className="banner banner-warn" style={{ textAlign: "left" }}>{relockMsg}</div>}
             <button className="btn btn-primary btn-full" onClick={turnBackOn} disabled={cam.camera === "starting" || cam.mic === "starting"}>
               {cam.camera === "starting" || cam.mic === "starting" ? "Turning on…" : <>Turn {needCamera ? "camera and microphone" : "microphone"} back on</>}

@@ -21,7 +21,7 @@ function UpdateBar({ inExam }) {
     <div className="update-bar" role="status">
       <span style={{ flex: 1 }}>
         <strong>A new version of the Exam Room is available.</strong>{" "}
-        {inExam ? "Tap Refresh. If you are writing an exam, your answers and time are saved — log in again and tap Continue exam." : "Tap Refresh to update."}
+        {inExam ? "It refreshes by itself within 1 minute (or tap Refresh now). Your answers and time are saved — log in again and tap Continue exam." : "Tap Refresh to update."}
       </span>
       <button className="btn btn-sm btn-primary" onClick={reloadNow}>Refresh</button>
     </div>
