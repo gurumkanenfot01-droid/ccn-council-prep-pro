@@ -132,6 +132,7 @@ export function useCamera() {
     camera, mic, stream, version, start, stop, stopVideo, restart,
     getVideo: () => ref.current.video,
     getAnalyser: () => ref.current.analyser,
+    getAudioState: () => (ref.current.audioCtx ? ref.current.audioCtx.state : "none"),
     getTracks: () => ref.current.streams.flatMap(st => st.getTracks()),
     setOnEnded: fn => { ref.current.onEnded = fn; },
   };
