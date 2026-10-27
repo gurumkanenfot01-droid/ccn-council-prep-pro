@@ -42,6 +42,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const [warnings, setWarnings] = useState(session.warnings || 0);
   const [deadline, setDeadline] = useState(new Date(session.deadline).getTime());
   const [message, setMessage] = useState("");
+  const messageTimer = useRef(null);
   const [toast, setToast] = useState(null);
   const [offline, setOffline] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -54,11 +55,16 @@ export default function ExamScreen({ cam, session, onFinished }) {
   const ended = useRef(false);
   const maxWarnings = session.max_warnings;
 
+  // Keep callbacks stable across re-renders (the parent passes a new
+  // onFinished each render), so the heartbeat timer and question loader are
+  // never reset by an unrelated re-render.
+  const onFinishedRef = useRef(onFinished);
+  onFinishedRef.current = onFinished;
   const finish = useCallback(result => {
     if (ended.current) return;
     ended.current = true;
-    onFinished(result);
-  }, [onFinished]);
+    onFinishedRef.current(result);
+  }, []);
 
   // Handles any server reply: finished, pause state, warnings, admin message.
   const absorb = useCallback(data => {
@@ -76,16 +82,24 @@ export default function ExamScreen({ cam, session, onFinished }) {
         alertStudent();
       } else {
         setMessage(data.message);
+        // Admin chose a display time: hide it automatically after that.
+        if (data.message_seconds > 0) {
+          clearTimeout(messageTimer.current);
+          const text = data.message;
+          messageTimer.current = setTimeout(() => setMessage(m => (m === text ? "" : m)), data.message_seconds * 1000);
+        }
       }
     }
     return data;
   }, [finish, maxWarnings]);
 
+  const warningsRef = useRef(warnings);
+  warningsRef.current = warnings;
   const onError = useCallback(e => {
     if (e.code === "network") setOffline(true);
-    else if (e.code === "invalid_session") finish({ finished: true, status: "terminated", reason: "Your exam session ended.", answered: 0, total: session.total, warnings });
+    else if (e.code === "invalid_session") finish({ finished: true, status: "terminated", reason: "Your exam session ended.", answered: 0, total: session.total, warnings: warningsRef.current });
     else setToast({ text: e.message, n: Date.now() });
-  }, [finish, session.total, warnings]);
+  }, [finish, session.total]);
 
   const loading = useRef(false);
   const loadQuestion = useCallback(async () => {
