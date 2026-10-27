@@ -1,0 +1,32 @@
+{
+  "name": "ccn-exam-room",
+  "productName": "CCN Exam Room",
+  "version": "1.0.0",
+  "description": "CCN Exam Room in a secure window: screenshots, screen recording and screen sharing are blocked.",
+  "main": "main.js",
+  "author": "CCN Council Prep Pro",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.ccn.examroom",
+    "productName": "CCN Exam Room",
+    "files": ["main.js", "package.json"],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": { "icon": "build/icon.png", "artifactName": "ccn-exam-room-setup.exe" },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CCN Exam Room"
+    }
+  }
+}
