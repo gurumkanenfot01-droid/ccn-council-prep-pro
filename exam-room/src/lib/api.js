@@ -25,6 +25,7 @@ export const MESSAGES = {
   not_current_question: "That question is no longer active.",
   bad_choice: "Choose one of the options.",
   answer_first: "Answer this question before moving on.",
+  devices_off: "Turn your camera and microphone back on to continue.",
   invalid_session: "Your exam session has ended. Log in again.",
   network: "Connection problem. Check your internet — your answers so far are saved.",
 };

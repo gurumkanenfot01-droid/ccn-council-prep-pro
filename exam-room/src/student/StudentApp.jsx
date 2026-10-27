@@ -246,7 +246,7 @@ function rulesFor(level, faceMode = "full") {
       ? "Stay alone and in view of the camera for the whole exam. Your face is checked every minute."
       : "Stay alone and in view of the camera for the whole exam.",
     "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
-    "No phones in view of the camera — a phone seen by the camera counts as a warning.",
+    "No phones in view of the camera — a phone seen by the camera ENDS your exam immediately.",
     level === "strict"
       ? "Keep completely quiet and face the screen. Any talking, noise or looking away counts as a warning."
       : level === "normal"
