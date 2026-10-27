@@ -774,6 +774,11 @@ begin
   if s.status <> 'in_progress' then return exam__result(s); end if;
   select * into e from exam_exams where id = s.exam_id;
   if e.paused then return exam__err('exam_paused'); end if;
+  -- Camera / microphone switched off (as last reported by the student's page): no answering.
+  if s.live_status->>'mic' = 'false' or s.live_status->>'locked' = 'true'
+     or (exam__face_mode() <> 'mic' and s.live_status->>'camera' = 'false') then
+    return exam__err('devices_off');
+  end if;
   if p_question_id is distinct from s.question_order[s.current_index + 1] then return exam__err('not_current_question'); end if;
   if p_choice is null or p_choice not between 0 and 3 then return exam__err('bad_choice'); end if;
   select qq.id, qq.ans_idx, qq.exp into v_q from questions qq where qq.id = p_question_id;
@@ -909,7 +914,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   s public.exam_sessions := exam__session(p_token);
   e public.exam_exams;
-  instant boolean := p_type in ('multiple_faces');
+  instant boolean := p_type in ('multiple_faces', 'phone');
   counted_types text[] := array['multiple_faces', 'no_face', 'looking_away', 'phone', 'dark', 'noise',
                                 'tab_away', 'window_blur', 'fullscreen_exit', 'screenshot_key',
                                 'copy_attempt', 'camera_off', 'mic_off', 'devtools'];
@@ -936,7 +941,7 @@ begin
   update exam_sessions set warnings = warnings + 1, last_seen_at = now() where id = s.id returning * into s;
 
   if instant then
-    perform exam__finish(s.id, 'terminated', 'Another person was seen with the student');
+    perform exam__finish(s.id, 'terminated', case when p_type = 'phone' then 'A phone was held up to the camera' else 'Another person was seen with the student' end);
   elsif s.warnings >= e.max_warnings then
     perform exam__finish(s.id, 'auto_submitted', format('Reached the limit of %s warnings', e.max_warnings));
   end if;

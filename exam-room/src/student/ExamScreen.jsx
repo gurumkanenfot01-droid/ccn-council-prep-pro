@@ -314,11 +314,24 @@ export default function ExamScreen({ cam, session, onFinished }) {
     fullscreen: !!(document.fullscreenElement || document.webkitFullscreenElement),
     camera: cam.camera === "on" && !camBlocked, mic: cam.mic === "on" && !micBlocked, locked,
   };
+  // The server refuses answers while the camera/mic is reported off, so tell it
+  // straight away whenever that changes (not only on the 15 s heartbeat).
+  const deviceKey = `${liveStatus.current.camera}${liveStatus.current.mic}${locked}`;
+  const sendStatus = useCallback(() => api.heartbeat(token, null, null, liveStatus.current).then(absorb), [token, absorb]);
+  useEffect(() => {
+    if (!ended.current) sendStatus().catch(() => {});
+  }, [deviceKey, sendStatus]);
   async function choose(i) {
     if (!q || feedback || busy || locked) return;
     setBusy(true);
     try {
-      const data = absorb(await api.answer(token, q.question.id, i));
+      let data;
+      try { data = await api.answer(token, q.question.id, i); } catch (e) {
+        if (e.code !== "devices_off") throw e;
+        await sendStatus(); // the server had an old status — update it and try once more
+        data = await api.answer(token, q.question.id, i);
+      }
+      data = absorb(data);
       if (data && !data.finished) setFeedback({ chosen: data.chosen, correct: data.correct, correct_index: data.correct_index, explanation: data.explanation });
     } catch (e) { onError(e); } finally { setBusy(false); }
   }
