@@ -64,7 +64,25 @@ function LiveView({ sessionId, onStop, compact = false }) {
   useEffect(() => {
     supabase.from("exam_sessions").select("token").eq("id", sessionId).maybeSingle().then(({ data }) => setToken(data?.token || ""));
   }, [sessionId]);
-  const { status, hasVideo, frame } = useLiveWatch({ token, attempt, videoRef });
+  const { status, hasVideo, frame, rtError } = useLiveWatch({ token, attempt, videoRef });
+  // Backup route through the database: ask the student's page for pictures and
+  // poll the newest one. Works even when the Realtime live link can't connect.
+  const [dbFrame, setDbFrame] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const since = Date.now() - 5000;
+    const ping = () => supabase.rpc("exam_admin_watch", { p_session: sessionId });
+    const poll = async () => {
+      const { data } = await supabase.from("exam_sessions").select("live_frame, live_frame_at").eq("id", sessionId).maybeSingle();
+      if (alive && data?.live_frame && new Date(data.live_frame_at).getTime() > since) setDbFrame({ img: data.live_frame, at: data.live_frame_at });
+    };
+    ping(); poll();
+    const p1 = setInterval(ping, 10000);
+    const p2 = setInterval(poll, 2000);
+    return () => { alive = false; clearInterval(p1); clearInterval(p2); };
+  }, [sessionId, attempt]);
+  const showDb = status !== "live" && status !== "pictures" && dbFrame;
+  const dbStale = dbFrame && Date.now() - new Date(dbFrame.at).getTime() > 15000;
   function toggleSound() {
     const v = videoRef.current;
     if (!v) return;
@@ -77,12 +95,16 @@ function LiveView({ sessionId, onStop, compact = false }) {
       <div style={{ position: "relative", background: "#000", borderRadius: 10, overflow: "hidden", aspectRatio: "4 / 3" }}>
         <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", display: hasVideo && status === "live" ? "block" : "none" }} />
         {status === "pictures" && frame && <img src={frame} alt="Live camera" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
-        {(status === "live" ? !hasVideo : status !== "pictures") && (
+        {showDb && <img src={dbFrame.img} alt="Live camera" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
+        {(status === "live" ? !hasVideo : status !== "pictures" && !showDb) && (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textAlign: "center", padding: 16, fontSize: 13.5 }}>
-            {status === "connecting" || token === null ? <span><Spinner /><br />Connecting to the student's phone…</span> : status === "live" ? <span><Mic size={16} /> Listening live (no camera on this student)</span> : LIVE_TEXT[status]}
+            {status === "connecting" || token === null ? <span><Spinner /><br />Connecting to the student's phone…</span>
+              : status === "live" ? <span><Mic size={16} /> Listening live (no camera on this student)</span>
+              : status === "offline" ? <span><Spinner /><br />Waiting for the student's phone — this can take up to 20 seconds.{rtError ? " (The fast live link is unavailable — Supabase Realtime may be off or over quota — so pictures will come through the database instead.)" : ""}</span>
+              : LIVE_TEXT[status]}
           </div>
         )}
-        {(status === "live" || status === "pictures") && <span className="pill pill-bad" style={{ position: "absolute", top: 8, left: 8 }}>● LIVE{status === "pictures" ? " · pictures (no sound)" : ""}</span>}
+        {(status === "live" || status === "pictures" || showDb) && <span className="pill pill-bad" style={{ position: "absolute", top: 8, left: 8 }}>● LIVE{status === "live" ? "" : " · pictures (no sound)"}{showDb && dbStale ? " · paused (student offline?)" : ""}</span>}
       </div>
       <div className="row" style={{ gap: 6, marginTop: 8 }}>
         <button className="btn btn-sm btn-ghost" onClick={toggleSound} disabled={status !== "live"}>

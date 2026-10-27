@@ -158,8 +158,10 @@ export function useLiveWatch({ token, attempt, videoRef }) {
   const [status, setStatus] = useState("connecting");
   const [hasVideo, setHasVideo] = useState(false);
   const [frame, setFrame] = useState(null);
+  const [rtError, setRtError] = useState(false); // Realtime channel couldn't connect at all
 
   useEffect(() => {
+    setRtError(false);
     if (!token || !liveSupported()) { setStatus("failed"); return undefined; }
     setStatus("connecting");
     setHasVideo(false);
@@ -227,7 +229,10 @@ export function useLiveWatch({ token, attempt, videoRef }) {
       if (live) return;
       if (pictures) send("frames", { viewer: picViewer }); else send("watch", { viewer });
     });
-    ch.subscribe(st => { if (st === "SUBSCRIBED") send("watch", { viewer }); });
+    ch.subscribe(st => {
+      if (st === "SUBSCRIBED") send("watch", { viewer });
+      else if (st === "CHANNEL_ERROR" || st === "TIMED_OUT") setRtError(true);
+    });
 
     const direct = setTimeout(usePictures, DIRECT_WAIT_MS);
     const offline = setTimeout(() => { if (!heard) setStatus("offline"); }, OFFLINE_MS);
@@ -246,5 +251,5 @@ export function useLiveWatch({ token, attempt, videoRef }) {
     };
   }, [token, attempt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { status, hasVideo, frame };
+  return { status, hasVideo, frame, rtError };
 }
