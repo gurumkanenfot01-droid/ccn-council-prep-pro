@@ -4,7 +4,7 @@ import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckC
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useCamera, enterFullscreen, exitFullscreen } from "../lib/proctor.js";
 import { snapshot } from "../lib/face.js";
-import { APP_DOWNLOAD_URL, isAndroidBrowser } from "../lib/app.js";
+import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL, isAndroidBrowser, isWindowsBrowser } from "../lib/app.js";
 import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
 import Liveness from "./Liveness.jsx";
 import ExamScreen from "./ExamScreen.jsx";
@@ -58,6 +58,11 @@ function CodeScreen({ onLogin }) {
             Your code is personal. Don’t share it with anyone.
           </p>
         </form>
+        {isWindowsBrowser() && (
+          <p className="muted" style={{ textAlign: "center", fontSize: 13.5, marginTop: 14 }}>
+            On a Windows laptop? <a href={DESKTOP_DOWNLOAD_URL}><Download size={13} /> Download the CCN Exam Room app</a>
+          </p>
+        )}
         {isAndroidBrowser() && (
           <p className="muted" style={{ textAlign: "center", fontSize: 13.5, marginTop: 14 }}>
             On Android? <a href={APP_DOWNLOAD_URL}><Download size={13} /> Download the CCN Exam Room app</a>
@@ -266,18 +271,27 @@ function rulesFor(level, faceMode = "full") {
   ];
 }
 
-// Android phones must take exams in the app when the administrator requires it.
-function AppRequired() {
+// Android phones / Windows laptops must take exams in the app when the administrator requires it.
+function AppRequired({ kind }) {
+  const windows = kind === "windows";
   return (
     <div className="card" style={{ marginBottom: 12, borderColor: "#0B3C5D" }}>
       <h2 style={{ fontSize: 16, marginTop: 0 }}><Smartphone size={17} /> Use the CCN Exam Room app</h2>
-      <p style={{ margin: "0 0 10px" }}>On Android phones, exams must be taken in the CCN Exam Room app.</p>
-      <ol style={{ margin: "0 0 12px", paddingLeft: 20 }}>
-        <li>Tap <strong>Download the app</strong> below.</li>
-        <li>Open the downloaded file. If asked, allow <strong>Install unknown apps</strong> for your browser, then tap <strong>Install</strong>.</li>
-        <li>Open <strong>CCN Exam Room</strong> from your apps, log in with your code and start the exam there.</li>
-      </ol>
-      <a className="btn btn-primary" href={APP_DOWNLOAD_URL}><Download size={16} /> Download the app</a>
+      <p style={{ margin: "0 0 10px" }}>On {windows ? "Windows laptops" : "Android phones"}, exams must be taken in the CCN Exam Room app.</p>
+      {windows ? (
+        <ol style={{ margin: "0 0 12px", paddingLeft: 20 }}>
+          <li>Click <strong>Download the app</strong> below.</li>
+          <li>Open the downloaded file. If Windows says <strong>“Windows protected your PC”</strong>, click <strong>More info</strong> → <strong>Run anyway</strong>.</li>
+          <li>The app opens by itself (later, use the <strong>CCN Exam Room</strong> icon on your desktop). Log in with your code and start the exam there.</li>
+        </ol>
+      ) : (
+        <ol style={{ margin: "0 0 12px", paddingLeft: 20 }}>
+          <li>Tap <strong>Download the app</strong> below.</li>
+          <li>Open the downloaded file. If asked, allow <strong>Install unknown apps</strong> for your browser, then tap <strong>Install</strong>.</li>
+          <li>Open <strong>CCN Exam Room</strong> from your apps, log in with your code and start the exam there.</li>
+        </ol>
+      )}
+      <a className="btn btn-primary" href={windows ? DESKTOP_DOWNLOAD_URL : APP_DOWNLOAD_URL}><Download size={16} /> Download the app</a>
     </div>
   );
 }
@@ -466,7 +480,8 @@ export default function StudentApp({ updateReady = false }) {
   if (!profile) return <CodeScreen onLogin={login} />;
 
   const faceMode = profile.face_mode || "full";
-  const needApp = !!profile.require_app && isAndroidBrowser();
+  const needApp = (!!profile.require_app && isAndroidBrowser()) ? "android"
+    : (!!profile.require_desktop_app && isWindowsBrowser()) ? "windows" : null;
   const noFace = faceMode === "off" || faceMode === "mic";
   if (noFace && profile.name_needed) {
     return <NameScreen code={code} onDone={() => refresh()} onLogout={logout} />;
@@ -500,7 +515,7 @@ export default function StudentApp({ updateReady = false }) {
         <div className="banner banner-warn"><Hourglass size={16} /> Your face registration is waiting for approval. You can start exams once it’s approved.</div>
       )}
       {refreshError && <div className="banner banner-warn">{refreshError}</div>}
-      {needApp && <AppRequired />}
+      {needApp && <AppRequired kind={needApp} />}
       <div className="row" style={{ marginBottom: 10 }}>
         <h2 style={{ fontSize: 16, margin: 0 }}>Your exams</h2>
         <span className="spacer" />

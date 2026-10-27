@@ -3,7 +3,7 @@ import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search,
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
-import { APP_DOWNLOAD_URL } from "../lib/app.js";
+import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL } from "../lib/app.js";
 
 // No look-alike characters (0/O, 1/I/L), so codes are easy to read out.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -125,30 +125,38 @@ function FaceModeCard() {
   );
 }
 
-// Android phones must use the CCN Exam Room app (screenshots and screen recording blocked).
+// Android phones / Windows laptops must use the CCN Exam Room apps (screenshots, recording and screen sharing blocked).
 function AppRequiredCard() {
-  const [on, setOn] = useState(null);
+  const [cfg, setCfg] = useState(null);
   const [error, setError] = useState("");
   useEffect(() => {
-    supabase.from("exam_settings").select("require_app").eq("id", 1).maybeSingle()
-      .then(({ data, error: err }) => { if (err) setError(adminDbMessage(err)); else setOn(!!data?.require_app); });
+    supabase.from("exam_settings").select("require_app, require_desktop_app").eq("id", 1).maybeSingle()
+      .then(({ data, error: err }) => { if (err) setError(adminDbMessage(err)); else setCfg({ require_app: !!data?.require_app, require_desktop_app: !!data?.require_desktop_app }); });
   }, []);
-  async function toggle(v) {
+  async function toggle(key, v) {
     setError("");
-    const { error: err } = await supabase.from("exam_settings").upsert({ id: 1, require_app: v, updated_at: new Date().toISOString() });
-    if (err) setError(adminDbMessage(err)); else setOn(v);
+    const { error: err } = await supabase.from("exam_settings").upsert({ id: 1, [key]: v, updated_at: new Date().toISOString() });
+    if (err) setError(adminDbMessage(err)); else setCfg(c => ({ ...c, [key]: v }));
   }
   return (
     <section className="card">
-      <h2 style={{ fontSize: 16, marginTop: 0 }}><Smartphone size={17} /> Android app</h2>
-      <p className="muted" style={{ marginTop: 0 }}>Inside the CCN Exam Room app, Android blocks screenshots and screen recording.</p>
-      {error ? <div className="banner banner-bad">{error}</div> : on === null ? <Spinner /> : (
-        <label className="toggle-row">
-          <input type="checkbox" checked={on} onChange={e => toggle(e.target.checked)} />
-          <span><strong>Android phones must use the app</strong> — <span className="muted">students on Android can only start exams inside the app. iPhones and computers still use the website.</span></span>
-        </label>
+      <h2 style={{ fontSize: 16, marginTop: 0 }}><Smartphone size={17} /> Exam apps</h2>
+      <p className="muted" style={{ marginTop: 0 }}>Inside the CCN Exam Room apps, screenshots, screen recording and screen sharing are blocked.</p>
+      {error ? <div className="banner banner-bad">{error}</div> : cfg === null ? <Spinner /> : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <label className="toggle-row">
+            <input type="checkbox" checked={cfg.require_desktop_app} onChange={e => toggle("require_desktop_app", e.target.checked)} />
+            <span><strong>Windows laptops must use the app</strong> — <span className="muted">students on Windows can only start exams inside the Windows app.</span></span>
+          </label>
+          <label className="toggle-row">
+            <input type="checkbox" checked={cfg.require_app} onChange={e => toggle("require_app", e.target.checked)} />
+            <span><strong>Android phones must use the app</strong> — <span className="muted">students on Android can only start exams inside the Android app.</span></span>
+          </label>
+          <p className="faint" style={{ fontSize: 12.5, margin: 0 }}>iPhones, iPads and Mac laptops still use the website. Turn these on before an exam starts.</p>
+        </div>
       )}
-      <p style={{ fontSize: 13.5, marginBottom: 0 }}>Download link for students: <a href={APP_DOWNLOAD_URL}>{APP_DOWNLOAD_URL}</a></p>
+      <p style={{ fontSize: 13.5, marginBottom: 4 }}>Windows app: <a href={DESKTOP_DOWNLOAD_URL}>{DESKTOP_DOWNLOAD_URL}</a></p>
+      <p style={{ fontSize: 13.5, margin: 0 }}>Android app: <a href={APP_DOWNLOAD_URL}>{APP_DOWNLOAD_URL}</a></p>
     </section>
   );
 }
