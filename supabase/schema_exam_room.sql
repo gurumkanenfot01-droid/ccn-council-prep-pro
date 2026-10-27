@@ -155,6 +155,8 @@ alter table public.exam_sessions add column if not exists live_status jsonb;
 -- the admin keeps watch_until in the future while watching; the student's page
 -- then uploads a small picture every couple of seconds into live_frame.
 alter table public.exam_sessions add column if not exists watch_until timestamptz;
+-- Optional: hide the admin's message on the student's screen after this many seconds.
+alter table public.exam_sessions add column if not exists admin_message_seconds integer;
 alter table public.exam_sessions add column if not exists live_frame text;
 alter table public.exam_sessions add column if not exists live_frame_at timestamptz;
 alter table public.exam_sessions drop constraint if exists exam_sessions_exam_id_candidate_id_key;
@@ -829,6 +831,7 @@ declare
   e public.exam_exams;
   dist float8;
   msg text;
+  msg_secs integer;
   photo text := exam__clean_photo(p_photo);
 begin
   if s.status <> 'in_progress' then return exam__result(s); end if;
@@ -858,8 +861,9 @@ begin
   end if;
 
   msg := s.admin_message;
+  msg_secs := s.admin_message_seconds;
   update exam_sessions
-     set last_seen_at = now(), admin_message = null,
+     set last_seen_at = now(), admin_message = null, admin_message_seconds = null,
          live_status = case when p_status is not null and length(p_status::text) < 500 then p_status else live_status end,
          last_photo = coalesce(photo, last_photo),
          last_photo_at = case when photo is not null then now() else last_photo_at end
@@ -867,7 +871,7 @@ begin
 
   return jsonb_build_object(
     'status', 'in_progress', 'paused', e.paused, 'deadline', s.deadline, 'server_time', now(),
-    'warnings', s.warnings, 'max_warnings', e.max_warnings, 'message', msg,
+    'warnings', s.warnings, 'max_warnings', e.max_warnings, 'message', msg, 'message_seconds', msg_secs,
     'face_fail_streak', s.face_fail_streak, 'face_mode', exam__face_mode(),
     'watch', coalesce(s.watch_until > now(), false));
 end; $$;

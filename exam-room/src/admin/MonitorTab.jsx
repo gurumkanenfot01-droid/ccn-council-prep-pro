@@ -118,6 +118,67 @@ function LiveView({ sessionId, onStop, compact = false }) {
   );
 }
 
+// Message several students at once: untick anyone to leave them out, and
+// optionally make it disappear after a few seconds.
+function MessageDialog({ students, onClose, onError }) {
+  const [text, setText] = useState("");
+  const [seconds, setSeconds] = useState("");
+  const [skip, setSkip] = useState(() => new Set());
+  const [search, setSearch] = useState("");
+  const [busy, setBusy] = useState(false);
+  const to = students.filter(s => !skip.has(s.id));
+  const q = search.trim().toLowerCase();
+  async function send() {
+    if (!text.trim() || !to.length) return;
+    setBusy(true);
+    const secs = parseInt(seconds, 10);
+    const row = { admin_message: text.trim().slice(0, 300), admin_message_seconds: secs > 0 ? Math.min(secs, 600) : null };
+    let { error: err } = await supabase.from("exam_sessions").update(row).in("id", to.map(s => s.id));
+    if (err && /admin_message_seconds/.test(err.message)) {
+      // Database not updated yet: send without the auto-hide.
+      ({ error: err } = await supabase.from("exam_sessions").update({ admin_message: row.admin_message }).in("id", to.map(s => s.id)));
+      if (!err) alert("Sent, but it will stay until each student taps OK — run the latest schema_exam_room.sql to enable auto-hide.");
+    }
+    setBusy(false);
+    if (err) { onError(err.message); return; }
+    alert(`Sent to ${to.length} student(s)${secs > 0 ? `; it disappears after ${secs} seconds` : ""}.`);
+    onClose();
+  }
+  const toggle = id => setSkip(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  return (
+    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="msg-h">
+      <div className="card" style={{ maxWidth: 520, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div className="row"><h2 id="msg-h" style={{ fontSize: 17, margin: 0 }}><MessageSquare size={16} /> Message students</h2><span className="spacer" /><button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close"><X size={14} /></button></div>
+        <textarea rows={3} maxLength={300} placeholder="Type your message" value={text} onChange={e => setText(e.target.value)}
+          style={{ padding: 10, borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", font: "inherit" }} />
+        <label className="row" style={{ gap: 8, fontSize: 14 }}>
+          Disappear after
+          <input type="number" min={1} max={600} placeholder="—" value={seconds} onChange={e => setSeconds(e.target.value)}
+            style={{ width: 80, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)" }} />
+          seconds <span className="faint" style={{ fontSize: 12 }}>(leave empty: stays until they tap OK)</span>
+        </label>
+        <div className="row" style={{ fontSize: 14 }}>
+          <strong>Send to {to.length} of {students.length}</strong><span className="faint" style={{ fontSize: 12 }}>— untick anyone to leave them out</span>
+          <span className="spacer" />
+          <button className="btn btn-ghost btn-sm" onClick={() => setSkip(new Set())}>All</button>
+        </div>
+        <input placeholder="Search name" value={search} onChange={e => setSearch(e.target.value)}
+          style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)" }} />
+        <div style={{ maxHeight: 240, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 10, padding: "4px 10px" }}>
+          {students.filter(s => !q || s.name.toLowerCase().includes(q)).map(s => (
+            <label key={s.id} className="toggle-row" style={{ padding: "4px 0" }}>
+              <input type="checkbox" checked={!skip.has(s.id)} onChange={() => toggle(s.id)} /> {s.name}
+            </label>
+          ))}
+        </div>
+        <button className="btn btn-primary btn-full" onClick={send} disabled={busy || !text.trim() || !to.length}>
+          {busy ? "Sending…" : `Send to ${to.length} student${to.length === 1 ? "" : "s"}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Drawer({ session, candidate, onClose, startWatching = false }) {
   const [watching, setWatching] = useState(startWatching);
   const [events, setEvents] = useState(null);
@@ -235,6 +296,7 @@ export default function MonitorTab() {
   const [livePhotos, setLivePhotos] = useState(false);
   const [photos, setPhotos] = useState({});
   const [open, setOpen] = useState(null);
+  const [composing, setComposing] = useState(false);
   const [watchingIds, setWatchingIds] = useState(() => new Set()); // live tiles on the camera wall
   const toggleWatch = id => setWatchingIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [examRow, setExamRow] = useState(null);
@@ -346,14 +408,9 @@ export default function MonitorTab() {
     poll();
   }
   // One message on the screen of everyone writing this exam (picked up with their next heartbeat).
-  async function messageAll() {
-    const writing = sessions.filter(x => x.status === "in_progress").length;
-    if (!writing) { alert("Nobody is writing this exam right now."); return; }
-    const text = prompt(`Message to all ${writing} student(s) writing now (shown on their screen within about 25 seconds):`);
-    if (!text || !text.trim()) return;
-    const { error: err } = await supabase.from("exam_sessions").update({ admin_message: text.trim().slice(0, 300) })
-      .eq("exam_id", examId).eq("status", "in_progress").eq("archived", false);
-    if (err) setError(err.message); else alert(`Sent to ${writing} student(s).`);
+  function messageAll() {
+    if (!sessions.some(x => x.status === "in_progress")) { alert("Nobody is writing this exam right now."); return; }
+    setComposing(true);
   }
   async function message(s, name) {
     const text = prompt(`Message to ${name} (shown on their screen within 15 seconds):`);
@@ -566,6 +623,12 @@ export default function MonitorTab() {
         </section>
       )}
 
+      {composing && (
+        <MessageDialog
+          students={sessions.filter(x => x.status === "in_progress").map(x => ({ id: x.id, name: byCandidate[x.candidate_id]?.full_name || "Student" }))
+            .sort((a, b) => a.name.localeCompare(b.name))}
+          onClose={() => setComposing(false)} onError={setError} />
+      )}
       {open && <Drawer key={`${open.s.id}-${open.live ? "live" : "view"}`} session={open.s} candidate={open.c} startWatching={!!open.live} onClose={() => setOpen(null)} />}
     </div>
   );
