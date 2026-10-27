@@ -193,7 +193,9 @@ export const VIOLATION_LABELS = {
 // and identity(descriptor, photo) about once a minute.
 // video: false = microphone-only mode: no face, phone or camera checks, and no
 // face/phone models are downloaded (much lighter on a slow network).
-export function useProctor({ cam, active, report, identity, level: strictness = "relaxed", video = true }) {
+// phoneCheck: look for a phone held up to the camera even when face checks are
+// off (any mode where the camera is on).
+export function useProctor({ cam, active, report, identity, level: strictness = "relaxed", video = true, phoneCheck = video }) {
   const L = PROCTOR_LEVELS[strictness] || PROCTOR_LEVELS.relaxed;
   const [face, setFace] = useState("checking"); // ok | none | multiple | away | dark | checking
   const [phone, setPhone] = useState(false);
@@ -212,7 +214,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
     let dark = false;
 
     const fire = (type, detail = "") => {
-      const photo = video ? snapshot(cam.getVideo()) : null;
+      const photo = video || phoneCheck ? snapshot(cam.getVideo()) : null;
       cb.current.report(type, detail, photo);
     };
     // A condition is reported once it has lasted HOLD ms, then re-arms only
@@ -257,7 +259,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
     }).catch(() => setFace("checking"));
 
     // Phone in view.
-    if (video) loadPhoneDetector().then(detector => {
+    if (phoneCheck) loadPhoneDetector().then(detector => {
       if (!alive) return;
       setPhoneModel("ready");
       timers.push(setInterval(() => {
@@ -386,7 +388,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
       document.removeEventListener("contextmenu", block);
       window.removeEventListener("beforeprint", block);
     };
-  }, [active, video, cam.version]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active, video, phoneCheck, cam.version]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { face, phone, noisy, level, phoneModel };
 }

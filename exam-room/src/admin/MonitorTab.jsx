@@ -338,7 +338,11 @@ export default function MonitorTab() {
       fresh.forEach(e => seen.current.add(e.id));
       if (fresh.length) {
         setAlerts(prev => [...fresh, ...prev].slice(0, 6));
-        if (alertsOnRef.current) chime();
+        if (alertsOnRef.current) {
+          chime();
+          // A phone pointed at the camera: ring twice and buzz the admin's phone.
+          if (fresh.some(e => e.type === "phone")) { setTimeout(chime, 700); try { navigator.vibrate && navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) { /* optional */ } }
+        }
       }
     }
     setTick(x => x + 1);
@@ -514,8 +518,13 @@ export default function MonitorTab() {
           <ul className="list" style={{ marginTop: 6, fontWeight: 600 }}>
             {alerts.map(e => (
               <li key={e.id}>
-                {new Date(e.created_at).toLocaleTimeString()} · {byCandidate[e.candidate_id]?.full_name || "?"} — {EVENT_TEXT[e.type] || e.type}
-                {e.detail ? ` (${e.detail})` : ""}
+                {new Date(e.created_at).toLocaleTimeString()} ·{" "}
+                <button className="link-btn" style={{ fontWeight: 700, color: "inherit", textDecoration: "underline", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                  onClick={() => { const s = sessions.find(x => x.id === e.session_id); if (s) setOpen({ s, c: byCandidate[s.candidate_id], live: s.status === "in_progress" }); }}>
+                  {byCandidate[e.candidate_id]?.full_name || "?"}
+                </button>{" "}
+                — {e.type === "phone" ? "📱 " : ""}{EVENT_TEXT[e.type] || e.type}
+                {e.detail ? ` (${e.detail})` : ""}{e.type === "phone" ? " — tap the name to see the photo and watch live" : ""}
               </li>
             ))}
           </ul>
