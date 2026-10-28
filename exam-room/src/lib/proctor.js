@@ -152,18 +152,20 @@ export function useCamera() {
 // Relaxed lets students murmur, read under their breath and turn their head;
 // only clearly loud talking/noise, leaving the camera, another person or a
 // phone count.
+// Looking away or down (e.g. at paper for calculations) is never counted, and
+// the face may be out of view for a while before "face not visible" counts.
 export const PROCTOR_LEVELS = {
   relaxed: {
-    hold: { no_face: 10000, multiple_faces: 3000, looking_away: Infinity, dark: 5000, noise: 3000, phone: 2000 },
+    hold: { no_face: 45000, multiple_faces: 3000, looking_away: Infinity, dark: 15000, noise: 3000, phone: 2000 },
     yaw: Infinity, voice: 22, loud: 24, floor: -40,
   },
   normal: {
-    hold: { no_face: 7000, multiple_faces: 2500, looking_away: 10000, dark: 4000, noise: 2000, phone: 1500 },
-    yaw: 0.45, voice: 15, loud: 17, floor: -50,
+    hold: { no_face: 30000, multiple_faces: 2500, looking_away: Infinity, dark: 10000, noise: 2000, phone: 1500 },
+    yaw: Infinity, voice: 15, loud: 17, floor: -50,
   },
   strict: {
-    hold: { no_face: 5000, multiple_faces: 2000, looking_away: 6000, dark: 3000, noise: 1200, phone: 1500 },
-    yaw: 0.33, voice: 8, loud: 10, floor: -62,
+    hold: { no_face: 20000, multiple_faces: 2000, looking_away: Infinity, dark: 8000, noise: 1200, phone: 1500 },
+    yaw: Infinity, voice: 8, loud: 10, floor: -62,
   },
 };
 
@@ -260,7 +262,8 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
     }).catch(() => setFace("checking"));
 
     // Phone in view.
-    if (phoneCheck) loadPhoneDetector().then(detector => {
+    // Downloaded a little after the start, so the first questions load first on a slow network.
+    if (phoneCheck) new Promise(r => timers.push(setTimeout(r, 15000))).then(() => alive ? loadPhoneDetector() : Promise.reject()).then(detector => {
       if (!alive) return;
       setPhoneModel("ready");
       timers.push(setInterval(() => {

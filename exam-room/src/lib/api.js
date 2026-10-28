@@ -49,7 +49,22 @@ function syncClock(data) {
   if (data && data.server_time) offsetMs = new Date(data.server_time).getTime() - Date.now();
 }
 
-const TIMEOUT_MS = 15000;
+// Generous: on a slow mobile network a reply can take a while, and giving up
+// too early just means sending the same request again.
+const TIMEOUT_MS = 25000;
+
+// Tells the exam page when it is waiting for the network (to show "Reconnecting…").
+function networkState(waiting) {
+  try { window.dispatchEvent(new CustomEvent("exam-network", { detail: { waiting } })); } catch (e) { /* old browser */ }
+}
+function online() {
+  if (typeof navigator === "undefined" || navigator.onLine !== false) return Promise.resolve();
+  return new Promise(r => {
+    const done = () => { window.removeEventListener("online", done); r(); };
+    window.addEventListener("online", done);
+    setTimeout(done, 10000);
+  });
+}
 
 export async function rpc(fn, args) {
   let res;
@@ -77,14 +92,19 @@ export async function rpc(fn, args) {
 
 // For calls that are safe to repeat (answering the same question twice, or
 // "next" before the new one is answered, changes nothing): on a weak network,
-// try again quietly a few times before showing an error.
+// keep trying quietly for about two minutes before showing an error. Waits for
+// the phone to come back online instead of failing straight away.
 async function retry(fn, args) {
   for (let attempt = 0; ; attempt++) {
     try {
-      return await rpc(fn, args);
+      const data = await rpc(fn, args);
+      if (attempt > 0) networkState(false);
+      return data;
     } catch (e) {
-      if (e.code !== "network" || attempt >= 3) throw e;
-      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+      if (e.code !== "network" || attempt >= 10) { if (attempt > 0) networkState(false); throw e; }
+      networkState(true);
+      await new Promise(r => setTimeout(r, Math.min(1000 * 2 ** attempt, 8000)));
+      await online();
     }
   }
 }
