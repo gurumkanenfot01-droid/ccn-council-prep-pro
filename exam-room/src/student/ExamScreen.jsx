@@ -191,13 +191,24 @@ export default function ExamScreen({ cam, session, onFinished }) {
 
 
   // Heartbeat: keeps the admin's live view current and picks up admin actions.
+  // On a slow network, never send a new one while the last is still on its way.
   useEffect(() => {
+    let inFlight = false;
     const t = setInterval(async () => {
-      if (ended.current) return;
-      try { absorb(await api.heartbeat(token, null, null, liveStatus.current)); } catch (e) { onError(e); }
+      if (ended.current || inFlight) return;
+      inFlight = true;
+      try { absorb(await api.heartbeat(token, null, null, liveStatus.current)); } catch (e) { onError(e); } finally { inFlight = false; }
     }, HEARTBEAT_MS);
     return () => clearInterval(t);
   }, [token, absorb, onError]);
+
+  // Answer / next / question calls retry by themselves on a weak network:
+  // show "Reconnecting…" while they wait instead of an error.
+  useEffect(() => {
+    const onNet = e => setOffline(!!(e.detail && e.detail.waiting));
+    window.addEventListener("exam-network", onNet);
+    return () => window.removeEventListener("exam-network", onNet);
+  }, []);
 
   // Clock: the server decides when time is up; ask it as soon as we think so.
   useEffect(() => {
@@ -384,7 +395,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
           <VolumeX size={18} /> {proctor.noisy === "talking" ? "Talking detected" : "Noise detected"} — keep completely quiet. If it continues you get a warning.
         </div>
       )}
-      {offline && <div className="banner banner-warn"><WifiOff size={16} /> Reconnecting… your answers so far are saved. Stay on this page.</div>}
+      {offline && <div className="banner banner-warn"><WifiOff size={16} /> Weak network — reconnecting… Your answers are saved and will go through by themselves. Stay on this page.</div>}
       {message && (
         <div className="banner banner-info">
           <MessageSquare size={16} /> <span style={{ flex: 1 }}>Administrator: {message}</span>

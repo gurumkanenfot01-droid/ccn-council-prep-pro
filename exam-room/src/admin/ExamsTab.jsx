@@ -26,7 +26,7 @@ function blankExam() {
   return {
     title: "", instructions: "", starts_at: start.toISOString(), ends_at: end.toISOString(),
     duration_minutes: 60, question_ids: [], per_question_seconds: null, show_answers: true, show_score: true,
-    max_warnings: 3, shuffle: true, all_candidates: true, attempts_allowed: 1, proctor_level: "relaxed",
+    max_warnings: 100, shuffle: true, all_candidates: true, attempts_allowed: 1, proctor_level: "relaxed",
     questions_per_student: null,
   };
 }
@@ -151,7 +151,7 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
         <div className="field"><label htmlFor="pq">Seconds per question (blank = no limit)</label>
           <input id="pq" type="number" min={10} max={3600} value={f.per_question_seconds ?? ""} onChange={e => set("per_question_seconds", e.target.value || null)} /></div>
         <div className="field"><label htmlFor="w">Warnings before auto-submit</label>
-          <input id="w" type="number" min={1} max={50} value={f.max_warnings} onChange={e => set("max_warnings", e.target.value)} /></div>
+          <input id="w" type="number" min={1} max={500} value={f.max_warnings} onChange={e => set("max_warnings", e.target.value)} /></div>
         <div className="field"><label htmlFor="lvl">How strict the camera &amp; microphone are</label>
           <select id="lvl" value={f.proctor_level || "relaxed"} onChange={e => set("proctor_level", e.target.value)}>
             <option value="relaxed">Relaxed — murmuring and head turns allowed</option>

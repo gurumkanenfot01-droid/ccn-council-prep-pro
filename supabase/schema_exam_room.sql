@@ -49,7 +49,7 @@ create table if not exists public.exam_exams (
   per_question_seconds integer check (per_question_seconds is null or per_question_seconds between 10 and 3600),
   show_answers boolean not null default true,    -- reveal correct answer right after each answer
   show_score boolean not null default true,      -- show the score when the exam ends
-  max_warnings integer not null default 3 check (max_warnings between 1 and 50),
+  max_warnings integer not null default 100 check (max_warnings between 1 and 500),
   shuffle boolean not null default true,
   paused boolean not null default false,         -- admin can hide the questions mid-exam
   closed boolean not null default false,         -- admin can end the exam for everyone
@@ -226,6 +226,10 @@ create table if not exists public.exam_settings (
   face_mode text not null default 'full',
   updated_at timestamptz not null default now()
 );
+-- Warning limit: up to 500 (it was 1–50).
+alter table public.exam_exams drop constraint if exists exam_exams_max_warnings_check;
+alter table public.exam_exams add constraint exam_exams_max_warnings_check check (max_warnings between 1 and 500);
+alter table public.exam_exams alter column max_warnings set default 100;
 insert into public.exam_settings (id) values (1) on conflict (id) do nothing;
 -- Android phones must take exams in the CCN Exam Room app (android-app/), which blocks screenshots.
 alter table public.exam_settings add column if not exists require_app boolean not null default false;
@@ -943,8 +947,9 @@ begin
   -- Microphone-only, face-off or face-at-start mode: camera/face reports (e.g. from a page opened before
   -- the switch) are ignored and never count as warnings.
   -- (A phone held up to the camera still counts whenever the camera is on.)
+  -- Looking away / down (e.g. at paper for calculations) never counts, in any mode.
   if (exam__face_mode() in ('mic', 'off', 'start') and p_type in ('multiple_faces', 'no_face', 'looking_away', 'dark', 'camera_off'))
-     or (exam__face_mode() = 'mic' and p_type = 'phone') then
+     or (exam__face_mode() = 'mic' and p_type = 'phone') or p_type = 'looking_away' then
     return jsonb_build_object('status', s.status, 'warnings', s.warnings, 'max_warnings', e.max_warnings, 'ignored', true);
   end if;
 
