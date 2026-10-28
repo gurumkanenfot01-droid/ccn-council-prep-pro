@@ -250,7 +250,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
           track("looking_away", away);
           setFace(dark ? "dark" : none ? "none" : many ? "multiple" : away ? "away" : "ok");
         } catch (e) { /* skip this frame */ } finally { faceBusy = false; }
-      }, 800));
+      }, 1200));
 
       // Identity check about once a minute (the database does the matching).
       timers.push(setInterval(async () => {
@@ -270,7 +270,7 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
         const seen = phoneInView(detector, cam.getVideo());
         setPhone(seen);
         track("phone", seen);
-      }, 1000));
+      }, 1500));
     }).catch(() => setPhoneModel("unavailable"));
 
     // Camera covered / dark.

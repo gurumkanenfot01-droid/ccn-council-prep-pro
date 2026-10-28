@@ -844,6 +844,90 @@ begin
   return exam_question(p_token) || jsonb_build_object('ok', true);
 end; $$;
 
+-- Fast mode for slow networks (exams that don't show answers): the page downloads the next few
+-- questions in advance and sends answers in the background, so moving on is instant.
+-- Up to 10 questions after the current one; never earlier ones, never answers.
+create or replace function public.exam_upcoming(p_token uuid, p_from integer, p_count integer default 5) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  s public.exam_sessions := exam__session(p_token);
+  e public.exam_exams;
+  first_i integer;
+  last_i integer;
+begin
+  if s.status <> 'in_progress' then return exam__result(s); end if;
+  select * into e from exam_exams where id = s.exam_id;
+  if e.paused then
+    return jsonb_build_object('paused', true, 'deadline', s.deadline, 'server_time', now(), 'warnings', s.warnings);
+  end if;
+  first_i := greatest(coalesce(p_from, 0), s.current_index);
+  last_i := least(first_i + least(greatest(coalesce(p_count, 5), 1), 10) - 1, s.current_index + 10, s.total - 1);
+  return jsonb_build_object(
+    'index', s.current_index, 'total', s.total, 'per_question_seconds', e.per_question_seconds,
+    'deadline', s.deadline, 'server_time', now(), 'warnings', s.warnings,
+    'questions', coalesce((
+      select jsonb_agg(jsonb_build_object('index', i - 1, 'question',
+               jsonb_build_object('id', qq.id, 'q', qq.q, 'opts', qq.opts, 'category', qq.category)) order by i)
+      from generate_series(first_i + 1, last_i + 1) i
+      join questions qq on qq.id = s.question_order[i]), '[]'::jsonb));
+end; $$;
+
+-- One step in fast mode: record the answer to a question (null = time ran out, no answer) and,
+-- if it is the current question, move on. Safe to repeat. An answer that arrives late because of
+-- the network still counts: for a question the server already moved past on its own timer, and
+-- for up to 3 minutes after the exam time ran out (answers given before time, delivered late).
+create or replace function public.exam_step(p_token uuid, p_question_id integer, p_choice integer) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  s public.exam_sessions := exam__session(p_token);
+  e public.exam_exams;
+  pos integer;
+  v_ans integer;
+  changed integer := 0;
+  late boolean;
+begin
+  late := s.status = 'auto_submitted' and s.ended_reason = 'Time is up' and s.ended_at > now() - interval '3 minutes';
+  if s.status <> 'in_progress' and not late then return exam__result(s); end if;
+  select * into e from exam_exams where id = s.exam_id;
+  if not late and e.paused then return exam__err('exam_paused'); end if;
+  if not late and p_choice is not null and (s.live_status->>'mic' = 'false' or s.live_status->>'locked' = 'true'
+     or (exam__face_mode() <> 'mic' and s.live_status->>'camera' = 'false')) then
+    return exam__err('devices_off');
+  end if;
+  pos := array_position(s.question_order, p_question_id);
+  if pos is null or pos > s.current_index + 1 then return exam__err('not_current_question'); end if;
+
+  if p_choice is not null and p_choice between 0 and 3 then
+    select ans_idx into v_ans from questions where id = p_question_id;
+    insert into exam_answers(session_id, question_id, chosen, correct)
+      values (s.id, p_question_id, p_choice, p_choice = v_ans)
+      on conflict (session_id, question_id) do update set chosen = excluded.chosen, correct = excluded.correct
+      where exam_answers.chosen is null;
+    get diagnostics changed = row_count;
+    if changed > 0 then
+      update exam_sessions set answered = answered + 1, score = score + (case when p_choice = v_ans then 1 else 0 end), last_seen_at = now()
+       where id = s.id returning * into s;
+    end if;
+  end if;
+  if late then return exam__result(s); end if;
+
+  if pos = s.current_index + 1 then
+    if p_choice is null then
+      insert into exam_answers(session_id, question_id, chosen, correct) values (s.id, p_question_id, null, false)
+        on conflict do nothing;
+    end if;
+    if s.current_index + 1 >= s.total then
+      perform exam__finish(s.id, 'submitted', 'Completed');
+      select * into s from exam_sessions where id = s.id;
+      return exam__result(s);
+    end if;
+    update exam_sessions set current_index = current_index + 1, current_shown_at = now(), last_seen_at = now()
+     where id = s.id returning * into s;
+  end if;
+  return jsonb_build_object('ok', true, 'index', s.current_index, 'total', s.total,
+    'deadline', s.deadline, 'server_time', now(), 'warnings', s.warnings);
+end; $$;
+
 -- Sent every ~15 seconds. Optionally carries a fresh face descriptor + photo
 -- for the periodic identity check. Returns anything the admin changed:
 -- ended exam, pause, a message to the student.
@@ -1008,6 +1092,8 @@ grant execute on function
   public.exam_question(uuid),
   public.exam_answer(uuid, integer, integer),
   public.exam_next(uuid),
+  public.exam_upcoming(uuid, integer, integer),
+  public.exam_step(uuid, integer, integer),
   public.exam_heartbeat(uuid, float8[], text, jsonb),
   public.exam_report(uuid, text, text, text),
   public.exam_submit(uuid),
