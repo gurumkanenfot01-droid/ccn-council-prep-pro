@@ -179,7 +179,25 @@ export default function AuthScreen({ t, signOutNotice }) {
             </div>
           )}
         </Card>
+        <LegalFooter t={t} />
       </div>
+    </div>
+  );
+}
+
+// What the service is, its prices, and links to the policy pages (public/legal/),
+// readable without an account.
+export function LegalFooter({ t }) {
+  const links = [["pricing", "Pricing"], ["terms", "Terms"], ["refund-policy", "Refund Policy"], ["privacy-policy", "Privacy"], ["contact", "Contact"]];
+  return (
+    <div style={{ textAlign: "center", marginTop: 18, fontSize: 12, color: t.textFaint, lineHeight: 1.6 }}>
+      <div>Online exam preparation for the Critical Care Nursing Council examination. Free preview; full access from ₦2,000 (6 months) or ₦4,000 (1 year), one-time payment via Paystack.</div>
+      <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "4px 12px" }}>
+        {links.map(([href, label]) => (
+          <a key={href} href={`/legal/${href}.html`} style={{ color: t.navy, fontWeight: 600, textDecoration: "none" }}>{label}</a>
+        ))}
+      </div>
+      <div style={{ marginTop: 6 }}>Nenfot · Jos, Plateau State, Nigeria · gurumkanenfot01@gmail.com</div>
     </div>
   );
 }
