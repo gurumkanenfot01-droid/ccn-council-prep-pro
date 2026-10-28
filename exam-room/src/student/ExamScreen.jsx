@@ -61,8 +61,38 @@ export default function ExamScreen({ cam, session, onFinished }) {
   // never reset by an unrelated re-render.
   const onFinishedRef = useRef(onFinished);
   onFinishedRef.current = onFinished;
+
+  // Fast mode (exams that don't show answers): the next few questions are
+  // downloaded in advance and answers go to the server in the background, in
+  // order, so "Next" is instant even on a slow network. Answers waiting to be
+  // sent are kept in this device's storage, so a refresh doesn't lose them.
+  const canFast = !session.show_answers;
+  const fast = useRef(false);
+  const ahead = useRef(new Map()); // index -> { index, total, question }
+  const queueKey = `exam-queue-${token}`;
+  const queue = useRef(null);
+  if (queue.current === null) {
+    try { queue.current = JSON.parse(localStorage.getItem(queueKey) || "[]"); } catch (e) { queue.current = []; }
+    if (!Array.isArray(queue.current)) queue.current = [];
+  }
+  const [pending, setPending] = useState(queue.current.length);
+  const saveQueue = useCallback(() => {
+    try { localStorage.setItem(queueKey, JSON.stringify(queue.current)); } catch (e) { /* storage full or blocked */ }
+    setPending(queue.current.length);
+  }, [queueKey]);
+  const flushRef = useRef(null);
+
   const finish = useCallback(result => {
     if (ended.current) return;
+    // Answers still on their way: send them first, then show the final result.
+    if (queue.current.length && flushRef.current) {
+      flushRef.current().then(last => {
+        if (ended.current) return;
+        ended.current = true;
+        onFinishedRef.current(last || result);
+      });
+      return;
+    }
     ended.current = true;
     onFinishedRef.current(result);
   }, []);
@@ -109,13 +139,102 @@ export default function ExamScreen({ cam, session, onFinished }) {
     try {
       const data = absorb(await api.question(token));
       if (!data || data.finished) return;
-      if (data.paused) { setQ(null); return; }
+      if (data.paused) { if (!fast.current) setQ(null); return; }
+      // Fast mode: the server may still be behind this page (answers not sent yet).
+      if (fast.current && (queue.current.length || (qRef.current && data.index < qRef.current.index))) return;
       setQ(data);
       setFeedback(data.answered ? { chosen: data.chosen, correct: data.correct, correct_index: data.correct_index, explanation: data.explanation } : null);
     } catch (e) { onError(e); } finally { loading.current = false; }
   }, [token, absorb, onError]);
 
-  useEffect(() => { loadQuestion(); }, [loadQuestion]);
+  const qRef = useRef(null);
+  qRef.current = q;
+
+  // Send queued answers one by one, retrying until they get through.
+  // Resolves with the final result if the exam finished meanwhile.
+  const flushing = useRef(null);
+  const flush = useCallback(() => {
+    if (flushing.current) return flushing.current;
+    flushing.current = (async () => {
+      let last = null;
+      while (queue.current.length) {
+        const st = queue.current[0];
+        try {
+          let data;
+          try { data = await api.step(token, st.id, st.choice); } catch (e) {
+            if (e.code !== "devices_off") throw e;
+            await api.heartbeat(token, null, null, liveStatus.current).catch(() => {});
+            data = await api.step(token, st.id, st.choice);
+          }
+          queue.current.shift(); saveQueue();
+          if (data && data.finished) last = data;
+          else if (data) { if (data.deadline) setDeadline(new Date(data.deadline).getTime()); if (typeof data.warnings === "number") setWarnings(data.warnings); }
+        } catch (e) {
+          if (["network", "devices_off", "exam_paused"].includes(e.code)) { await new Promise(r => setTimeout(r, 5000)); continue; }
+          queue.current.shift(); saveQueue(); // not accepted (e.g. already moved on): skip it
+        }
+      }
+      return last;
+    })().finally(() => { flushing.current = null; });
+    return flushing.current;
+  }, [token, saveQueue]);
+  flushRef.current = flush;
+
+  // Download the next few questions in advance.
+  const prefetching = useRef(false);
+  const prefetch = useCallback(async from => {
+    if (!fast.current || prefetching.current || ended.current) return;
+    prefetching.current = true;
+    try {
+      const data = await api.upcoming(token, from, 10);
+      if (data && data.finished) { finish(data); return; }
+      if (data && data.paused) { setPaused(true); return; }
+      for (const x of (data && data.questions) || []) ahead.current.set(x.index, { index: x.index, total: data.total, question: x.question });
+    } catch (e) { /* try again on the next question */ } finally { prefetching.current = false; }
+  }, [token, finish]);
+
+  const want = useRef(null); // index waiting to be shown when it arrives
+  const showLocal = useCallback(index => {
+    const x = ahead.current.get(index);
+    if (!x) return false;
+    ahead.current.delete(index);
+    const per = session.per_question_seconds;
+    setQ({ ...x, question_deadline: per ? new Date(serverNow() + per * 1000).toISOString() : null });
+    setFeedback(null);
+    want.current = null;
+    return true;
+  }, [session.per_question_seconds]);
+
+  // Move on (fast mode): queue the answer (null = none) and show the next question at once.
+  const [sending, setSending] = useState(false); // last question done, sending the answers
+  const advance = useCallback(choice => {
+    const cur = qRef.current;
+    if (!cur || ended.current) return;
+    queue.current.push({ id: cur.question.id, choice: choice ?? null });
+    saveQueue();
+    const wasLast = cur.index + 1 >= cur.total;
+    flush().then(last => {
+      if (last) finish(last);
+      else if (wasLast) { setSending(false); loadQuestion(); } // not finished after all: ask the server where we are
+    });
+    setFeedback(null);
+    if (wasLast) { setQ(null); setSending(true); return; }
+    if (!showLocal(cur.index + 1)) { setQ(null); want.current = cur.index + 1; prefetch(cur.index + 1); }
+    else if (!ahead.current.has(cur.index + 6)) prefetch(cur.index + 2);
+  }, [saveQueue, flush, finish, showLocal, prefetch, loadQuestion]);
+
+  useEffect(() => {
+    // Answers left from before a refresh: send them first, then load where the server is.
+    if (queue.current.length) { fast.current = true; flush().then(last => { if (last) finish(last); else loadQuestion(); }); }
+    else loadQuestion();
+    if (canFast) {
+      api.upcoming(token, 0, 10).then(data => {
+        if (!data || data.finished || data.paused) return;
+        fast.current = true;
+        for (const x of data.questions || []) ahead.current.set(x.index, { index: x.index, total: data.total, question: x.question });
+      }, () => { /* database without fast mode: answer as before */ });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Proctoring: violations go straight to the server, which counts them.
   const report = useCallback(async (type, detail, photo) => {
@@ -215,11 +334,15 @@ export default function ExamScreen({ cam, session, onFinished }) {
     const t = setInterval(() => {
       setTick(x => x + 1);
       const now = serverNow();
-      if (now >= deadline) loadQuestion();
+      if (now >= deadline) { if (!flushing.current) loadQuestion(); }
+      else if (fast.current) {
+        if (!q && want.current != null && !showLocal(want.current)) prefetch(want.current);
+        else if (q && q.question_deadline && !feedback && now >= new Date(q.question_deadline).getTime()) advance(null);
+      }
       else if (q && q.question_deadline && !feedback && now >= new Date(q.question_deadline).getTime() + 1500) loadQuestion();
     }, 1000);
     return () => clearInterval(t);
-  }, [deadline, q, feedback, loadQuestion]);
+  }, [deadline, q, feedback, loadQuestion, showLocal, prefetch, advance]);
 
   // Was paused: poll for resume.
   useEffect(() => {
@@ -335,6 +458,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   }, [deviceKey, sendStatus]);
   async function choose(i) {
     if (!q || feedback || busy || locked) return;
+    if (fast.current) { setFeedback({ chosen: i }); return; } // sent with "Next"
     setBusy(true);
     try {
       let data;
@@ -350,6 +474,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
 
   async function next() {
     if (locked) return;
+    if (fast.current) { advance(feedback ? feedback.chosen : null); return; }
     setBusy(true);
     try {
       const data = absorb(await api.next(token));
@@ -364,7 +489,13 @@ export default function ExamScreen({ cam, session, onFinished }) {
 
   async function submitNow() {
     setConfirmSubmit(false);
-    try { absorb(await api.submit(token)); } catch (e) { onError(e); }
+    setSending(true);
+    try {
+      // Send any answers still waiting before submitting.
+      const last = await flush();
+      if (last) { finish(last); return; }
+      absorb(await api.submit(token));
+    } catch (e) { onError(e); } finally { setSending(false); }
   }
 
   const now = serverNow();
@@ -411,8 +542,16 @@ export default function ExamScreen({ cam, session, onFinished }) {
               <h2 style={{ fontSize: 18 }}>The exam is paused</h2>
               <p className="muted">The administrator has paused the exam. Stay on this page — it continues automatically.</p>
             </div>
+          ) : sending || left <= 0 ? (
+            <div style={{ textAlign: "center", padding: 30 }}>
+              <Spinner />
+              <p className="muted" style={{ marginTop: 12 }}>{left <= 0 ? "Time is up. " : ""}Sending your answers{pending ? ` (${pending} left)` : ""}… Stay on this page.</p>
+            </div>
           ) : !q ? (
-            <div style={{ textAlign: "center", padding: 30 }}><Spinner /></div>
+            <div style={{ textAlign: "center", padding: 30 }}>
+              <Spinner />
+              {offline && <p className="muted" style={{ marginTop: 12 }}>Loading the next question… (weak network)</p>}
+            </div>
           ) : (
             <>
               <div className="row" style={{ marginBottom: 8 }}>
@@ -447,8 +586,9 @@ export default function ExamScreen({ cam, session, onFinished }) {
                 </div>
               )}
               {feedback && feedback.correct_index == null && (
-                <p className="muted" style={{ marginTop: 14 }}>Answer recorded.</p>
+                <p className="muted" style={{ marginTop: 14 }}>{fast.current ? "Answer chosen. Tap Next — it is saved automatically." : "Answer recorded."}</p>
               )}
+              {pending > 2 && <p className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>{pending} answers waiting to send (weak network) — they are kept safely and go through by themselves.</p>}
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
                 <button className={`btn ${isLast ? "btn-success" : "btn-primary"}`} disabled={!feedback || busy} onClick={next}>
                   {isLast ? "Finish exam" : "Next question"} <ArrowRight size={16} />

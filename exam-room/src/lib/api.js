@@ -120,6 +120,9 @@ export const api = {
   question: token => retry("exam_question", { p_token: token }),
   answer: (token, questionId, choice) => retry("exam_answer", { p_token: token, p_question_id: questionId, p_choice: choice }),
   next: token => retry("exam_next", { p_token: token }),
+  // Fast mode (slow networks): questions downloaded ahead, answers sent in the background.
+  upcoming: (token, from, count = 5) => retry("exam_upcoming", { p_token: token, p_from: from, p_count: count }),
+  step: (token, questionId, choice) => retry("exam_step", { p_token: token, p_question_id: questionId, p_choice: choice }),
   heartbeat: (token, descriptor = null, photo = null, status = null) =>
     rpc("exam_heartbeat", { p_token: token, p_descriptor: descriptor, p_photo: photo, p_status: status }),
   liveFrame: (token, frame) => rpc("exam_live_frame", { p_token: token, p_frame: frame }),
