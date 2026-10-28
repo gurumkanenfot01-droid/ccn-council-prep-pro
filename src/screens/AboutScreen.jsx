@@ -1,6 +1,7 @@
 import { Info, Mail, ShieldCheck, Sparkles, BookOpenCheck, Code2 } from "lucide-react";
 import { Card, SectionHeader, useApp } from "../ui/kit.jsx";
 import { CATEGORY_LIST } from "../App.jsx";
+import { LegalFooter } from "./AuthScreen.jsx";
 
 const APP_VERSION = "1.0.0";
 const DEVELOPER_NAME = "Nenfot Gurumka";
@@ -87,6 +88,7 @@ export default function AboutScreen() {
           </div>
         ))}
       </Card>
+      <LegalFooter t={t} />
     </div>
   );
 }

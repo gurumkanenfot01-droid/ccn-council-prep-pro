@@ -115,6 +115,7 @@ export default function SubscribeScreen() {
 
       <div style={{ fontSize: 11, color: t.textFaint, textAlign: "center", marginTop: 8 }}>
         Payments are processed securely by Paystack. Card, bank transfer, and USSD are supported.
+        One-time payment — no automatic renewal. See the <a href="/legal/refund-policy.html" style={{ color: t.navy }}>Refund Policy</a> and <a href="/legal/terms.html" style={{ color: t.navy }}>Terms</a>.
       </div>
     </div>
   );
