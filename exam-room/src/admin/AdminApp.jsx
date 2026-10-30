@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, Activity, ClipboardList, Users, BarChart3, LogOut } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { Spinner } from "../ui.jsx";
+import { SPECIALTIES, getSpecialty, setSpecialty } from "../lib/specialty.js";
 import MonitorTab from "./MonitorTab.jsx";
 import ExamsTab from "./ExamsTab.jsx";
 import StudentsTab from "./StudentsTab.jsx";
@@ -45,6 +46,8 @@ export default function AdminApp() {
   const [session, setSession] = useState(undefined);
   const [isAdmin, setIsAdmin] = useState(null);
   const [tab, setTab] = useState("monitor");
+  const [specialty, setSpecialtyState] = useState(getSpecialty());
+  const chooseSpecialty = id => { setSpecialty(id); setSpecialtyState(id); };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
@@ -86,6 +89,14 @@ export default function AdminApp() {
         </div>
         <button className="btn btn-ghost btn-sm" onClick={() => supabase.auth.signOut()}><LogOut size={14} /> Log out</button>
       </header>
+      <div className="row" role="tablist" aria-label="Specialty" style={{ gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+        {SPECIALTIES.map(s => (
+          <button key={s.id} role="tab" aria-selected={specialty === s.id}
+            className={`btn btn-sm ${specialty === s.id ? "btn-primary" : "btn-ghost"}`} onClick={() => chooseSpecialty(s.id)}>
+            {s.label}
+          </button>
+        ))}
+      </div>
       <nav className="tabs" role="tablist">
         {TABS.map(t => (
           <button key={t.id} role="tab" className="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
@@ -93,7 +104,7 @@ export default function AdminApp() {
           </button>
         ))}
       </nav>
-      <Current />
+      <Current key={specialty} />
     </main>
   );
 }

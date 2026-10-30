@@ -42,6 +42,10 @@ create table if not exists public.exam_candidates (
 -- even after it has closed, with unlimited retakes (e.g. students who joined late).
 alter table public.exam_candidates add column if not exists anytime boolean not null default false;
 
+-- Specialty: 'ccn' (Critical Care Nursing) or 'periop' (Perioperative Nursing). Students only see
+-- exams of their own specialty.
+alter table public.exam_candidates add column if not exists specialty text not null default 'ccn';
+
 create table if not exists public.exam_exams (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -64,6 +68,8 @@ create table if not exists public.exam_exams (
   created_at timestamptz not null default now(),
   check (ends_at > starts_at)
 );
+
+alter table public.exam_exams add column if not exists specialty text not null default 'ccn';
 
 create table if not exists public.exam_allowed (
   exam_id uuid not null references public.exam_exams(id) on delete cascade,
@@ -275,6 +281,7 @@ create or replace function public.exam__can_access(e public.exam_exams, p_candid
 language sql stable security definer set search_path = public as $$
   select (e.all_candidates or exists (select 1 from exam_allowed a where a.exam_id = e.id and a.candidate_id = p_candidate))
      and not exists (select 1 from exam_blocked b where b.exam_id = e.id and b.candidate_id = p_candidate)
+     and coalesce(e.specialty, 'ccn') = coalesce((select c.specialty from exam_candidates c where c.id = p_candidate), 'ccn')
 $$;
 
 -- Face descriptors closer than this are the same person. face-api.js uses 0.6;
@@ -606,6 +613,7 @@ begin
     'face_status', c.face_status,
     'face_mode', exam__face_mode(),
     'require_app', coalesce((select require_app from exam_settings where id = 1), false),
+    'specialty', c.specialty,
     'require_desktop_app', coalesce((select require_desktop_app from exam_settings where id = 1), false),
     'server_time', now(),
     'exams', coalesce((

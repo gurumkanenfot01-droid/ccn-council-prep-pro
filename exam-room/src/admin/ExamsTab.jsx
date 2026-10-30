@@ -3,6 +3,7 @@ import { Plus, Pencil, PauseCircle, PlayCircle, Lock, Trash2, Save, Shuffle, Use
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner, fmtDateTime } from "../ui.jsx";
+import { getSpecialty } from "../lib/specialty.js";
 
 // <input type="datetime-local"> works in local time without a timezone.
 function toLocalInput(iso) {
@@ -111,6 +112,7 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
       show_answers: f.show_answers, show_score: f.show_score, max_warnings: Number(f.max_warnings),
       shuffle: f.shuffle, all_candidates: f.all_candidates, attempts_allowed: Number(f.attempts_allowed || 1),
       proctor_level: f.proctor_level || "relaxed", questions_per_student: perStudent,
+      ...(f.id ? {} : { specialty: getSpecialty() }),
     };
     const res = f.id
       ? await supabase.from("exam_exams").update(row).eq("id", f.id).select("id").single()
@@ -372,7 +374,7 @@ export default function ExamsTab() {
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const { data, error: err } = await supabase.from("exam_exams").select("*").order("starts_at", { ascending: false });
+    const { data, error: err } = await supabase.from("exam_exams").select("*").eq("specialty", getSpecialty()).order("starts_at", { ascending: false });
     if (err) setError(err.message); else setExams(data);
   }, []);
 
@@ -386,7 +388,7 @@ export default function ExamsTab() {
         if (!data || data.length < 1000) break;
       }
       setBank(all);
-      const { data: c, error: cErr } = await supabase.from("exam_candidates").select("id, full_name, access_code, batch, name_pending").eq("active", true).order("full_name");
+      const { data: c, error: cErr } = await supabase.from("exam_candidates").select("id, full_name, access_code, batch, name_pending").eq("active", true).eq("specialty", getSpecialty()).order("full_name");
       if (cErr) setError(adminDbMessage(cErr));
       setCandidates(c || []);
     })();

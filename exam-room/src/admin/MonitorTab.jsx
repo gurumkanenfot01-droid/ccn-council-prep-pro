@@ -8,6 +8,7 @@ import { fmtClock } from "../lib/api.js";
 import { useLiveWatch, liveSupported } from "../lib/live.js";
 import { Spinner } from "../ui.jsx";
 import { examState } from "./ExamsTab.jsx";
+import { getSpecialty } from "../lib/specialty.js";
 
 const POLL_MS = 5000;
 const PHOTO_POLL_MS = 20000;
@@ -35,7 +36,7 @@ export function useExamPicker() {
   const [exams, setExams] = useState(null);
   const [examId, setExamId] = useState("");
   useEffect(() => {
-    supabase.from("exam_exams").select("*").order("starts_at", { ascending: false }).then(({ data }) => {
+    supabase.from("exam_exams").select("*").eq("specialty", getSpecialty()).order("starts_at", { ascending: false }).then(({ data }) => {
       setExams(data || []);
       const now = Date.now();
       const open = (data || []).find(e => !e.closed && new Date(e.starts_at) <= now && new Date(e.ends_at) > now);
