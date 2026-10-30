@@ -225,12 +225,18 @@ export default function ExamScreen({ cam, session, onFinished }) {
 
   useEffect(() => {
     // Answers left from before a refresh: send them first, then load where the server is.
-    if (queue.current.length) { fast.current = true; flush().then(last => { if (last) finish(last); else loadQuestion(); }); }
+    if (queue.current.length) {
+      fast.current = true;
+      // Answers saved before a refresh: send them, then carry on in this exam's
+      // current mode (with answers and explanations if the admin turned them on).
+      flush().then(last => { fast.current = false; if (last) finish(last); else loadQuestion(); });
+    }
     else loadQuestion();
     if (canFast) {
       api.upcoming(token, 0, 10).then(data => {
         if (!data || data.finished || data.paused) return;
-        fast.current = true;
+        if (flushing.current) { flushing.current.then(() => { fast.current = true; }); }
+        else fast.current = true;
         for (const x of data.questions || []) ahead.current.set(x.index, { index: x.index, total: data.total, question: x.question });
       }, () => { /* database without fast mode: answer as before */ });
     }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { reloadNow } from "../lib/update.js";
 import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock, RotateCcw, Smartphone, Download } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
@@ -304,6 +304,8 @@ function AppRequired({ kind }) {
   );
 }
 
+const RESUME_KEY = "ccn-exam-resume";
+
 function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
   const [agreed, setAgreed] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -421,9 +423,27 @@ export default function StudentApp({ updateReady = false }) {
   // nobody stays on an old version (answers and time are kept on the server).
   useEffect(() => {
     if (!updateReady || view !== "exam") return undefined;
-    const t = setTimeout(reloadNow, 60000);
+    const t = setTimeout(() => {
+      // Come straight back to this exam after the refresh.
+      try { sessionStorage.setItem(RESUME_KEY, exam ? exam.id : ""); } catch (e) { /* ignore */ }
+      reloadNow();
+    }, 60000);
     return () => clearTimeout(t);
-  }, [updateReady, view]);
+  }, [updateReady, view, exam]);
+  // After an automatic refresh during an exam, open that exam's start screen
+  // again so the student only has to tap once to continue.
+  // Also when the page is reloaded for any reason: an exam already in progress
+  // opens straight away (only on the first load, so "Back" still works).
+  const autoResumed = useRef(false);
+  useEffect(() => {
+    if (!profile || view !== "exams" || autoResumed.current) return;
+    autoResumed.current = true;
+    let id = "";
+    try { id = sessionStorage.getItem(RESUME_KEY) || ""; sessionStorage.removeItem(RESUME_KEY); } catch (e) { /* ignore */ }
+    const live = (profile.exams || []).filter(x => x.session_status === "in_progress" && !x.paused);
+    const ex = live.find(x => x.id === id) || live[0];
+    if (ex) { setExam(ex); setView("prep"); }
+  }, [profile, view]);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(!!code);
   const [refreshError, setRefreshError] = useState("");
