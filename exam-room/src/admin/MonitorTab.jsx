@@ -313,7 +313,7 @@ export default function MonitorTab() {
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    supabase.from("exam_candidates").select("id, full_name, access_code, active").order("full_name").then(({ data }) => setCandidates(data || []));
+    supabase.from("exam_candidates").select("id, full_name, access_code, active, specialty").order("full_name").then(({ data }) => setCandidates(data || []));
   }, []);
   useEffect(() => { setExamRow(exam || null); seen.current = null; setAlerts([]); }, [exam]);
 
@@ -386,7 +386,8 @@ export default function MonitorTab() {
     const list = sessions.map(s => ({ s, c: byCandidate[s.candidate_id] }));
     if (examRow && examRow.all_candidates) {
       const started = new Set(sessions.map(s => s.candidate_id));
-      candidates.filter(c => c.active && !started.has(c.id)).forEach(c => list.push({ s: null, c }));
+      const spec = examRow.specialty || "ccn";
+      candidates.filter(c => c.active && (c.specialty || "ccn") === spec && !started.has(c.id)).forEach(c => list.push({ s: null, c }));
     }
     const rank = r => (!r.s ? 3 : r.s.status === "in_progress" ? (r.s.warnings ? 0 : 1) : 2);
     return list.sort((a, b) => rank(a) - rank(b) || (b.s?.warnings || 0) - (a.s?.warnings || 0));
