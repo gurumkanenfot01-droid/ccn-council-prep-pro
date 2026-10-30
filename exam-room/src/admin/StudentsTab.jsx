@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
 import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL } from "../lib/app.js";
+import { getSpecialty, specialtyLabel } from "../lib/specialty.js";
 
 // No look-alike characters (0/O, 1/I/L), so codes are easy to read out.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -13,7 +14,7 @@ export function newCode(length = 8) {
   return Array.from(bytes, b => ALPHABET[b % ALPHABET.length]).join("");
 }
 
-const FIELDS = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime";
+const FIELDS = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime, specialty";
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -31,7 +32,7 @@ async function insertCandidates(rows) {
   for (let i = 0; i < rows.length; i += 100) {
     let chunk = rows.slice(i, i + 100);
     for (let tries = 0; ; tries++) {
-      const { data, error } = await supabase.from("exam_candidates").insert(chunk).select(FIELDS);
+      const { data, error } = await supabase.from("exam_candidates").insert(chunk.map(r => ({ ...r, specialty: getSpecialty() }))).select(FIELDS);
       if (!error) { created.push(...data); break; }
       if (error.code !== "23505" || tries >= 4) throw new Error(error.message);
       chunk = chunk.map(r => ({ ...r, access_code: newCode() }));
@@ -180,6 +181,7 @@ export default function StudentsTab() {
     const { data, error } = await supabase
       .from("exam_candidates")
       .select(FIELDS)
+      .eq("specialty", getSpecialty())
       .order("created_at", { ascending: false });
     if (error) { setLoadError(adminDbMessage(error)); setRows([]); } else { setLoadError(""); setRows(data); }
   }, []);
@@ -271,7 +273,7 @@ export default function StudentsTab() {
       <FaceModeCard />
       <AppRequiredCard />
       <section className="card">
-        <h2 style={{ fontSize: 16, marginTop: 0 }}><UserPlus size={17} /> Create access codes</h2>
+        <h2 style={{ fontSize: 16, marginTop: 0 }}><UserPlus size={17} /> Create access codes — {specialtyLabel(getSpecialty())}</h2>
         <div className="row" style={{ gap: 6, marginBottom: 12 }} role="tablist">
           <button role="tab" aria-selected={mode === "names"} className={`btn btn-sm ${mode === "names" ? "btn-primary" : "btn-ghost"}`} onClick={() => setMode("names")}>From a list of names</button>
           <button role="tab" aria-selected={mode === "blank"} className={`btn btn-sm ${mode === "blank" ? "btn-primary" : "btn-ghost"}`} onClick={() => setMode("blank")}>Blank codes (no names)</button>

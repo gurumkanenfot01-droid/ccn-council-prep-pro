@@ -4,6 +4,7 @@ import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckC
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useCamera, enterFullscreen, exitFullscreen } from "../lib/proctor.js";
 import { snapshot } from "../lib/face.js";
+import { specialtyLabel } from "../lib/specialty.js";
 import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL, isAndroidBrowser, isWindowsBrowser } from "../lib/app.js";
 import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
 import Liveness from "./Liveness.jsx";
@@ -538,7 +539,8 @@ export default function StudentApp({ updateReady = false }) {
   return (
     <main className="wrap">
       <Header name={profile.name} onLogout={logout} />
-      <h1 className="serif" style={{ fontSize: 24, margin: "0 0 12px" }}>Welcome, {profile.name.split(" ")[0]}</h1>
+      <h1 className="serif" style={{ fontSize: 24, margin: "0 0 4px" }}>Welcome, {profile.name.split(" ")[0]}</h1>
+      <p className="muted" style={{ margin: "0 0 12px", fontSize: 13.5 }}>{specialtyLabel(profile.specialty)}</p>
       {faceMode === "full" && profile.face_status === "pending" && (
         <div className="banner banner-warn"><Hourglass size={16} /> Your face registration is waiting for approval. You can start exams once it’s approved.</div>
       )}
