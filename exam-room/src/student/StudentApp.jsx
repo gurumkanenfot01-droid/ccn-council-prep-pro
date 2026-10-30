@@ -180,7 +180,9 @@ function ExamCard({ exam, onStart }) {
   let action;
   const used = exam.attempts_used || 0;
   const allowed = exam.attempts_allowed || 1;
-  const open = now >= starts && now < ends && !exam.paused;
+  // Students with 'anytime' access can take any exam whenever they like.
+  const anytime = !!exam.anytime;
+  const open = (anytime || (now >= starts && now < ends)) && !exam.paused;
   if (finished) {
     action = (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -194,7 +196,7 @@ function ExamCard({ exam, onStart }) {
       </div>
       {exam.can_retake ? (
         <button className="btn btn-primary" style={{ alignSelf: "flex-start" }} onClick={() => onStart(exam)}>
-          <RotateCcw size={16} /> Retake exam (attempt {used + 1} of {allowed})
+          <RotateCcw size={16} /> {anytime ? "Retake exam" : `Retake exam (attempt ${used + 1} of ${allowed})`}
         </button>
       ) : open && (
         <span className="faint" style={{ fontSize: 13 }}>
@@ -210,6 +212,12 @@ function ExamCard({ exam, onStart }) {
     action = (
       <button className="btn btn-primary" onClick={() => onStart(exam)}>
         <PlayCircle size={16} /> Continue exam
+      </button>
+    );
+  } else if (anytime && !exam.paused) {
+    action = (
+      <button className="btn btn-primary" onClick={() => onStart(exam)}>
+        <PlayCircle size={16} /> Start exam
       </button>
     );
   } else if (now < starts) {
@@ -229,7 +237,7 @@ function ExamCard({ exam, onStart }) {
     <div className="card exam-card">
       <div className="row"><strong style={{ fontSize: 16 }}>{exam.title}</strong></div>
       <div className="muted" style={{ fontSize: 13.5 }}>
-        <Clock size={13} /> {fmtDateTime(exam.starts_at)} – {fmtDateTime(exam.ends_at)} · {exam.duration_minutes} min · {exam.question_count} questions
+        <Clock size={13} /> {anytime ? "Available anytime" : `${fmtDateTime(exam.starts_at)} – ${fmtDateTime(exam.ends_at)}`} · {exam.duration_minutes} min · {exam.question_count} questions
         {allowed > 1 && ` · ${allowed} attempts allowed`}
       </div>
       <div>{action}</div>
