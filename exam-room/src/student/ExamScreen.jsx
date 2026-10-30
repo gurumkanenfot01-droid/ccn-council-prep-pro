@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, Calculator as CalcIcon, Eye, VideoOff, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX } from "lucide-react";
+import { AlertTriangle, Calculator as CalcIcon, Eye, VideoOff, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX, RefreshCw } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useProctor, VIOLATION_LABELS, pauseSoundChecks } from "../lib/proctor.js";
 import { useLiveShare } from "../lib/live.js";
 import Calculator from "./Calculator.jsx";
-import { isReloading } from "../lib/update.js";
+import { isReloading, reloadNow } from "../lib/update.js";
 import { IN_APP } from "../lib/app.js";
 import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinner } from "../ui.jsx";
 
@@ -66,7 +66,10 @@ export default function ExamScreen({ cam, session, onFinished }) {
   // downloaded in advance and answers go to the server in the background, in
   // order, so "Next" is instant even on a slow network. Answers waiting to be
   // sent are kept in this device's storage, so a refresh doesn't lose them.
-  const canFast = !session.show_answers;
+  // Every exam uses fast mode, so a weak network never stops the student moving on.
+  // When answers are shown, the result and explanation are fetched if the network
+  // answers quickly enough (see choose()).
+  const canFast = true;
   const fast = useRef(false);
   const ahead = useRef(new Map()); // index -> { index, total, question }
   const queueKey = `exam-queue-${token}`;
@@ -464,7 +467,31 @@ export default function ExamScreen({ cam, session, onFinished }) {
   }, [deviceKey, sendStatus]);
   async function choose(i) {
     if (!q || feedback || busy || locked) return;
-    if (fast.current) { setFeedback({ chosen: i }); return; } // sent with "Next"
+    if (fast.current) {
+      // Answer is sent with "Next". If this exam shows answers and nothing is waiting
+      // to be sent, ask the server for the result — but never wait more than 6 s.
+      if (!session.show_answers || queue.current.length || offline) { setFeedback({ chosen: i, saved: !!session.show_answers }); return; }
+      const qid = q.question.id;
+      setBusy(true);
+      const attempt = (async () => {
+        try { return await api.answer(token, qid, i); } catch (e) {
+          if (e.code !== "devices_off") throw e;
+          await sendStatus();
+          return api.answer(token, qid, i);
+        }
+      })();
+      attempt.catch(() => {}); // a late failure after moving on is harmless (the queue sends the answer)
+      let data = null;
+      try { data = await Promise.race([attempt, new Promise(r => setTimeout(() => r(null), 6000))]); } catch (e) { data = null; }
+      setBusy(false);
+      if (!qRef.current || qRef.current.question.id !== qid) return;
+      if (data && data.finished) { absorb(data); return; }
+      if (data && data.correct_index != null) {
+        absorb(data);
+        setFeedback({ chosen: data.chosen, correct: data.correct, correct_index: data.correct_index, explanation: data.explanation });
+      } else setFeedback({ chosen: i, saved: true });
+      return;
+    }
     setBusy(true);
     try {
       let data;
@@ -523,6 +550,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
           <span className={`timer ${left < 5 * 60000 ? "low" : ""}`} aria-label="Time left"><Clock size={16} /> {fmtClock(left)}</span>
           <span className={`pill ${warnings ? "pill-warn" : "pill-ok"}`}><AlertTriangle size={13} /> {warnings}/{maxWarnings}</span>
           <button className={`btn btn-sm ${showCalc ? "btn-primary" : "btn-ghost"}`} onClick={() => setShowCalc(v => !v)} aria-pressed={showCalc}><CalcIcon size={14} /> Calculator</button>
+          <button className="btn btn-ghost btn-sm" onClick={reloadNow} title="Reload the page if it is stuck. Your answers and time are kept."><RefreshCw size={14} /> Refresh</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setConfirmSubmit(true)}><Send size={14} /> Submit</button>
         </div>
       </header>
@@ -592,7 +620,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
                 </div>
               )}
               {feedback && feedback.correct_index == null && (
-                <p className="muted" style={{ marginTop: 14 }}>{fast.current ? "Answer chosen. Tap Next — it is saved automatically." : "Answer recorded."}</p>
+                <p className="muted" style={{ marginTop: 14 }}>{feedback.saved ? "Weak network — your answer is saved and will be sent automatically. Tap Next to continue." : fast.current ? "Answer chosen. Tap Next — it is saved automatically." : "Answer recorded."}</p>
               )}
               {pending > 2 && <p className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>{pending} answers waiting to send (weak network) — they are kept safely and go through by themselves.</p>}
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
