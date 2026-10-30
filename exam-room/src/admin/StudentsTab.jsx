@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
@@ -13,7 +13,7 @@ export function newCode(length = 8) {
   return Array.from(bytes, b => ALPHABET[b % ALPHABET.length]).join("");
 }
 
-const FIELDS = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch";
+const FIELDS = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime";
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -377,7 +377,10 @@ export default function StudentsTab() {
                         </button>
                       </td>
                       <td><span className={`pill ${cls}`}>{label}</span></td>
-                      <td>{r.active ? <span className="pill pill-ok">Active</span> : <span className="pill pill-bad">Disabled</span>}</td>
+                      <td>
+                        {r.active ? <span className="pill pill-ok">Active</span> : <span className="pill pill-bad">Disabled</span>}
+                        {r.anytime && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Clock size={12} /> Anytime</span></div>}
+                      </td>
                       <td>
                         <div className="row" style={{ gap: 6 }}>
                           {r.face_status !== "none" && <button className="btn btn-sm btn-ghost" onClick={() => viewPhoto(r)}><Image size={13} /> Photo</button>}
@@ -389,6 +392,10 @@ export default function StudentsTab() {
                             <button className="btn btn-sm btn-ghost" onClick={() => confirm(`Reset ${r.full_name}'s face? They must register again before their next exam.`) && update(r.id, { face_status: "none", face_descriptor: null, face_photo: null }, "Face reset.")}>
                               <RotateCcw size={13} /> Reset face
                             </button>}
+                          <button className="btn btn-sm btn-ghost" title="Let this student take every exam (past, current and future) at any time, with unlimited retakes"
+                            onClick={() => update(r.id, { anytime: !r.anytime }, r.anytime ? `${r.full_name || "This student"} now follows the normal exam times.` : `${r.full_name || "This student"} can now take every exam at any time.`)}>
+                            <Clock size={13} /> {r.anytime ? "Normal times" : "Anytime access"}
+                          </button>
                           <button className="btn btn-sm btn-ghost" onClick={() => update(r.id, { active: !r.active }, r.active ? "Code disabled — any exam in progress will end." : "Code enabled.")}>
                             {r.active ? <><Ban size={13} /> Disable</> : <><CheckCircle2 size={13} /> Enable</>}
                           </button>

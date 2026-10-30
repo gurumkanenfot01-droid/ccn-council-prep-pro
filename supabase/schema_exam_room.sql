@@ -38,6 +38,10 @@ create table if not exists public.exam_candidates (
   created_at timestamptz not null default now()
 );
 
+-- Students with 'anytime' access can take every exam (past, current and future) whenever they like,
+-- even after it has closed, with unlimited retakes (e.g. students who joined late).
+alter table public.exam_candidates add column if not exists anytime boolean not null default false;
+
 create table if not exists public.exam_exams (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -356,7 +360,7 @@ begin
   if new.closed and not coalesce(old.closed, false) then
     update exam_sessions
        set status = 'auto_submitted', ended_reason = 'Exam closed by the administrator', ended_at = now()
-     where exam_id = new.id and status = 'in_progress';
+     where exam_id = new.id and status = 'in_progress' and not exam__anytime(candidate_id);
   end if;
   return new;
 end; $$;
@@ -379,7 +383,7 @@ begin
   if s.status = 'in_progress' then
     if now() >= s.deadline then
       perform exam__finish(s.id, 'auto_submitted', 'Time is up');
-    elsif e.closed then
+    elsif e.closed and not exam__anytime(s.candidate_id) then
       perform exam__finish(s.id, 'auto_submitted', 'Exam closed by the administrator');
     elsif e.per_question_seconds is not null and not e.paused and s.current_shown_at is not null
           and now() > s.current_shown_at + make_interval(secs => e.per_question_seconds + 3) then
@@ -414,12 +418,19 @@ $$;
 -- A student may start another attempt by themselves when their last attempt
 -- was submitted (normally or at the warning limit), attempts remain and the
 -- exam is open. An attempt ended for cheating needs the admin's permission.
+create or replace function public.exam__anytime(p_candidate uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((select anytime from public.exam_candidates where id = p_candidate), false)
+$$;
+
 create or replace function public.exam__can_self_retake(e public.exam_exams, s public.exam_sessions) returns boolean
 language sql stable security definer set search_path = public as $$
   select s.id is not null
      and s.status in ('submitted', 'auto_submitted')
-     and (select count(*) from exam_sessions x where x.exam_id = e.id and x.candidate_id = s.candidate_id) < e.attempts_allowed
-     and not e.closed and not e.paused and now() >= e.starts_at and now() < e.ends_at
+     and not e.paused
+     and (exam__anytime(s.candidate_id)
+          or ((select count(*) from exam_sessions x where x.exam_id = e.id and x.candidate_id = s.candidate_id) < e.attempts_allowed
+              and not e.closed and now() >= e.starts_at and now() < e.ends_at))
 $$;
 
 -- ===================== ADMIN FUNCTIONS =====================
@@ -609,14 +620,16 @@ begin
         'session_status', s.status,
         'result', case when s.status is not null and s.status <> 'in_progress' then exam__result(s) end,
         'attempts_allowed', e.attempts_allowed,
+        'anytime', c.anytime,
         'attempts_used', (select count(*) from exam_sessions x where x.exam_id = e.id and x.candidate_id = c.id),
         'can_retake', exam__can_self_retake(e, s)
       ) order by e.starts_at)
       from exam_exams e
       left join exam_sessions s on s.exam_id = e.id and s.candidate_id = c.id and not s.archived
       where exam__can_access(e, c.id)
-        and ((not e.closed and e.ends_at > now()) or s.id is not null)
-        and e.ends_at > now() - interval '7 days'
+        and (c.anytime
+             or (((not e.closed and e.ends_at > now()) or s.id is not null)
+                 and e.ends_at > now() - interval '7 days'))
     ), '[]'::jsonb));
 end; $$;
 
@@ -722,9 +735,11 @@ begin
     insert into exam_events(exam_id, candidate_id, session_id, type, detail, photo)
       values (e.id, c.id, s.id, 'resume', format('Re-entered the exam (%s)', how), exam__clean_photo(p_photo));
   else
-    if e.closed then return exam__err('exam_closed'); end if;
-    if now() < e.starts_at then return exam__err('exam_not_started'); end if;
-    if now() >= e.ends_at then return exam__err('exam_ended'); end if;
+    if not c.anytime then
+      if e.closed then return exam__err('exam_closed'); end if;
+      if now() < e.starts_at then return exam__err('exam_not_started'); end if;
+      if now() >= e.ends_at then return exam__err('exam_ended'); end if;
+    end if;
     if e.paused then return exam__err('exam_paused'); end if;
     if cardinality(e.question_ids) = 0 then return exam__err('exam_has_no_questions'); end if;
     -- Draw this student's random set from the pool; keep the pool's order unless shuffling.
@@ -732,7 +747,8 @@ begin
     select array_agg(x order by case when e.shuffle then random() else pos end) into ord
       from (select x, pos from unnest(e.question_ids) with ordinality u(x, pos) order by random() limit plan.n) pick;
     insert into exam_sessions(exam_id, candidate_id, question_order, deadline, total, user_agent, last_photo, last_photo_at, attempt)
-      values (e.id, c.id, ord, least(now() + make_interval(mins => plan.minutes), e.ends_at),
+      values (e.id, c.id, ord, case when c.anytime then now() + make_interval(mins => plan.minutes)
+                                    else least(now() + make_interval(mins => plan.minutes), e.ends_at) end,
               cardinality(ord), left(coalesce(p_user_agent, ''), 300), exam__clean_photo(p_photo), now(),
               1 + (select count(*) from exam_sessions x where x.exam_id = e.id and x.candidate_id = c.id))
       returning * into s;
