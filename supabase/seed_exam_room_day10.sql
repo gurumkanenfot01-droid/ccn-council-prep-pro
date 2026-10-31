@@ -1,7 +1,7 @@
 -- CCN Mock Exam Day 10 (1 Nov 2026): 200 questions, 10 sections of 20, covering curriculum topics that
 -- Days 1–8 did not touch (or touched only once or twice), plus 20 ICU management questions.
 -- Adds the questions as hidden exam-only copies (not shown in the practice app) and creates the exam for the
--- Critical Care section (09:10–11:30 Nigeria time, 140 minutes, 1 attempt, answers shown after each question).
+-- Critical Care section (09:00–23:55 Nigeria time, 200 minutes, 1 attempt, answers shown after each question).
 -- Times can be changed on the admin page. If the exam already exists, only its questions are updated.
 -- Safe to run more than once.
 set lock_timeout = '5s';
@@ -212,10 +212,10 @@ insert into public.questions (id, topic, source, q, opts, ans_idx, exp, category
 select (select coalesce(max(id), 0) from public.questions) + d.n, d.topic, 'CCN Mock Exam — Day 10 (1 Nov 2026)', d.q, d.opts, d.ans_idx, d.exp, d.category, '📝', false
 from dnew d
 where not exists (select 1 from public.questions x where x.source = 'CCN Mock Exam — Day 10 (1 Nov 2026)' and x.q = d.q);
-update public.exam_exams set question_ids = (select array_agg(x.id order by d.n) from dnew d join public.questions x on x.source = 'CCN Mock Exam — Day 10 (1 Nov 2026)' and x.q = d.q), instructions = 'Day 10. This exam has 200 questions covering curriculum topics not yet examined, plus ICU management. Choose the ONE best answer for each question. Each correct answer carries 1 mark. You have 140 minutes.' where title = 'CCN Mock Exam — Day 10 (200 Questions)';
+update public.exam_exams set question_ids = (select array_agg(x.id order by d.n) from dnew d join public.questions x on x.source = 'CCN Mock Exam — Day 10 (1 Nov 2026)' and x.q = d.q), instructions = 'Day 10. This exam has 200 questions covering curriculum topics not yet examined, plus ICU management. Choose the ONE best answer for each question. Each correct answer carries 1 mark. You have 200 minutes.', starts_at = timestamptz '2026-11-01 09:00:00+01', ends_at = timestamptz '2026-11-01 23:55:00+01', duration_minutes = 200 where title = 'CCN Mock Exam — Day 10 (200 Questions)';
 insert into public.exam_exams (title, instructions, starts_at, ends_at, duration_minutes, question_ids,
                                show_answers, show_score, max_warnings, shuffle, all_candidates, attempts_allowed, proctor_level, specialty)
-select 'CCN Mock Exam — Day 10 (200 Questions)', 'Day 10. This exam has 200 questions covering curriculum topics not yet examined, plus ICU management. Choose the ONE best answer for each question. Each correct answer carries 1 mark. You have 140 minutes.', timestamptz '2026-11-01 09:10:00+01', timestamptz '2026-11-01 11:30:00+01', 140, (select array_agg(x.id order by d.n) from dnew d join public.questions x on x.source = 'CCN Mock Exam — Day 10 (1 Nov 2026)' and x.q = d.q),
+select 'CCN Mock Exam — Day 10 (200 Questions)', 'Day 10. This exam has 200 questions covering curriculum topics not yet examined, plus ICU management. Choose the ONE best answer for each question. Each correct answer carries 1 mark. You have 200 minutes.', timestamptz '2026-11-01 09:00:00+01', timestamptz '2026-11-01 23:55:00+01', 200, (select array_agg(x.id order by d.n) from dnew d join public.questions x on x.source = 'CCN Mock Exam — Day 10 (1 Nov 2026)' and x.q = d.q),
        true, true, 100, true, true, 1, 'relaxed', 'ccn'
 where not exists (select 1 from public.exam_exams where title = 'CCN Mock Exam — Day 10 (200 Questions)');
 select title, specialty, cardinality(question_ids) as questions_in_exam, starts_at, ends_at from public.exam_exams where title = 'CCN Mock Exam — Day 10 (200 Questions)';
