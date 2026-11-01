@@ -5,6 +5,7 @@ export const SPECIALTIES = [
   { id: "ccn", label: "Critical Care Nursing" },
   { id: "periop", label: "Perioperative Nursing" },
   { id: "anaes", label: "Anaesthesia Nursing" },
+  { id: "neph", label: "Nephrology Nursing" },
 ];
 export const specialtyLabel = id => (SPECIALTIES.find(s => s.id === id) || SPECIALTIES[0]).label;
 
