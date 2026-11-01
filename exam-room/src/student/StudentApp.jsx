@@ -18,7 +18,7 @@ function Header({ name, onLogout }) {
       <div className="brand">
         <span className="brand-mark"><ShieldCheck size={20} /></span>
         <div>
-          <div className="serif" style={{ fontWeight: 700, fontSize: 17 }}>CCN Exam Room</div>
+          <div className="serif" style={{ fontWeight: 700, fontSize: 17 }}>Nursing Exam Room</div>
           {name && <div className="faint" style={{ fontSize: 12 }}>{name}</div>}
         </div>
       </div>
@@ -41,7 +41,8 @@ function CodeScreen({ onLogin }) {
       <div className="narrow" style={{ width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div className="brand-mark" style={{ margin: "0 auto 10px", width: 52, height: 52, borderRadius: 16 }}><ShieldCheck size={26} /></div>
-          <h1 className="serif" style={{ fontSize: 24, margin: "0 0 4px" }}>CCN Exam Room</h1>
+          <h1 className="serif" style={{ fontSize: 24, margin: "0 0 4px" }}>Nursing Exam Room</h1>
+          <p className="faint" style={{ margin: "0 0 6px", fontSize: 12.5 }}>Critical Care · Perioperative · Anaesthesia · Nephrology Nursing</p>
           <p className="muted" style={{ margin: 0, fontSize: 14 }}>Enter the personal access code your administrator gave you.</p>
         </div>
         <form className="card" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -61,12 +62,12 @@ function CodeScreen({ onLogin }) {
         </form>
         {isWindowsBrowser() && (
           <p className="muted" style={{ textAlign: "center", fontSize: 13.5, marginTop: 14 }}>
-            On a Windows laptop? <a href={DESKTOP_DOWNLOAD_URL}><Download size={13} /> Download the CCN Exam Room app</a>
+            On a Windows laptop? <a href={DESKTOP_DOWNLOAD_URL}><Download size={13} /> Download the Nursing Exam Room app</a>
           </p>
         )}
         {isAndroidBrowser() && (
           <p className="muted" style={{ textAlign: "center", fontSize: 13.5, marginTop: 14 }}>
-            On Android? <a href={APP_DOWNLOAD_URL}><Download size={13} /> Download the CCN Exam Room app</a>
+            On Android? <a href={APP_DOWNLOAD_URL}><Download size={13} /> Download the Nursing Exam Room app</a>
           </p>
         )}
       </div>
@@ -285,19 +286,19 @@ function AppRequired({ kind }) {
   const windows = kind === "windows";
   return (
     <div className="card" style={{ marginBottom: 12, borderColor: "#0B3C5D" }}>
-      <h2 style={{ fontSize: 16, marginTop: 0 }}><Smartphone size={17} /> Use the CCN Exam Room app</h2>
-      <p style={{ margin: "0 0 10px" }}>On {windows ? "Windows laptops" : "Android phones"}, exams must be taken in the CCN Exam Room app.</p>
+      <h2 style={{ fontSize: 16, marginTop: 0 }}><Smartphone size={17} /> Use the Nursing Exam Room app</h2>
+      <p style={{ margin: "0 0 10px" }}>On {windows ? "Windows laptops" : "Android phones"}, exams must be taken in the Nursing Exam Room app.</p>
       {windows ? (
         <ol style={{ margin: "0 0 12px", paddingLeft: 20 }}>
           <li>Click <strong>Download the app</strong> below.</li>
           <li>Open the downloaded file. If Windows says <strong>“Windows protected your PC”</strong>, click <strong>More info</strong> → <strong>Run anyway</strong>.</li>
-          <li>The app opens by itself (later, use the <strong>CCN Exam Room</strong> icon on your desktop). Log in with your code and start the exam there.</li>
+          <li>The app opens by itself (later, use the <strong>Nursing Exam Room</strong> icon on your desktop). Log in with your code and start the exam there.</li>
         </ol>
       ) : (
         <ol style={{ margin: "0 0 12px", paddingLeft: 20 }}>
           <li>Tap <strong>Download the app</strong> below.</li>
           <li>Open the downloaded file. If asked, allow <strong>Install unknown apps</strong> for your browser, then tap <strong>Install</strong>.</li>
-          <li>Open <strong>CCN Exam Room</strong> from your apps, log in with your code and start the exam there.</li>
+          <li>Open <strong>Nursing Exam Room</strong> from your apps, log in with your code and start the exam there.</li>
         </ol>
       )}
       <a className="btn btn-primary" href={windows ? DESKTOP_DOWNLOAD_URL : APP_DOWNLOAD_URL}><Download size={16} /> Download the app</a>
@@ -557,7 +558,7 @@ export default function StudentApp({ updateReady = false }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {profile.exams.map(e => (
             <ExamCard key={e.id} exam={e}
-              onStart={ex => { if (needApp) { setRefreshError("Install and open the CCN Exam Room app to start this exam."); return; } if (faceMode === "full" && profile.face_status !== "approved") { setRefreshError("Your face registration must be approved first."); return; } setExam(ex); setView("prep"); }} />
+              onStart={ex => { if (needApp) { setRefreshError("Install and open the Nursing Exam Room app to start this exam."); return; } if (faceMode === "full" && profile.face_status !== "approved") { setRefreshError("Your face registration must be approved first."); return; } setExam(ex); setView("prep"); }} />
           ))}
         </div>
       )}

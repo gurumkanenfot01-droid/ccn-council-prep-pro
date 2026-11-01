@@ -1,4 +1,4 @@
-// The CCN Exam Room Android app (android-app/) opens this site in a secure
+// The Nursing Exam Room Android app (android-app/) opens this site in a secure
 // window (no screenshots or screen recording) and adds "CCNExamApp" to the
 // user agent so the site can tell.
 export const IN_APP = typeof navigator !== "undefined" && /CCNExamApp/.test(navigator.userAgent);

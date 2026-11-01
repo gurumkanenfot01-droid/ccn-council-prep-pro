@@ -358,7 +358,7 @@ export default function MonitorTab() {
 
   // Flash the tab title while there are unseen alerts.
   useEffect(() => {
-    const base = "CCN Exam Room";
+    const base = "Nursing Exam Room";
     if (!alerts.length) { document.title = base; return undefined; }
     let on = false;
     const t = setInterval(() => { on = !on; document.title = on ? `(${alerts.length}) ⚠ Warning` : base; }, 1000);

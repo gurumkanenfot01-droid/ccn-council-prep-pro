@@ -60,7 +60,7 @@ function printSlips(list, site) {
   const w = window.open("", "_blank");
   if (!w) { alert("Allow pop-ups for this site to print the slips."); return; }
   const slips = list.map(r => `<div class="slip">
-    <div class="t">CCN Exam Room</div>
+    <div class="t">Nursing Exam Room</div>
     <div class="n">${r.name_pending ? "Name: ______________________________" : esc(r.full_name)}</div>
     <div class="c">${esc(r.access_code)}</div>
     <div class="s">1. Open <b>${esc(site)}</b><br>2. Enter this code and register your face${r.name_pending ? " and full name" : ""}.<br>Keep this code private. It only works with your face.</div>
@@ -126,7 +126,7 @@ function FaceModeCard() {
   );
 }
 
-// Android phones / Windows laptops must use the CCN Exam Room apps (screenshots, recording and screen sharing blocked).
+// Android phones / Windows laptops must use the Nursing Exam Room apps (screenshots, recording and screen sharing blocked).
 function AppRequiredCard() {
   const [cfg, setCfg] = useState(null);
   const [error, setError] = useState("");
@@ -142,7 +142,7 @@ function AppRequiredCard() {
   return (
     <section className="card">
       <h2 style={{ fontSize: 16, marginTop: 0 }}><Smartphone size={17} /> Exam apps</h2>
-      <p className="muted" style={{ marginTop: 0 }}>Inside the CCN Exam Room apps, screenshots, screen recording and screen sharing are blocked.</p>
+      <p className="muted" style={{ marginTop: 0 }}>Inside the Nursing Exam Room apps, screenshots, screen recording and screen sharing are blocked.</p>
       {error ? <div className="banner banner-bad">{error}</div> : cfg === null ? <Spinner /> : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <label className="toggle-row">
@@ -374,7 +374,7 @@ export default function StudentsTab() {
                       </td>
                       <td>
                         <button className="btn btn-sm btn-ghost num" style={{ letterSpacing: "0.12em" }}
-                          onClick={() => copy(`${r.name_pending ? "Your" : `${r.full_name}, your`} CCN exam access code is ${r.access_code}. Open ${site}, enter the code and register your face${r.name_pending ? " and full name" : ""}. Don't share this code.`, r.id)}>
+                          onClick={() => copy(`${r.name_pending ? "Your" : `${r.full_name}, your`} exam access code is ${r.access_code}. Open ${site}, enter the code and register your face${r.name_pending ? " and full name" : ""}. Don't share this code.`, r.id)}>
                           {r.access_code} {copied === r.id ? <Check size={13} /> : <Copy size={13} />}
                         </button>
                       </td>

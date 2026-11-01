@@ -1,7 +1,7 @@
 {
-  "name": "CCN Exam Room",
+  "name": "Nursing Exam Room",
   "short_name": "Exam Room",
-  "description": "Proctored CCN exams with access codes and face verification.",
+  "description": "Proctored mock exams for Critical Care, Perioperative, Anaesthesia and Nephrology Nursing.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F4F6F8",
