@@ -48,6 +48,9 @@ alter table public.exam_candidates add column if not exists specialty text not n
 -- Full access: false = the student can only take Test Run exams (exam_exams.is_test) until an admin
 -- gives full access (e.g. private-class students who must be approved after their test run).
 alter table public.exam_candidates add column if not exists full_access boolean not null default true;
+-- No face: this student never registers a face and is never face-checked (as if the face setting were
+-- 'off' for them only). Other camera, microphone and screen rules still apply.
+alter table public.exam_candidates add column if not exists no_face boolean not null default false;
 
 create table if not exists public.exam_exams (
   id uuid primary key default gen_random_uuid(),
@@ -262,6 +265,14 @@ grant select, insert, update on public.exam_settings to authenticated;
 create or replace function public.exam__face_mode() returns text
 language sql stable security definer set search_path = public as $$
   select coalesce((select face_mode from public.exam_settings where id = 1), 'full')
+$$;
+-- The face setting for one student: 'off' if the admin turned face checks off for them
+-- (unless the whole Exam Room is microphone-only), otherwise the Exam Room setting.
+create or replace function public.exam__face_mode(p_candidate uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select case when coalesce((select no_face from public.exam_candidates where id = p_candidate), false)
+                   and public.exam__face_mode() <> 'mic' then 'off'
+              else public.exam__face_mode() end
 $$;
 
 do $$
@@ -617,7 +628,7 @@ begin
     'name', case when c.name_pending then '' else c.full_name end,
     'name_needed', c.name_pending,
     'face_status', c.face_status,
-    'face_mode', exam__face_mode(),
+    'face_mode', exam__face_mode(c.id),
     'require_app', coalesce((select require_app from exam_settings where id = 1), false),
     'specialty', c.specialty,
     'full_access', c.full_access,
@@ -659,12 +670,13 @@ language plpgsql security definer set search_path = public as $$
 declare
   c public.exam_candidates;
   nm text := regexp_replace(trim(coalesce(p_name, '')), '\s+', ' ', 'g');
-  mode text := exam__face_mode();
+  mode text;
   new_status text;
 begin
   if exam__throttled() then return exam__err('too_many_attempts'); end if;
   c := exam__candidate(p_code);
   if c.id is null then return exam__err('invalid_code'); end if;
+  mode := exam__face_mode(c.id);
   if c.name_pending and (char_length(nm) not between 3 and 80 or nm !~ '[[:alpha:]].*[[:space:]].*[[:alpha:]]') then
     return exam__err('name_required');
   end if;
@@ -702,12 +714,13 @@ declare
   dist float8;
   ord integer[];
   plan record;
-  mode text := exam__face_mode();
+  mode text;
   how text;
 begin
   if exam__throttled() then return exam__err('too_many_attempts'); end if;
   c := exam__candidate(p_code);
   if c.id is null then return exam__err('invalid_code'); end if;
+  mode := exam__face_mode(c.id);
   select * into e from exam_exams where id = p_exam_id;
   if e.id is null or not exam__can_access(e, c.id) then
     return exam__err('exam_not_found');
@@ -811,7 +824,7 @@ begin
     'explanation', case when a.session_id is not null and e.show_answers then v_q.exp end,
     'question_deadline', case when e.per_question_seconds is not null
                          then s.current_shown_at + make_interval(secs => e.per_question_seconds) end,
-    'deadline', s.deadline, 'server_time', now(), 'warnings', s.warnings, 'face_mode', exam__face_mode());
+    'deadline', s.deadline, 'server_time', now(), 'warnings', s.warnings, 'face_mode', exam__face_mode(s.candidate_id));
 end; $$;
 
 -- Lock in an answer to the current question. The first answer counts.
@@ -828,7 +841,7 @@ begin
   if e.paused then return exam__err('exam_paused'); end if;
   -- Camera / microphone switched off (as last reported by the student's page): no answering.
   if s.live_status->>'mic' = 'false' or s.live_status->>'locked' = 'true'
-     or (exam__face_mode() <> 'mic' and s.live_status->>'camera' = 'false') then
+     or (exam__face_mode(s.candidate_id) <> 'mic' and s.live_status->>'camera' = 'false') then
     return exam__err('devices_off');
   end if;
   if p_question_id is distinct from s.question_order[s.current_index + 1] then return exam__err('not_current_question'); end if;
@@ -922,7 +935,7 @@ begin
   select * into e from exam_exams where id = s.exam_id;
   if not late and e.paused then return exam__err('exam_paused'); end if;
   if not late and p_choice is not null and (s.live_status->>'mic' = 'false' or s.live_status->>'locked' = 'true'
-     or (exam__face_mode() <> 'mic' and s.live_status->>'camera' = 'false')) then
+     or (exam__face_mode(s.candidate_id) <> 'mic' and s.live_status->>'camera' = 'false')) then
     return exam__err('devices_off');
   end if;
   pos := array_position(s.question_order, p_question_id);
@@ -984,7 +997,7 @@ begin
     return exam__result(s);
   end if;
 
-  if p_descriptor is not null and exam__valid_descriptor(p_descriptor) and exam__face_mode() = 'full' then
+  if p_descriptor is not null and exam__valid_descriptor(p_descriptor) and exam__face_mode(s.candidate_id) = 'full' then
     dist := exam__face_distance(c.face_descriptor, p_descriptor);
     if dist > exam__face_threshold() then
       update exam_sessions set face_fail_streak = face_fail_streak + 1 where id = s.id returning * into s;
@@ -1013,7 +1026,7 @@ begin
   return jsonb_build_object(
     'status', 'in_progress', 'paused', e.paused, 'deadline', s.deadline, 'server_time', now(),
     'warnings', s.warnings, 'max_warnings', e.max_warnings, 'message', msg, 'message_seconds', msg_secs,
-    'face_fail_streak', s.face_fail_streak, 'face_mode', exam__face_mode(),
+    'face_fail_streak', s.face_fail_streak, 'face_mode', exam__face_mode(s.candidate_id),
     'watch', coalesce(s.watch_until > now(), false));
 end; $$;
 
@@ -1063,8 +1076,8 @@ begin
   -- the switch) are ignored and never count as warnings.
   -- (A phone held up to the camera still counts whenever the camera is on.)
   -- Looking away / down (e.g. at paper for calculations) never counts, in any mode.
-  if (exam__face_mode() in ('mic', 'off', 'start') and p_type in ('multiple_faces', 'no_face', 'looking_away', 'dark', 'camera_off'))
-     or (exam__face_mode() = 'mic' and p_type = 'phone') or p_type = 'looking_away' then
+  if (exam__face_mode(s.candidate_id) in ('mic', 'off', 'start') and p_type in ('multiple_faces', 'no_face', 'looking_away', 'dark', 'camera_off'))
+     or (exam__face_mode(s.candidate_id) = 'mic' and p_type = 'phone') or p_type = 'looking_away' then
     return jsonb_build_object('status', s.status, 'warnings', s.warnings, 'max_warnings', e.max_warnings, 'ignored', true);
   end if;
 
@@ -1113,7 +1126,7 @@ revoke all on function
   public.exam__can_self_retake(public.exam_exams, public.exam_sessions), public.exam__can_access(public.exam_exams, uuid),
   public.exam__throttled(), public.exam__candidate(text), public.exam__finish(uuid, text, text), public.exam__session(uuid),
   public.exam__result(public.exam_sessions), public.exam__client_ip(),
-  public.exam__plan(public.exam_exams, uuid)
+  public.exam__plan(public.exam_exams, uuid), public.exam__face_mode(uuid)
   from public, anon, authenticated;
 
 grant execute on function

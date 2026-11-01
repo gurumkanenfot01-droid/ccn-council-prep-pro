@@ -14,7 +14,7 @@ export function newCode(length = 8) {
   return Array.from(bytes, b => ALPHABET[b % ALPHABET.length]).join("");
 }
 
-const FIELDS = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime, specialty, full_access";
+const FIELDS = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime, specialty, full_access, no_face";
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -383,7 +383,7 @@ export default function StudentsTab() {
                       </td>
                       <td>
                         <button className="btn btn-sm btn-ghost num" style={{ letterSpacing: "0.12em" }}
-                          onClick={() => copy(`${r.name_pending ? "Your" : `${r.full_name}, your`} exam access code is ${r.access_code}. Open ${site}, enter the code and register your face${r.name_pending ? " and full name" : ""}. Don't share this code.`, r.id)}>
+                          onClick={() => copy(`${r.name_pending ? "Your" : `${r.full_name}, your`} exam access code is ${r.access_code}. Open ${site}, enter the code${r.no_face ? (r.name_pending ? " and your full name" : "") : ` and register your face${r.name_pending ? " and full name" : ""}`}. Don't share this code.`, r.id)}>
                           {r.access_code} {copied === r.id ? <Check size={13} /> : <Copy size={13} />}
                         </button>
                       </td>
@@ -392,6 +392,7 @@ export default function StudentsTab() {
                         {r.active ? <span className="pill pill-ok">Active</span> : <span className="pill pill-bad">Disabled</span>}
                         {r.anytime && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Clock size={12} /> Anytime</span></div>}
                         {r.full_access === false && <div><span className="pill pill-warn" style={{ marginTop: 4 }}>Test Run only</span></div>}
+                        {r.no_face && <div><span className="pill" style={{ marginTop: 4 }}><ScanFace size={12} /> No face check</span></div>}
                       </td>
                       <td>
                         <div className="row" style={{ gap: 6 }}>
@@ -404,6 +405,10 @@ export default function StudentsTab() {
                             <button className="btn btn-sm btn-ghost" onClick={() => confirm(`Reset ${r.full_name}'s face? They must register again before their next exam.`) && update(r.id, { face_status: "none", face_descriptor: null, face_photo: null }, "Face reset.")}>
                               <RotateCcw size={13} /> Reset face
                             </button>}
+                          <button className="btn btn-sm btn-ghost" title="Turn face registration and face checks off (or back on) for this student only"
+                            onClick={() => update(r.id, { no_face: !r.no_face }, r.no_face ? `${r.full_name || "This student"} must now register and match their face.` : `${r.full_name || "This student"} no longer needs face registration or face checks.`)}>
+                            <ScanFace size={13} /> {r.no_face ? "Face check on" : "No face"}
+                          </button>
                           {r.full_access === false
                             ? <button className="btn btn-sm btn-success" onClick={() => update(r.id, { full_access: true }, `${r.full_name || "This student"} now has full access to all exams.`)}><CheckCircle2 size={13} /> Give full access</button>
                             : <button className="btn btn-sm btn-ghost" title="Allow only Test Run exams until you give full access again"
