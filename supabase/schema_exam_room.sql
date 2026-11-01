@@ -45,6 +45,9 @@ alter table public.exam_candidates add column if not exists anytime boolean not 
 -- Specialty: 'ccn' (Critical Care Nursing) or 'periop' (Perioperative Nursing). Students only see
 -- exams of their own specialty.
 alter table public.exam_candidates add column if not exists specialty text not null default 'ccn';
+-- Full access: false = the student can only take Test Run exams (exam_exams.is_test) until an admin
+-- gives full access (e.g. private-class students who must be approved after their test run).
+alter table public.exam_candidates add column if not exists full_access boolean not null default true;
 
 create table if not exists public.exam_exams (
   id uuid primary key default gen_random_uuid(),
@@ -68,6 +71,8 @@ create table if not exists public.exam_exams (
   created_at timestamptz not null default now(),
   check (ends_at > starts_at)
 );
+-- Test Run exams can be taken by students who do not have full access yet.
+alter table public.exam_exams add column if not exists is_test boolean not null default false;
 
 alter table public.exam_exams add column if not exists specialty text not null default 'ccn';
 
@@ -282,6 +287,7 @@ language sql stable security definer set search_path = public as $$
   select (e.all_candidates or exists (select 1 from exam_allowed a where a.exam_id = e.id and a.candidate_id = p_candidate))
      and not exists (select 1 from exam_blocked b where b.exam_id = e.id and b.candidate_id = p_candidate)
      and coalesce(e.specialty, 'ccn') = coalesce((select c.specialty from exam_candidates c where c.id = p_candidate), 'ccn')
+     and (e.is_test or coalesce((select c.full_access from exam_candidates c where c.id = p_candidate), true))
 $$;
 
 -- Face descriptors closer than this are the same person. face-api.js uses 0.6;
@@ -614,6 +620,7 @@ begin
     'face_mode', exam__face_mode(),
     'require_app', coalesce((select require_app from exam_settings where id = 1), false),
     'specialty', c.specialty,
+    'full_access', c.full_access,
     'require_desktop_app', coalesce((select require_desktop_app from exam_settings where id = 1), false),
     'server_time', now(),
     'exams', coalesce((

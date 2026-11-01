@@ -545,6 +545,9 @@ export default function StudentApp({ updateReady = false }) {
       {faceMode === "full" && profile.face_status === "pending" && (
         <div className="banner banner-warn"><Hourglass size={16} /> Your face registration is waiting for approval. You can start exams once it’s approved.</div>
       )}
+      {profile.full_access === false && (
+        <div className="banner banner-warn"><Hourglass size={16} /> Start with the <strong>Test Run</strong> below to see how the exams work. Your full mock exams will appear here once the administrator gives you full access.</div>
+      )}
       {refreshError && <div className="banner banner-warn">{refreshError}</div>}
       {needApp && <AppRequired kind={needApp} />}
       <div className="row" style={{ marginBottom: 10 }}>

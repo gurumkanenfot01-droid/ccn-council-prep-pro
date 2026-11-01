@@ -14,7 +14,7 @@ export function newCode(length = 8) {
   return Array.from(bytes, b => ALPHABET[b % ALPHABET.length]).join("");
 }
 
-const FIELDS = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime, specialty";
+const FIELDS = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime, specialty, full_access";
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -176,6 +176,7 @@ export default function StudentsTab() {
   const [batchLabel, setBatchLabel] = useState("");
   const [created, setCreated] = useState(null); // rows made by the last bulk action
   const [batchFilter, setBatchFilter] = useState("");
+  const [testOnly, setTestOnly] = useState(true); // new codes can take only Test Run exams until approved
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -196,7 +197,7 @@ export default function StudentsTab() {
     setBusy(true);
     try {
       const batch = batchLabel.trim();
-      const rows = await insertCandidates(parsed.map(full_name => ({ full_name, access_code: newCode(), batch })));
+      const rows = await insertCandidates(parsed.map(full_name => ({ full_name, access_code: newCode(), batch, full_access: !testOnly })));
       setNames(""); setCreated(rows);
       flash(`Created ${rows.length} access code${rows.length === 1 ? "" : "s"}.`);
     } catch (e) { flash(adminDbMessage(e)); }
@@ -212,7 +213,7 @@ export default function StudentsTab() {
       const start = (rows || []).filter(r => r.batch === batch).length;
       const list = Array.from({ length: n }, (_, i) => ({
         full_name: `Unassigned ${batch} #${String(start + i + 1).padStart(3, "0")}`,
-        access_code: newCode(), name_pending: true, batch,
+        access_code: newCode(), name_pending: true, batch, full_access: !testOnly,
       }));
       const made = await insertCandidates(list);
       setCreated(made); setBatchFilter(batch);
@@ -266,6 +267,7 @@ export default function StudentsTab() {
   const listText = list => list.map(r => `${r.name_pending ? "(blank)" : r.full_name} — ${r.access_code}`).join("\n") + `\n\nExam site: ${site}`;
   const stamp = () => new Date().toISOString().slice(0, 10);
   const pending = (rows || []).filter(r => r.face_status === "pending").length;
+  const waitingFull = (rows || []).filter(r => r.full_access === false && !r.name_pending).length;
   const site = window.location.origin;
 
   return (
@@ -297,6 +299,10 @@ export default function StudentsTab() {
           <label htmlFor="batch-label"><Layers size={11} /> Group label (optional)</label>
           <input id="batch-label" value={batchLabel} onChange={e => setBatchLabel(e.target.value)} placeholder="e.g. 2026 Set A" maxLength={40} />
         </div>
+        <label className="row" style={{ gap: 8, marginTop: 10, fontSize: 14, alignItems: "flex-start", cursor: "pointer" }}>
+          <input type="checkbox" checked={testOnly} onChange={e => setTestOnly(e.target.checked)} style={{ marginTop: 3 }} />
+          <span><strong>Test Run only</strong> — these students can take only the Test Run until you tap <em>Give full access</em> in the list below.</span>
+        </label>
         <div className="row" style={{ marginTop: 12 }}>
           {mode === "names" ? (
             <button className="btn btn-primary" onClick={addStudents} disabled={busy || !parsed.length}>
@@ -326,6 +332,9 @@ export default function StudentsTab() {
       </section>
 
       {loadError && <div className="banner banner-bad">{loadError}</div>}
+      {waitingFull > 0 && <div className="banner banner-warn">
+        {waitingFull} student{waitingFull === 1 ? " is" : "s are"} on <strong>Test Run only</strong>. When a student is ready, tap <strong>Give full access</strong> next to their name.
+      </div>}
       {pending > 0 && <div className="banner banner-warn row" style={{ gap: 10 }}>
         <span>{pending} face registration{pending === 1 ? "" : "s"} waiting for your approval. Tap “Photo” to check and approve, or approve them all at once.</span>
         <span className="spacer" />
@@ -382,6 +391,7 @@ export default function StudentsTab() {
                       <td>
                         {r.active ? <span className="pill pill-ok">Active</span> : <span className="pill pill-bad">Disabled</span>}
                         {r.anytime && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Clock size={12} /> Anytime</span></div>}
+                        {r.full_access === false && <div><span className="pill pill-warn" style={{ marginTop: 4 }}>Test Run only</span></div>}
                       </td>
                       <td>
                         <div className="row" style={{ gap: 6 }}>
@@ -394,6 +404,10 @@ export default function StudentsTab() {
                             <button className="btn btn-sm btn-ghost" onClick={() => confirm(`Reset ${r.full_name}'s face? They must register again before their next exam.`) && update(r.id, { face_status: "none", face_descriptor: null, face_photo: null }, "Face reset.")}>
                               <RotateCcw size={13} /> Reset face
                             </button>}
+                          {r.full_access === false
+                            ? <button className="btn btn-sm btn-success" onClick={() => update(r.id, { full_access: true }, `${r.full_name || "This student"} now has full access to all exams.`)}><CheckCircle2 size={13} /> Give full access</button>
+                            : <button className="btn btn-sm btn-ghost" title="Allow only Test Run exams until you give full access again"
+                                onClick={() => confirm(`Limit ${r.full_name || "this student"} to the Test Run only?`) && update(r.id, { full_access: false }, `${r.full_name || "This student"} can now take only the Test Run.`)}>Test Run only</button>}
                           <button className="btn btn-sm btn-ghost" title="Let this student take every exam (past, current and future) at any time, with unlimited retakes"
                             onClick={() => update(r.id, { anytime: !r.anytime }, r.anytime ? `${r.full_name || "This student"} now follows the normal exam times.` : `${r.full_name || "This student"} can now take every exam at any time.`)}>
                             <Clock size={13} /> {r.anytime ? "Normal times" : "Anytime access"}
