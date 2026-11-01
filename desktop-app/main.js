@@ -1,4 +1,4 @@
-// CCN Exam Room for Windows laptops: the exam website in a secure full-screen window.
+// Nursing Exam Room for Windows laptops: the exam website in a secure full-screen window.
 // - Content protection: Windows leaves this window out of screenshots, screen
 //   recordings and screen sharing (Snipping Tool, Print Screen, OBS, Zoom, Meet…).
 // - No menus or developer tools; other websites open in the normal browser.
@@ -24,7 +24,7 @@ function createWindow() {
     fullscreen: true,
     autoHideMenuBar: true,
     backgroundColor: "#ffffff",
-    title: "CCN Exam Room",
+    title: "Nursing Exam Room",
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -69,7 +69,7 @@ function createWindow() {
   win.on("close", e => {
     const choice = dialog.showMessageBoxSync(win, {
       type: "question", buttons: ["Stay", "Close the app"], defaultId: 0, cancelId: 0,
-      title: "CCN Exam Room", message: "Close CCN Exam Room?",
+      title: "Nursing Exam Room", message: "Close Nursing Exam Room?",
       detail: "If you are in an exam, your time keeps running and leaving is recorded.",
     });
     if (choice === 0) e.preventDefault();

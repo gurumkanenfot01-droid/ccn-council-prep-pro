@@ -34,7 +34,7 @@ export default function App() {
   if (!isConfigured) {
     return (
       <main className="wrap narrow" style={{ paddingTop: 80, textAlign: "center" }}>
-        <h1 className="serif">CCN Exam Room</h1>
+        <h1 className="serif">Nursing Exam Room</h1>
         <p className="muted">This site isn’t connected to the database yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel (see HOW_TO_GO_LIVE.md).</p>
       </main>
     );
