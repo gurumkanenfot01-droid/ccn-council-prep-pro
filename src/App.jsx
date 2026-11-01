@@ -16,7 +16,7 @@ import TopicsScreen from "./screens/TopicsScreen.jsx";
 import SubscribeScreen from "./screens/SubscribeScreen.jsx";
 import PaywallGate from "./screens/PaywallGate.jsx";
 import NewQuestionsScreen from "./screens/NewQuestionsScreen.jsx";
-import SupportScreen from "./screens/SupportScreen.jsx";
+import SupportScreen, { WHATSAPP_NUMBER, WHATSAPP_DISPLAY } from "./screens/SupportScreen.jsx";
 import AdminNotifyScreen from "./screens/AdminNotifyScreen.jsx";
 import UpsellModal from "./screens/UpsellModal.jsx";
 import { CCN_SCHOOLS } from "./data/ccnSchools.js";
@@ -28,7 +28,7 @@ import {
   Calendar, ListChecks, RefreshCw, GraduationCap, Mail, Camera, Shuffle,
   PlayCircle, PauseCircle, ArrowRight, Sparkles, Flame, ChevronDown, ChevronUp,
   Grid3x3, Hash, Timer as TimerIcon, TrendingDown, Medal, Crown, Lock,
-  Stethoscope, Microscope, Info, BadgePlus, LifeBuoy, Bell, BellOff, WifiOff, Download, Share,
+  Stethoscope, Microscope, Info, BadgePlus, LifeBuoy, CalendarCheck, Bell, BellOff, WifiOff, Download, Share,
   LayoutDashboard, Copy, Gift, Eye,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
@@ -358,6 +358,21 @@ function HomeScreen({ go, startQuiz }) {
         </div>
         <ChevronRight size={18} color={t.navy} />
       </Card>
+
+      {/* Private class banner */}
+      <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hello, I want to join the one-week private preparation class.")}`}
+         target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block", marginBottom: 22 }}>
+        <Card hover style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: t.amberSoft, border: `1px solid ${t.amber}33` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <IconBadge icon={CalendarCheck} color={t.amber} bg={t.card} size={38} />
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: t.text }}>One-week private preparation class</div>
+              <div style={{ fontSize: 11.5, color: t.textFaint }}>Want a one-week intensive prep? Reach out to the admin on WhatsApp: {WHATSAPP_DISPLAY}</div>
+            </div>
+          </div>
+          <ChevronRight size={18} color={t.amber} />
+        </Card>
+      </a>
 
       {/* Progress overview */}
       <Card style={{ padding: 22, marginBottom: 26, display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>

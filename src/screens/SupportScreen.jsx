@@ -1,8 +1,8 @@
 import { LifeBuoy, MessageCircle, Mail, HelpCircle, Clock } from "lucide-react";
 import { Card, SectionHeader, useApp } from "../ui/kit.jsx";
 
-const WHATSAPP_NUMBER = "2349031853995";
-const WHATSAPP_DISPLAY = "+234 903 185 3995";
+export const WHATSAPP_NUMBER = "2349031853995";
+export const WHATSAPP_DISPLAY = "+234 903 185 3995";
 const SUPPORT_EMAIL = "gurumkanenfot01@gmail.com";
 
 const FAQS = [
