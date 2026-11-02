@@ -11,13 +11,16 @@ function mediaError(err) {
   const name = err && err.name;
   if (name === "NotAllowedError" || name === "SecurityError" || name === "PermissionDeniedError") return "denied";
   if (name === "NotFoundError" || name === "OverconstrainedError" || name === "DevicesNotFoundError") return "unavailable";
+  // Another app (Zoom, WhatsApp, the Camera app, another tab) is holding the device,
+  // or the laptop's camera key / Windows privacy setting has switched it off.
+  if (name === "NotReadableError" || name === "TrackStartError" || name === "AbortError") return "busy";
   return "error";
 }
 
 // One camera/mic session for the whole visit. `video` is a hidden on-page
 // element that the checks read from; previews are separate <video>s.
 export function useCamera() {
-  const [camera, setCamera] = useState("off"); // off | starting | on | denied | unavailable | error
+  const [camera, setCamera] = useState("off"); // off | starting | on | denied | unavailable | busy | error
   const [mic, setMic] = useState("off");
   const [stream, setStream] = useState(null);
   const [version, setVersion] = useState(0); // bumps on every (re)start so checks re-attach
