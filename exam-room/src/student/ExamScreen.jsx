@@ -618,7 +618,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
                   </strong>
                   {feedback.explanation && <>
                     <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--ink-2, inherit)", opacity: 0.75 }}>Explanation</div>
-                    <p style={{ margin: "4px 0 0", fontSize: 17, lineHeight: 1.6 }}>{feedback.explanation}</p>
+                    <p style={{ margin: "4px 0 0", fontSize: 17, lineHeight: 1.65, whiteSpace: "pre-line" }}>{feedback.explanation}</p>
                   </>}
                 </div>
               )}
