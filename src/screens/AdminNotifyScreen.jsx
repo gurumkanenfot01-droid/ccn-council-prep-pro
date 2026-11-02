@@ -3,6 +3,11 @@ import { Bell, Send, Loader2, Type, Gift } from "lucide-react";
 import { Card, Button, SectionHeader, Field, useApp } from "../ui/kit.jsx";
 import { supabase } from "../lib/supabase.js";
 
+const CLASS_TEMPLATE = {
+  title: "One-Week Private Preparation Class: new batch open",
+  body: "Critical Care, Perioperative, Anaesthesia and Nephrology Nursing. Daily timed mocks, full curriculum, council-style past questions, answers and explanations. Free Test Run! WhatsApp +234 903 185 3995 to join.",
+};
+
 const REFERRAL_TEMPLATE = {
   title: "Know someone else studying for CCN Council?",
   body: "Share your invite link with a course-mate from Profile > Invite Friends — you'll both be glad you did.",
@@ -13,9 +18,17 @@ export default function AdminNotifyScreen() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [audience, setAudience] = useState("all"); // "all" | "subscribers"
+  const [excludeJuth, setExcludeJuth] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+
+  function useClassTemplate() {
+    setTitle(CLASS_TEMPLATE.title);
+    setBody(CLASS_TEMPLATE.body);
+    setAudience("all");
+    setExcludeJuth(true);
+  }
 
   function useReferralTemplate() {
     setTitle(REFERRAL_TEMPLATE.title);
@@ -29,7 +42,7 @@ export default function AdminNotifyScreen() {
     setBusy(true);
     try {
       const { data, error: fnError } = await supabase.functions.invoke("send-push", {
-        body: { title: title.trim(), body: body.trim(), audience },
+        body: { title: title.trim(), body: body.trim(), audience, exclude_juth: excludeJuth },
       });
       if (fnError) throw new Error(fnError.message || "Failed to send.");
       if (!data?.success) throw new Error(data?.error || "Failed to send.");
@@ -51,7 +64,10 @@ export default function AdminNotifyScreen() {
           Sends a push notification to members who have notifications turned on — use it for new content
           announcements, exam-season reminders, re-engagement pings, or asking paying members to share the app.
         </div>
-        <Button size="sm" variant="ghost" icon={Gift} onClick={useReferralTemplate}>Use Referral Reminder Template</Button>
+<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Button size="sm" variant="ghost" icon={Gift} onClick={useReferralTemplate}>Use Referral Reminder Template</Button>
+        <Button size="sm" variant="ghost" icon={Bell} onClick={useClassTemplate}>Use Private Class Template</Button>
+        </div>
       </Card>
 
       <Card style={{ padding: 18, marginBottom: 16 }}>
@@ -71,6 +87,10 @@ export default function AdminNotifyScreen() {
             ))}
           </div>
         </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: t.text, marginBottom: 14, cursor: "pointer" }}>
+          <input type="checkbox" checked={excludeJuth} onChange={e => setExcludeJuth(e.target.checked)} />
+          Don't send to JUTH (Jos University Teaching Hospital) members
+        </label>
         <div style={{ marginBottom: 14 }}>
           <Field label="Title" value={title} onChange={setTitle} icon={Type} />
         </div>

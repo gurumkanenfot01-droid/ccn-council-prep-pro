@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       if (profile?.role !== "admin") return json({ success: false, error: "Admins only" }, 403);
     }
 
-    const { title, body, url, audience } = await req.json();
+    const { title, body, url, audience, exclude_juth } = await req.json();
     if (!title || !body) throw new Error("title and body are required");
 
     webpush.setVapidDetails(
@@ -80,6 +80,23 @@ Deno.serve(async (req) => {
       ({ data: subs, error: subsErr } = await admin.from("push_subscriptions").select("id, endpoint, p256dh, auth"));
     }
     if (subsErr) throw subsErr;
+
+    // exclude_juth: leave out devices of members whose school or hospital is JUTH
+    // (Jos University Teaching Hospital), e.g. for the private-class promotion.
+    if (exclude_juth && subs?.length) {
+      const { data: juth, error: juthErr } = await admin
+        .from("profiles")
+        .select("id")
+        .or("school.ilike.%JUTH%,school.ilike.%Jos University Teaching Hospital%,hospital.ilike.%JUTH%,hospital.ilike.%Jos University Teaching Hospital%");
+      if (juthErr) throw juthErr;
+      const skip = new Set((juth || []).map((p) => p.id));
+      if (skip.size) {
+        const { data: owners, error: ownErr } = await admin.from("push_subscriptions").select("id, user_id").in("id", subs.map((x) => x.id));
+        if (ownErr) throw ownErr;
+        const drop = new Set((owners || []).filter((o) => skip.has(o.user_id)).map((o) => o.id));
+        subs = subs.filter((x) => !drop.has(x.id));
+      }
+    }
 
     const payload = JSON.stringify({ title, body, url: url || "/" });
     let sent = 0;
