@@ -10,6 +10,51 @@ import { CameraView, FacePill, MicPill, PhonePill, SoundMeter, Watermark, Spinne
 
 const LETTERS = ["A", "B", "C", "D"];
 const HEARTBEAT_MS = 15000;
+// Step-by-step help for the "camera/microphone off" lock, for the student's device.
+function deviceHelp(reason, { camBlocked, micBlocked } = {}) {
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+  const iphone = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const phone = iphone || /Android|Mobile/i.test(ua);
+  const windows = /Windows NT/.test(ua);
+  const mac = /Macintosh/.test(ua) && !iphone;
+  const app = IN_APP;
+  const laptopKey = "• Check the keyboard: many laptops (HP, Lenovo, Dell) have a camera key with a camera symbol, often on F10, F11 or F12 — press it once. Also slide open any small cover over the camera.";
+  const winPrivacy = "• Windows: open Start → Settings → Privacy & security → Camera → turn ON “Camera access” and “Let apps access your camera” (and “Let desktop apps access your camera”). Do the same under Microphone.";
+  const macPrivacy = "• Mac: Apple menu → System Settings → Privacy & Security → Camera → turn ON your browser. Do the same under Microphone.";
+  const closeApps = phone
+    ? "• Close any call or app using the camera (WhatsApp, Zoom, Telegram, Camera app), then come back here."
+    : "• Close anything else using the camera: Zoom, Teams, WhatsApp Desktop, Skype, the Camera app, or another browser tab or window.";
+
+  if (reason === "denied") {
+    if (app) return ["The camera or microphone permission is switched off for this app.",
+      phone ? "• Open your phone Settings → Apps → Nursing Exam Room → Permissions → allow Camera and Microphone." : winPrivacy].join("\n");
+    if (iphone) return ["Safari is blocking the camera or microphone:",
+      "• Tap aA in the address bar → Website Settings → set Camera and Microphone to Allow.",
+      "• If that doesn't work: iPhone Settings → Safari → Camera and Microphone → Allow."].join("\n");
+    if (phone) return ["Your browser is blocking the camera or microphone:",
+      "• Tap the 🔒 or ⓘ icon beside the website address → Permissions → turn ON Camera and Microphone.",
+      "• If they are not listed: phone Settings → Apps → Chrome → Permissions → allow Camera and Microphone."].join("\n");
+    return ["Your browser is blocking the camera or microphone. On this computer:",
+      "• Look at the RIGHT end of the website address bar for a camera icon with a red ✕ — click it, choose “Always allow”, then click Done.",
+      "• Or click the 🔒 / settings icon at the LEFT of the website address → turn Camera and Microphone to Allow.",
+      windows ? winPrivacy : mac ? macPrivacy : ""].filter(Boolean).join("\n");
+  }
+  if (reason === "busy") return ["The camera or microphone is being used by something else, or is switched off:",
+    closeApps, phone ? "" : laptopKey, windows ? winPrivacy : mac ? macPrivacy : ""].filter(Boolean).join("\n");
+  if (reason === "unavailable") return ["No camera or microphone was found.",
+    phone ? "• Restart the phone and open the exam again." : "• If you use a USB camera or headset, plug it in again.",
+    phone ? "" : laptopKey, windows ? winPrivacy : ""].filter(Boolean).join("\n");
+  if (reason === "blank") {
+    const what = camBlocked && micBlocked ? "Your camera shows only black and your microphone is silent."
+      : camBlocked ? "Your camera shows only black." : "Your microphone is completely silent.";
+    return phone
+      ? [what, "• Swipe down from the top of the screen and turn ON Camera access and Microphone access.", "• Make sure nothing is covering the camera."].join("\n")
+      : [what, laptopKey, "• Make sure the microphone is not muted (a microphone key on the keyboard, or the taskbar sound settings)."].join("\n");
+  }
+  if (reason === "error") return ["The camera or microphone couldn't start.", closeApps, phone ? "" : laptopKey].filter(Boolean).join("\n");
+  return "";
+}
+
 const CAMERA_TYPES = ["multiple_faces", "no_face", "looking_away", "dark", "camera_off"];
 
 // Two short beeps + a vibration so a warning can't be missed.
@@ -433,23 +478,69 @@ export default function ExamScreen({ cam, session, onFinished }) {
 
   const devicesOff = cam.mic !== "on" || micBlocked || (needCamera && (cam.camera !== "on" || camBlocked));
   const [locked, setLocked] = useState(false);
-  const [relockMsg, setRelockMsg] = useState("");
   useEffect(() => {
-    if (!devicesOff) { setLocked(false); setRelockMsg(""); return undefined; }
+    if (!devicesOff) { setLocked(false); return undefined; }
     const t = setTimeout(() => setLocked(true), 2000);
     return () => clearTimeout(t);
   }, [devicesOff]);
   async function turnBackOn() {
-    setRelockMsg("");
     setCamBlocked(false); setMicBlocked(false);
     await cam.restart({ video: needCamera });
   }
+  // Why the devices are off, in the words the help text needs.
+  const offStates = needCamera ? [cam.camera, cam.mic] : [cam.mic];
+  const offReason = offStates.includes("denied") ? "denied"
+    : offStates.includes("busy") ? "busy"
+    : offStates.includes("unavailable") ? "unavailable"
+    : offStates.includes("error") ? "error"
+    : (camBlocked || micBlocked) && cam.mic === "on" && (!needCamera || cam.camera === "on") ? "blank"
+    : "off";
+  const helpMsg = locked ? deviceHelp(offReason, { camBlocked, micBlocked }) : "";
+
+  // Fix itself: while locked, keep checking and turn the camera/microphone back
+  // on by itself as soon as the browser allows it again (permission switched
+  // back on, the other app closed, the camera key pressed). A browser block
+  // can't be lifted by the website — only the student can — but they no
+  // longer have to come back and press the button afterwards.
+  const autoRef = useRef({ running: false, prompted: false });
   useEffect(() => {
-    if (!locked) return;
-    if (["denied", "unavailable", "error"].includes(cam.camera) || ["denied", "unavailable", "error"].includes(cam.mic)) {
-      setRelockMsg("Your browser is blocking the camera or microphone. Tap the lock (🔒) or ⓘ icon beside the website address → Permissions → allow Camera and Microphone, then tap the button again.");
-    }
-  }, [locked, cam.camera, cam.mic]);
+    if (!locked) { autoRef.current.prompted = false; return undefined; }
+    let cancelled = false;
+    const statuses = [];
+    const permState = async () => {
+      if (!navigator.permissions || !navigator.permissions.query) return null;
+      try {
+        const names = needCamera ? ["camera", "microphone"] : ["microphone"];
+        const rs = await Promise.all(names.map(name => navigator.permissions.query({ name })));
+        rs.forEach(r => { if (!statuses.includes(r)) { statuses.push(r); r.onchange = () => tryNow(); } });
+        if (rs.some(r => r.state === "denied")) return "denied";
+        if (rs.some(r => r.state === "prompt")) return "prompt";
+        return "granted";
+      } catch (e) { return null; } // e.g. Firefox doesn't know "camera"
+    };
+    const tryNow = async () => {
+      const a = autoRef.current;
+      if (cancelled || a.running || document.visibilityState !== "visible") return;
+      if (cam.camera === "starting" || cam.mic === "starting") return;
+      if (offReason === "blank") return; // stream is live; it unlocks by itself when the picture/sound returns
+      const perm = await permState();
+      if (cancelled || perm === "denied") return; // still blocked — waiting for the student
+      if (perm === "prompt") { if (a.prompted) return; a.prompted = true; } // ask the browser once, not over and over
+      if (perm === null && offReason === "denied") return;
+      a.running = true;
+      try { await turnBackOn(); } finally { a.running = false; }
+    };
+    const iv = setInterval(tryNow, 4000);
+    const onFocus = () => tryNow();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      cancelled = true; clearInterval(iv);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+      statuses.forEach(r => { r.onchange = null; });
+    };
+  }, [locked, offReason, needCamera, cam.camera, cam.mic]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // What the admin's live monitor shows for this student (sent with each heartbeat).
   const liveStatus = useRef(null);
@@ -663,8 +754,8 @@ export default function ExamScreen({ cam, session, onFinished }) {
             <p className="muted" style={{ marginTop: 0 }}>
               The exam is locked until your {needCamera ? "camera and microphone are" : "microphone is"} back on. <strong>Your time is still running.</strong> Your administrator can see this.
             </p>
-            {(camBlocked || micBlocked) && <div className="banner banner-warn" style={{ textAlign: "left" }}>Your {camBlocked && micBlocked ? "camera shows only black and your microphone is silent" : camBlocked ? "camera shows only black" : "microphone is completely silent"}. Check your phone's quick settings (swipe down) and turn ON camera access and microphone access, and make sure nothing is covering the camera.</div>}
-            {relockMsg && <div className="banner banner-warn" style={{ textAlign: "left" }}>{relockMsg}</div>}
+            {helpMsg && <div className="banner banner-warn" style={{ textAlign: "left", display: "block", whiteSpace: "pre-line" }}>{helpMsg}</div>}
+            <p className="faint" style={{ fontSize: 12, margin: "8px 0" }}>As soon as it is fixed, the exam carries on by itself. You can also press the button.</p>
             <button className="btn btn-primary btn-full" onClick={turnBackOn} disabled={cam.camera === "starting" || cam.mic === "starting"}>
               {cam.camera === "starting" || cam.mic === "starting" ? "Turning on…" : <>Turn {needCamera ? "camera and microphone" : "microphone"} back on</>}
             </button>

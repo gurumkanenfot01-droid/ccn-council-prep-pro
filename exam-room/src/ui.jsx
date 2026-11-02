@@ -15,7 +15,7 @@ export function CameraView({ stream, status, label }) {
   }, [stream]);
   const message = {
     off: "Camera is off", starting: "Starting camera…", denied: "Camera access was blocked",
-    unavailable: "No camera found", error: "Camera couldn't start",
+    unavailable: "No camera found", busy: "Camera is in use or switched off", error: "Camera couldn't start",
   }[status];
   return (
     <div className="cam">
@@ -66,7 +66,7 @@ export function Watermark({ text }) {
 export function PermissionHelp({ camera, mic }) {
   const blocked = camera === "denied" || mic === "denied";
   const missing = camera === "unavailable" || mic === "unavailable";
-  const failed = camera === "error" || mic === "error";
+  const failed = ["error", "busy"].includes(camera) || ["error", "busy"].includes(mic);
   if (!blocked && !missing && !failed) return null;
   return (
     <div className="banner banner-warn" style={{ display: "block", fontWeight: 500 }}>
@@ -81,7 +81,7 @@ export function PermissionHelp({ camera, mic }) {
         </>
       )}
       {!blocked && missing && <><strong>No camera or microphone found.</strong> Use a phone, tablet or laptop with both.</>}
-      {!blocked && !missing && <><strong>The camera or microphone couldn’t start.</strong> Close other apps using it (WhatsApp or Zoom calls), then try again.</>}
+      {!blocked && !missing && <><strong>The camera or microphone couldn’t start.</strong> Close other apps using it (WhatsApp, Zoom or Teams calls, the Camera app, other browser tabs). On a laptop, also check the camera key on the keyboard (a camera symbol, often on F10–F12) or a sliding cover over the camera, then try again.</>}
     </div>
   );
 }
