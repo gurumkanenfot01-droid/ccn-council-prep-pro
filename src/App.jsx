@@ -289,6 +289,47 @@ function InstallAppBanner() {
   );
 }
 
+// JUTH students are excluded from the private-class promotion.
+const isJuth = p => /\bJUTH\b|Jos University Teaching Hospital/i.test(`${p?.school || ""} ${p?.hospital || ""}`);
+// Change this id to show a new private-class announcement to everyone again.
+const CLASS_POPUP_ID = "private-class-2026-11";
+const CLASS_WA_TEXT = "Hello, I want to join the one-week private preparation class.";
+
+function PrivateClassPopup() {
+  const { t, profile, isAdmin } = useApp();
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (isAdmin || !profile?.email || isJuth(profile)) return;
+    let seen = false;
+    try { seen = localStorage.getItem(CLASS_POPUP_ID) === "1"; } catch { /* storage blocked */ }
+    if (!seen) { const id = setTimeout(() => setOpen(true), 1200); return () => clearTimeout(id); }
+  }, [isAdmin, profile]);
+  function close() { setOpen(false); try { localStorage.setItem(CLASS_POPUP_ID, "1"); } catch { /* ignore */ } }
+  if (!open) return null;
+  return (
+    <Modal onClose={close} width={420}>
+      <div style={{ textAlign: "center" }}>
+        <IconBadge icon={CalendarCheck} color={t.amber} bg={t.amberSoft} size={52} />
+        <div className="f-serif" style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: "12px 0 6px" }}>One-Week Private Preparation Class</div>
+        <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.6, marginBottom: 12 }}>
+          New batch now open for <b>Critical Care, Perioperative, Anaesthesia and Nephrology Nursing</b>.
+        </div>
+        <div style={{ textAlign: "left", fontSize: 13, color: t.text, lineHeight: 1.75, background: t.bgAlt, borderRadius: 12, padding: "10px 14px", marginBottom: 14 }}>
+          ✓ Full timed mock exams every day<br />
+          ✓ Your whole curriculum with council-style past questions<br />
+          ✓ Answers and explanations after every question<br />
+          ✓ Free 5-question Test Run before you join
+        </div>
+        <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(CLASS_WA_TEXT)}`} target="_blank" rel="noopener noreferrer"
+           onClick={close} style={{ display: "block", textDecoration: "none", background: "#25D366", color: "#fff", fontWeight: 700, fontSize: 14.5, padding: "12px 16px", borderRadius: 12, marginBottom: 8 }}>
+          Chat with the admin on WhatsApp ({WHATSAPP_DISPLAY})
+        </a>
+        <button type="button" onClick={close} style={{ background: "none", border: "none", color: t.textFaint, fontSize: 13, cursor: "pointer", padding: 6 }}>Not now</button>
+      </div>
+    </Modal>
+  );
+}
+
 function HomeScreen({ go, startQuiz }) {
   const { t, profile, bookmarks, history, wrongBank, streak, isAdmin } = useApp();
   const preCouncilCount = QUESTION_BANK.filter(q => q.category === "Pre-Council").length;
@@ -359,8 +400,9 @@ function HomeScreen({ go, startQuiz }) {
         <ChevronRight size={18} color={t.navy} />
       </Card>
 
-      {/* Private class banner */}
-      <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hello, I want to join the one-week private preparation class.")}`}
+      <PrivateClassPopup />
+      {/* Private class banner (not shown to JUTH students) */}
+      {!isJuth(profile) && <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(CLASS_WA_TEXT)}`}
          target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block", marginBottom: 22 }}>
         <Card hover style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: t.amberSoft, border: `1px solid ${t.amber}33` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -372,7 +414,7 @@ function HomeScreen({ go, startQuiz }) {
           </div>
           <ChevronRight size={18} color={t.amber} />
         </Card>
-      </a>
+      </a>}
 
       {/* Progress overview */}
       <Card style={{ padding: 22, marginBottom: 26, display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
