@@ -149,7 +149,7 @@ export default function AdminReviewScreen() {
               </div>
               <div style={{ background: t.navySoft, borderRadius: 10, padding: 14, marginBottom: 18 }}>
                 <div style={{ fontSize: 11.5, fontWeight: 700, color: t.navy, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.4 }}>Explanation</div>
-                <div style={{ fontSize: 13, color: t.text, lineHeight: 1.55 }}>
+                <div style={{ fontSize: 14, color: t.text, lineHeight: 1.6, whiteSpace: "pre-line" }}>
                   {current.exp && current.exp.trim() ? current.exp : "No stored explanation for this question yet — add one via Admin > Manage Questions."}
                 </div>
               </div>

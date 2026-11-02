@@ -970,7 +970,7 @@ function ResultsScreen({ quiz, answers, flagged, elapsed, goHome, retakeWrong })
                 })}
                 {given === undefined && <div style={{ fontSize: 12, color: t.amber, fontStyle: "italic" }}>Not answered</div>}
               </div>
-              <div style={{ fontSize: 13, color: t.textMuted, background: t.bgAlt, padding: "9px 12px", borderRadius: 8 }}>
+              <div style={{ fontSize: 14.5, lineHeight: 1.6, whiteSpace: "pre-line", color: t.text, background: t.bgAlt, padding: "10px 13px", borderRadius: 8 }}>
                 <span style={{ fontWeight: 700, color: t.navy }}>Why: </span>{q.exp}
               </div>
             </Card>
@@ -1450,7 +1450,7 @@ function FlashcardsScreen() {
           ) : (
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, color: t.emerald, marginBottom: 12 }}>{LETTERS[q.ansIdx]}) {q.opts[q.ansIdx]}</div>
-              <div style={{ fontSize: 13.5, color: t.textMuted, lineHeight: 1.55 }}>{q.exp}</div>
+              <div style={{ fontSize: 15, color: t.text, lineHeight: 1.6, whiteSpace: "pre-line" }}>{q.exp}</div>
             </div>
           )}
         </Card>
@@ -1534,7 +1534,7 @@ function RandomQuestionScreen() {
           })}
         </div>
         {selected !== null && (
-          <div style={{ fontSize: 13.5, color: t.textMuted, background: t.bgAlt, padding: "12px 14px", borderRadius: 10, marginBottom: 16 }}>
+          <div style={{ fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-line", color: t.text, background: t.bgAlt, padding: "12px 14px", borderRadius: 10, marginBottom: 16 }}>
             <span style={{ fontWeight: 700, color: t.navy }}>Why: </span>{q.exp}
           </div>
         )}
@@ -1564,7 +1564,7 @@ function WrongReviewScreen({ startQuiz }) {
               </div>
               <div style={{ fontSize: 14, fontWeight: 600, color: t.text, marginBottom: 8 }}>{q.q}</div>
               <div style={{ fontSize: 12.5, color: t.emerald, fontWeight: 700, marginBottom: 6 }}>Correct: {LETTERS[q.ansIdx]}) {q.opts[q.ansIdx]}</div>
-              <div style={{ fontSize: 12.5, color: t.textMuted }}>{q.exp}</div>
+              <div style={{ fontSize: 14, color: t.text, lineHeight: 1.55, whiteSpace: "pre-line" }}>{q.exp}</div>
             </Card>
           ))}
         </div>
