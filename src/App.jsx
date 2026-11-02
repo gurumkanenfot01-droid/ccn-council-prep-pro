@@ -299,7 +299,8 @@ function PrivateClassPopup() {
   const { t, profile, isAdmin } = useApp();
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    if (isAdmin || !profile?.email || isJuth(profile)) return;
+    // Admins always see it once (as a preview), even if their own profile says JUTH.
+    if (!profile?.email || (!isAdmin && isJuth(profile))) return;
     let seen = false;
     try { seen = localStorage.getItem(CLASS_POPUP_ID) === "1"; } catch { /* storage blocked */ }
     if (!seen) { const id = setTimeout(() => setOpen(true), 1200); return () => clearTimeout(id); }
@@ -401,8 +402,8 @@ function HomeScreen({ go, startQuiz }) {
       </Card>
 
       <PrivateClassPopup />
-      {/* Private class banner (not shown to JUTH students) */}
-      {!isJuth(profile) && <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(CLASS_WA_TEXT)}`}
+      {/* Private class banner (not shown to JUTH students; admins always see it) */}
+      {(isAdmin || !isJuth(profile)) && <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(CLASS_WA_TEXT)}`}
          target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block", marginBottom: 22 }}>
         <Card hover style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: t.amberSoft, border: `1px solid ${t.amber}33` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
