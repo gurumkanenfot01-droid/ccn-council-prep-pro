@@ -10,6 +10,9 @@ import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
 import Liveness from "./Liveness.jsx";
 import ExamScreen from "./ExamScreen.jsx";
 
+const ADMIN_WHATSAPP = "2349031853995";
+const ADMIN_WHATSAPP_DISPLAY = "+234 903 185 3995";
+
 const CODE_KEY = "exam-room-code";
 
 function Header({ name, onLogout }) {
@@ -545,9 +548,15 @@ export default function StudentApp({ updateReady = false }) {
       {faceMode === "full" && profile.face_status === "pending" && (
         <div className="banner banner-warn"><Hourglass size={16} /> Your face registration is waiting for approval. You can start exams once it’s approved.</div>
       )}
-      {profile.full_access === false && (
-        <div className="banner banner-warn"><Hourglass size={16} /> Start with the <strong>Test Run</strong> below to see how the exams work. Your full mock exams will appear here once the administrator gives you full access.</div>
-      )}
+      {profile.full_access === false && (profile.exams.some(e => e.session_status && e.session_status !== "in_progress") ? (
+        <div className="banner banner-info" style={{ flexWrap: "wrap" }}>
+          <CheckCircle2 size={16} />
+          <span style={{ flex: 1, minWidth: 200 }}>You have finished the <strong>Test Run</strong> (5 questions). Your full mock exams will appear here once the administrator gives you full access. Message the administrator on WhatsApp ({ADMIN_WHATSAPP_DISPLAY}) to get full access, then tap Refresh.</span>
+          <a className="btn btn-sm btn-success" href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hello, I have finished the Test Run on the Nursing Exam Room. My name is ${profile.name}. Please give me full access.`)}`} target="_blank" rel="noreferrer">Message admin</a>
+        </div>
+      ) : (
+        <div className="banner banner-warn"><Hourglass size={16} /> Start with the <strong>Test Run</strong> below (5 questions) to see how the exams work. Your full mock exams will appear here once the administrator gives you full access.</div>
+      ))}
       {refreshError && <div className="banner banner-warn">{refreshError}</div>}
       {needApp && <AppRequired kind={needApp} />}
       <div className="row" style={{ marginBottom: 10 }}>

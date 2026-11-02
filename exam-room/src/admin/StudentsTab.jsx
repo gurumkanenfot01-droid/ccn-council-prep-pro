@@ -244,6 +244,17 @@ export default function StudentsTab() {
     if (error) flash(adminDbMessage(error)); else { flash(`Approved ${pending} student${pending === 1 ? "" : "s"}.`); load(); }
   }
 
+  async function giveAllFull() {
+    const ids = (rows || []).filter(r => r.full_access === false && !r.name_pending).map(r => r.id);
+    if (!ids.length) return;
+    if (!confirm(`Give full access to all ${ids.length} student${ids.length === 1 ? "" : "s"} on Test Run only? They will see all the full mock exams.`)) return;
+    for (let i = 0; i < ids.length; i += 200) {
+      const { error } = await supabase.from("exam_candidates").update({ full_access: true }).in("id", ids.slice(i, i + 200));
+      if (error) { flash(adminDbMessage(error)); return; }
+    }
+    flash(`${ids.length} student${ids.length === 1 ? " now has" : "s now have"} full access to all exams.`); load();
+  }
+
   async function viewPhoto(row) {
     const { data } = await supabase.from("exam_candidates").select("face_photo").eq("id", row.id).maybeSingle();
     setPhoto({ name: row.full_name, src: data?.face_photo || null, row });
@@ -332,8 +343,10 @@ export default function StudentsTab() {
       </section>
 
       {loadError && <div className="banner banner-bad">{loadError}</div>}
-      {waitingFull > 0 && <div className="banner banner-warn">
-        {waitingFull} student{waitingFull === 1 ? " is" : "s are"} on <strong>Test Run only</strong>. When a student is ready, tap <strong>Give full access</strong> next to their name.
+      {waitingFull > 0 && <div className="banner banner-warn row" style={{ gap: 10 }}>
+        <span>{waitingFull} student{waitingFull === 1 ? " is" : "s are"} on <strong>Test Run only</strong> — they can take only the 5-question Test Run and won’t see the full mock exams. When a student is ready, tap <strong>Give full access</strong> next to their name, or give it to all of them at once.</span>
+        <span className="spacer" />
+        <button className="btn btn-sm btn-success" onClick={giveAllFull}><CheckCircle2 size={13} /> Give full access to all {waitingFull}</button>
       </div>}
       {pending > 0 && <div className="banner banner-warn row" style={{ gap: 10 }}>
         <span>{pending} face registration{pending === 1 ? "" : "s"} waiting for your approval. Tap “Photo” to check and approve, or approve them all at once.</span>

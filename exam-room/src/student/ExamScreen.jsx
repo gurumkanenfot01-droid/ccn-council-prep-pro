@@ -612,11 +612,14 @@ export default function ExamScreen({ cam, session, onFinished }) {
                 })}
               </div>
               {feedback && feedback.correct_index != null && (
-                <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: feedback.correct ? "var(--emerald-soft)" : "var(--red-soft)" }}>
-                  <strong style={{ color: feedback.correct ? "var(--emerald)" : "var(--red)" }}>
+                <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: feedback.correct ? "var(--emerald-soft)" : "var(--red-soft)" }}>
+                  <strong style={{ fontSize: 18, color: feedback.correct ? "var(--emerald)" : "var(--red)" }}>
                     {feedback.correct ? "Correct!" : `Wrong — the answer is ${LETTERS[feedback.correct_index]}.`}
                   </strong>
-                  {feedback.explanation && <p style={{ margin: "6px 0 0", fontSize: 14 }}>{feedback.explanation}</p>}
+                  {feedback.explanation && <>
+                    <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--ink-2, inherit)", opacity: 0.75 }}>Explanation</div>
+                    <p style={{ margin: "4px 0 0", fontSize: 17, lineHeight: 1.6 }}>{feedback.explanation}</p>
+                  </>}
                 </div>
               )}
               {feedback && feedback.correct_index == null && (
