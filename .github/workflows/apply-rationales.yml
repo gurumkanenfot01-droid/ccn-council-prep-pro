@@ -1,0 +1,80 @@
+name: Apply CCN rationales to Supabase
+
+# Sends the rationale SQL files straight to the Supabase database, so nobody
+# has to copy and paste them into the SQL Editor.
+#
+# Needs one repository secret: SUPABASE_DB_URL — the "Session pooler"
+# connection string from Supabase (Connect → Session pooler), with the
+# database password filled in.
+#
+# Runs by itself when the rationale files change on main, or by hand:
+# Actions → "Apply CCN rationales to Supabase" → Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      first_day:
+        description: "First day to apply (1-15)"
+        default: "1"
+        required: true
+      last_day:
+        description: "Last day to apply (1-15)"
+        default: "15"
+        required: true
+  push:
+    branches: [main]
+    paths:
+      - "supabase/rationales_ccn_day*.sql"
+      - ".github/workflows/apply-rationales.yml"
+
+concurrency:
+  group: apply-rationales
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the database secret is set
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::The SUPABASE_DB_URL secret is missing. Add it in Settings → Secrets and variables → Actions, then run this again."
+            exit 1
+          fi
+
+      - name: Install psql
+        run: |
+          command -v psql >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client)
+
+      - name: Apply rationales
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          FIRST: ${{ github.event.inputs.first_day || '1' }}
+          LAST: ${{ github.event.inputs.last_day || '15' }}
+        run: |
+          set -o pipefail
+          {
+            echo "## CCN rationales applied"
+            echo ""
+            echo "| Day | Questions updated (should be 200) | Rows changed |"
+            echo "|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          failed=0
+          for d in $(seq "$FIRST" "$LAST"); do
+            f="supabase/rationales_ccn_day$d.sql"
+            if [ ! -f "$f" ]; then echo "::warning::$f not found"; continue; fi
+            if out=$(psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -qtA -F ' | ' -f "$f" 2>&1); then
+              echo "Day $d: $out"
+              echo "| $d | $out |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::Day $d failed: $out"
+              echo "| $d | FAILED | |" >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+          done
+          exit $failed
