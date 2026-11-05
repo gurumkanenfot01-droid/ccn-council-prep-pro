@@ -1,0 +1,52 @@
+name: Apply admin study pack to Supabase
+
+# Loads supabase/admin_study.sql (the admin-only study pack: 3,000 sorted CCN mock
+# questions with the must-know 300, plus the keynote quiz, flashcards and notes).
+# Uses the same SUPABASE_DB_URL secret as the rationales workflow.
+# Runs by itself when the file changes on main, or by hand from the Actions tab.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/admin_study.sql"
+      - ".github/workflows/apply-admin-study.yml"
+
+concurrency:
+  group: apply-admin-study
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the database secret is set
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::The SUPABASE_DB_URL secret is missing. Add it in Settings → Secrets and variables → Actions, then run this again."
+            exit 1
+          fi
+
+      - name: Install psql
+        run: command -v psql >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client)
+
+      - name: Load the admin study pack
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -o pipefail
+          out=$(psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -qtA -F ' | ' -f supabase/admin_study.sql 2>&1)
+          echo "$out"
+          {
+            echo "## Admin study pack loaded"
+            echo ""
+            echo "| Collection | Items | Must-know |"
+            echo "|---|---|---|"
+            echo "$out" | grep ' | ' | sed 's/^/| /; s/$/ |/'
+          } >> "$GITHUB_STEP_SUMMARY"

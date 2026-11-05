@@ -293,3 +293,21 @@ textarea { font: inherit; color: inherit; border: 1px solid var(--border); backg
   display: flex; gap: 10px; align-items: center; padding: 10px 16px; font-size: 14px;
   background: var(--amber-soft); color: var(--text); border-bottom: 1px solid var(--amber);
 }
+
+/* Admin study: flashcards and the keynote notes reader */
+.flashcard { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; white-space: pre-line; cursor: pointer; width: 100%; color: var(--text); font: inherit; }
+.study-md { line-height: 1.6; overflow-wrap: anywhere; }
+.study-md h2 { font-size: 22px; margin: 4px 0 12px; }
+.study-md h3 { font-size: 18px; margin: 22px 0 8px; }
+.study-md h4, .study-md h5 { font-size: 15px; margin: 16px 0 6px; }
+.study-md p, .study-md ul, .study-md ol { margin: 0 0 10px; }
+.study-md ul, .study-md ol { padding-left: 20px; }
+.study-md blockquote { margin: 0 0 12px; padding: 8px 12px; border-left: 3px solid var(--navy); background: var(--surface-alt); border-radius: 0 8px 8px 0; }
+.study-md code { background: var(--surface-alt); padding: 1px 5px; border-radius: 5px; font-size: 0.92em; }
+.study-md .md-table { overflow-x: auto; margin: 0 0 14px; }
+.study-md table { border-collapse: collapse; font-size: 13px; min-width: 100%; }
+.study-md th, .study-md td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
+.study-md th { background: var(--surface-alt); }
+.study-md figure { margin: 8px 0 16px; text-align: center; }
+.study-md img { max-width: 100%; height: auto; background: #fff; border-radius: 10px; border: 1px solid var(--border); }
+.study-md figcaption { font-size: 12px; margin-top: 4px; }
