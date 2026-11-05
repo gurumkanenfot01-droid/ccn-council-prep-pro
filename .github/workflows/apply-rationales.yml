@@ -25,6 +25,7 @@ on:
     branches: [main]
     paths:
       - "supabase/rationales_ccn_day*.sql"
+      - ".github/workflows/apply-rationales.yml"
 
 concurrency:
   group: apply-rationales
