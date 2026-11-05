@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ShieldCheck, Activity, ClipboardList, Users, BarChart3, LogOut } from "lucide-react";
+import { ShieldCheck, Activity, ClipboardList, Users, BarChart3, LogOut, GraduationCap } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { Spinner } from "../ui.jsx";
 import { SPECIALTIES, getSpecialty, setSpecialty } from "../lib/specialty.js";
@@ -7,12 +7,14 @@ import MonitorTab from "./MonitorTab.jsx";
 import ExamsTab from "./ExamsTab.jsx";
 import StudentsTab from "./StudentsTab.jsx";
 import ResultsTab from "./ResultsTab.jsx";
+import StudyTab from "./StudyTab.jsx";
 
 const TABS = [
   { id: "monitor", label: "Live monitor", icon: Activity, Comp: MonitorTab },
   { id: "exams", label: "Exams", icon: ClipboardList, Comp: ExamsTab },
   { id: "students", label: "Students & codes", icon: Users, Comp: StudentsTab },
   { id: "results", label: "Results", icon: BarChart3, Comp: ResultsTab },
+  { id: "study", label: "Admin study", icon: GraduationCap, Comp: StudyTab },
 ];
 
 function AdminLogin() {
