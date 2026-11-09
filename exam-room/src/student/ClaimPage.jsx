@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { GraduationCap, ArrowRight, Copy, Check, UserRound, MessageCircle, PlayCircle, Lock } from "lucide-react";
 import { api } from "../lib/api.js";
+import ExamNumberCard from "./ExamNumberCard.jsx";
 import { ADMIN_WHATSAPP, ADMIN_WHATSAPP_DISPLAY, CODE_KEY } from "./StudentApp.jsx";
 
 // The link the administrator posts in the class group (/#/claim): a student
@@ -55,7 +56,7 @@ export default function ClaimPage() {
           <p className="muted" style={{ margin: 0, fontSize: 14 }}>Paid students: type your name to see your personal code for Paper 1, Paper 2 and the OSCE.</p>
         </div>
 
-        {got ? (
+        {got ? (<>
           <div className="card claim-result" style={{ display: "flex", flexDirection: "column", gap: 14, textAlign: "center" }}>
             <div className="muted" style={{ fontSize: 14 }}>Hello <strong>{got.name}</strong>, your access code is</div>
             <div className="claim-code" aria-label={`Access code ${got.code.split("").join(" ")}`}>{got.code}</div>
@@ -68,7 +69,8 @@ export default function ClaimPage() {
               Write it down. The code is only for you: your face is registered with it and checked at every exam, so nobody else can use it.
             </p>
           </div>
-        ) : (
+          <div style={{ marginTop: 14 }}><ExamNumberCard code={got.code} /></div>
+        </>) : (
           <form className="card" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="field">
               <label htmlFor="claim-name"><UserRound size={11} /> Your full name</label>

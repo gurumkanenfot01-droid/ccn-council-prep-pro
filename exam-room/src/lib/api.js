@@ -28,6 +28,7 @@ export const MESSAGES = {
   app_required: "On this device, exams must be taken in the Nursing Exam Room app. Download it from your exam list.",
   devices_off: "Turn your camera and microphone back on to continue.",
   invalid_session: "Your exam session has ended. Log in again.",
+  bad_exam_number: "Type your exam number using letters, numbers and / or - only (up to 30 characters).",
   network: "Connection problem. Check your internet — your answers so far are saved.",
 };
 
@@ -124,6 +125,9 @@ export const api = {
   recordCheck: (token, kind, photo) => rpc("exam_record_check", { p_token: token, p_kind: kind, p_photo: photo }).catch(() => ({})),
   // Council claim page: a paid student types their name and gets their code.
   claimCode: name => rpc("exam_claim_code", { p_name: name }),
+  // The student's Council exam number, sent to the administrator.
+  setExamNumber: (code, number) => rpc("exam_set_exam_number", { p_code: code, p_number: number }),
+  myExamNumber: code => rpc("exam_my_exam_number", { p_code: code }).catch(() => null),
   mySecurity: code => rpc("exam_my_security", { p_code: code }).catch(() => ({})),
   start: (code, examId, descriptor, photo) =>
     rpc("exam_start", { p_code: code, p_exam_id: examId, p_descriptor: descriptor, p_photo: photo, p_user_agent: navigator.userAgent }),

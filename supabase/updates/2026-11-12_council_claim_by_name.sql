@@ -81,6 +81,34 @@ revoke all on function public.exam_claim_code(text) from public;
 grant execute on function public.exam_claim_code(text) to anon, authenticated;
 revoke all on function public.exam__name_words(text), public.exam__word_near(text, text), public.exam__words_found(text[], text[]) from public;
 
+-- The student's Council exam number, typed by the student (claim page or
+-- their exam list) and shown to the administrator on the Students tab.
+alter table public.exam_candidates add column if not exists exam_number text not null default '';
+
+create or replace function public.exam_set_exam_number(p_code text, p_number text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  c public.exam_candidates;
+  n text := upper(regexp_replace(trim(coalesce(p_number, '')), '\s+', ' ', 'g'));
+begin
+  if exam__throttled() then return exam__err('too_many_attempts'); end if;
+  c := exam__candidate(p_code);
+  if c.id is null then return exam__err('invalid_code'); end if;
+  if n !~ '^[A-Z0-9][A-Z0-9 /._-]{0,29}$' then return exam__err('bad_exam_number'); end if;
+  update exam_candidates set exam_number = n where id = c.id;
+  return jsonb_build_object('exam_number', n);
+end; $$;
+revoke all on function public.exam_set_exam_number(text, text) from public;
+grant execute on function public.exam_set_exam_number(text, text) to anon, authenticated;
+
+create or replace function public.exam_my_exam_number(p_code text) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce((select jsonb_build_object('exam_number', exam_number) from exam_candidates
+                   where access_code = upper(trim(coalesce(p_code, ''))) and active), '{}'::jsonb)
+$$;
+revoke all on function public.exam_my_exam_number(text) from public;
+grant execute on function public.exam_my_exam_number(text) to anon, authenticated;
+
 -- The students who have paid (class list, November 2026). A student who
 -- already has a council code keeps it and is marked as paid; anyone else gets
 -- a new code with full access. Running this again adds nobody twice.

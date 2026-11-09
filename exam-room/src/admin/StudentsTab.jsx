@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck, Hash } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner, MoreMenu } from "../ui.jsx";
@@ -20,7 +20,7 @@ const FIELDS_BASE = "id, full_name, access_code, face_status, active, enrolled_a
 const FIELDS = FIELDS_BASE + ", security_level, max_warnings_override, app_only, exempt_checks, watch";
 const FIELDS_MID = FIELDS_BASE + ", security_level, max_warnings_override, app_only";
 // Council claim link (supabase/updates/2026-11-12_council_claim_by_name.sql).
-const FIELDS_CLAIM = FIELDS + ", claimable, claimed_at, claim_count";
+const FIELDS_CLAIM = FIELDS + ", claimable, claimed_at, claim_count, exam_number";
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -50,8 +50,8 @@ async function insertCandidates(rows) {
 function csvCell(v) { const t = String(v ?? ""); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; }
 
 function downloadCsv(list, site, filename) {
-  const lines = [["Name", "Access code", "Batch", "Face", "Exam site"],
-    ...list.map(r => [r.name_pending ? "" : r.full_name, r.access_code, r.batch, r.face_status, site])];
+  const lines = [["Name", "Access code", "Exam number", "Batch", "Face", "Exam site"],
+    ...list.map(r => [r.name_pending ? "" : r.full_name, r.access_code, r.exam_number || "", r.batch, r.face_status, site])];
   const blob = new Blob(["\ufeff" + lines.map(l => l.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = filename;
@@ -226,22 +226,28 @@ function ClaimLinkCard({ rows, onCopy, copied }) {
   const paid = list.filter(r => r.claimable);
   const collected = paid.filter(r => r.claim_count > 0);
   const repeat = paid.filter(r => r.claim_count > 1);
+  const numbered = list.filter(r => r.exam_number);
+  const numbersText = list.filter(r => r.claimable || r.exam_number).slice().sort((a, b) => a.full_name.localeCompare(b.full_name))
+    .map((r, i) => `${i + 1}. ${r.full_name} — ${r.exam_number || "(no exam number yet)"}`).join("\n");
   const groupText = `Council Exams access codes (paid students only):\n1. Open ${link}\n2. Type your full name\n3. Your personal code appears straight away. Write it down and don't share it.\nIf it says you're not on the list, message the administrator.`;
   return (
     <section className="card">
       <h2 style={{ fontSize: 16, marginTop: 0 }}><Link2 size={17} /> Claim link for paid students</h2>
       <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
         Post this link in the class group. A student who has paid types their name and sees their code at once. Anyone not marked <strong>Paid</strong> gets nothing.
+        After getting their code, students type their <strong>exam number</strong>; it appears under their name in the list below.
       </p>
       <div className="claim-link">
         <code>{link}</code>
         <button className="btn btn-primary btn-sm" onClick={() => onCopy(link, "claim-link")}>{copied === "claim-link" ? <Check size={14} /> : <Copy size={14} />} Copy link</button>
         <button className="btn btn-ghost btn-sm" onClick={() => onCopy(groupText, "claim-text")}>{copied === "claim-text" ? <Check size={14} /> : <Copy size={14} />} Copy message for the group</button>
+        {"exam_number" in (list[0] || {}) && <button className="btn btn-ghost btn-sm" onClick={() => onCopy(numbersText, "claim-numbers")}>{copied === "claim-numbers" ? <Check size={14} /> : <Hash size={14} />} Copy names and exam numbers</button>}
       </div>
       <div className="chip-row" style={{ marginTop: 10 }}>
         <span className="pill pill-ok"><BadgeCheck size={12} /> {paid.length} paid</span>
         <span className="pill">{collected.length} collected their code</span>
         <span className="pill pill-warn">{paid.length - collected.length} not yet</span>
+        <span className="pill pill-ok"><Hash size={12} /> {numbered.length} sent their exam number</span>
         {repeat.length > 0 && <span className="pill pill-bad" title="The code was shown more than once. Check the face photo is the right student.">{repeat.length} opened more than once</span>}
       </div>
       <p className="faint" style={{ fontSize: 12.5, margin: "10px 0 0" }}>
@@ -366,7 +372,7 @@ export default function StudentsTab() {
   const batches = useMemo(() => [...new Set((rows || []).map(r => r.batch).filter(Boolean))].sort(), [rows]);
   const filtered = useMemo(() => (rows || []).filter(r =>
     (!batchFilter || r.batch === batchFilter) &&
-    (!query || r.full_name.toLowerCase().includes(query.toLowerCase()) || r.access_code.includes(query.toUpperCase()))), [rows, query, batchFilter]);
+    (!query || r.full_name.toLowerCase().includes(query.toLowerCase()) || r.access_code.includes(query.toUpperCase()) || (r.exam_number || "").includes(query.toUpperCase()))), [rows, query, batchFilter]);
   const listText = list => list.map(r => `${r.name_pending ? "(blank)" : r.full_name} — ${r.access_code}`).join("\n") + `\n\nExam site: ${site}`;
   const stamp = () => new Date().toISOString().slice(0, 10);
   const pending = (rows || []).filter(r => r.face_status === "pending").length;
@@ -460,7 +466,7 @@ export default function StudentsTab() {
           <span className="spacer" />
           <div className="field" style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <Search size={14} />
-            <input placeholder="Search name or code" value={query} onChange={e => setQuery(e.target.value)} style={{ maxWidth: 200 }} />
+            <input placeholder="Search name, code or exam no." value={query} onChange={e => setQuery(e.target.value)} style={{ maxWidth: 200 }} />
           </div>
           {batches.length > 0 && (
             <select aria-label="Filter by group" value={batchFilter} onChange={e => setBatchFilter(e.target.value)} style={{ maxWidth: 180 }}>
@@ -503,6 +509,7 @@ export default function StudentsTab() {
                             {(r.exempt_checks || []).map(k => <span key={k} className="pill pill-ok"><Moon size={11} /> {exemptLabel(k)} OK</span>)}
                           </div>
                         )}
+                        {r.exam_number && <div className="exam-no"><Hash size={11} /> Exam no. <strong className="num">{r.exam_number}</strong></div>}
                         {r.batch && <div className="faint" style={{ fontSize: 12 }}>{r.batch}</div>}
                       </td>
                       <td data-label="Access code">
