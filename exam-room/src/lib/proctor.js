@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadFaceModels, scanFaces, readDescriptor, snapshot, frameBrightness } from "./face.js";
+import { slowNetwork } from "./net.js";
 import { loadPhoneDetector, phoneInView } from "./phone.js";
 import { IN_APP } from "./app.js";
 
@@ -292,7 +293,10 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
 
     // Phone in view.
     // Downloaded a little after the start, so the first questions load first on a slow network.
-    if (phoneCheck) new Promise(r => timers.push(setTimeout(r, 15000))).then(() => alive ? loadPhoneDetector() : Promise.reject()).then(detector => {
+    // The phone detector is an 18 MB download: skipped on a slow or data-saving
+    // connection so questions and answers aren't held up (photos still go to the admin).
+    if (phoneCheck && slowNetwork()) setPhoneModel("unavailable");
+    else if (phoneCheck) new Promise(r => timers.push(setTimeout(r, 15000))).then(() => alive ? loadPhoneDetector() : Promise.reject()).then(detector => {
       if (!alive) return;
       setPhoneModel("ready");
       timers.push(setInterval(() => {
