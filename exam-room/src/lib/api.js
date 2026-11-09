@@ -28,6 +28,7 @@ export const MESSAGES = {
   app_required: "On this device, exams must be taken in the Nursing Exam Room app. Download it from your exam list.",
   devices_off: "Turn your camera and microphone back on to continue.",
   invalid_session: "Your exam session has ended. Log in again.",
+  second_device: "This code is already signed in on another phone or computer. Only one device can use a code at a time. Log out on the other device (or close it and wait 2 minutes), then try again.",
   bad_exam_number: "Type your exam number using letters, numbers and / or - only (up to 30 characters).",
   network: "Connection problem. Check your internet — your answers so far are saved.",
 };
@@ -132,6 +133,10 @@ export const api = {
   claimCode: name => rpc("exam_claim_code", { p_name: name }),
   // The student's Council exam number, sent to the administrator.
   setExamNumber: (code, number) => rpc("exam_set_exam_number", { p_code: code, p_number: number }),
+  // One device per code (Council): sign this device in / keep it signed in, and let go on log out.
+  // A missing function or a network problem never blocks the student.
+  loginDevice: (code, device) => rpc("exam_login_device", { p_code: code, p_device: device }).catch(() => ({ ok: true })),
+  logoutDevice: (code, device) => rpc("exam_logout_device", { p_code: code, p_device: device }).catch(() => ({})),
   // Council: the student's share of the questions (by what they paid).
   myPlan: code => rpc("exam_my_plan", { p_code: code }).catch(() => null),
   myExamNumber: code => rpc("exam_my_exam_number", { p_code: code }).catch(() => null),
