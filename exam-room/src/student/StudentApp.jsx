@@ -12,6 +12,7 @@ import Liveness from "./Liveness.jsx";
 import ExamScreen from "./ExamScreen.jsx";
 import RoomCheck from "./RoomCheck.jsx";
 import ExamNumberCard from "./ExamNumberCard.jsx";
+import PlanCard from "./PlanCard.jsx";
 
 export const ADMIN_WHATSAPP = "2349031853995";
 export const ADMIN_WHATSAPP_DISPLAY = "+234 903 185 3995";
@@ -627,7 +628,7 @@ export default function StudentApp({ updateReady = false }) {
       ) : (
         <div className="banner banner-warn"><Hourglass size={16} /> Start with the <strong>Test Run</strong> below (5 questions) to see how the exams work. Your full mock exams will appear here once the administrator gives you full access.</div>
       ))}
-      {profile.specialty === "council" && <div style={{ marginBottom: 14 }}><ExamNumberCard code={code} /></div>}
+      {profile.specialty === "council" && <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}><PlanCard code={code} name={profile.name} /><ExamNumberCard code={code} /></div>}
       {refreshError && <div className="banner banner-warn">{refreshError}</div>}
       {needApp && <AppRequired kind={needApp} />}
       <div className="row" style={{ marginBottom: 10 }}>

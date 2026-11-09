@@ -132,6 +132,8 @@ export const api = {
   claimCode: name => rpc("exam_claim_code", { p_name: name }),
   // The student's Council exam number, sent to the administrator.
   setExamNumber: (code, number) => rpc("exam_set_exam_number", { p_code: code, p_number: number }),
+  // Council: the student's share of the questions (by what they paid).
+  myPlan: code => rpc("exam_my_plan", { p_code: code }).catch(() => null),
   myExamNumber: code => rpc("exam_my_exam_number", { p_code: code }).catch(() => null),
   mySecurity: code => rpc("exam_my_security", { p_code: code }).catch(() => ({})),
   start: (code, examId, descriptor, photo) =>

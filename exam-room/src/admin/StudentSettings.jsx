@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Shield, ShieldAlert, ListOrdered, Smartphone, X, Moon, Baby, CheckCircle2, Lock, Eye, Minus, Plus, Lightbulb } from "lucide-react";
+import { Shield, ShieldAlert, ListOrdered, Smartphone, X, Moon, Baby, CheckCircle2, Lock, Eye, Minus, Plus, Lightbulb, Percent } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
@@ -31,6 +31,9 @@ export const EXEMPTIONS = [
   ["noise", "Noise or talking", "Children's noise, talking or TV never counts."],
 ];
 export const exemptLabel = k => (EXEMPTIONS.find(x => x[0] === k) || [k, k])[1];
+
+// Council: share of questions by amount paid.
+export const SHARES = [[100, "Full (₦20,000)"], [80, "80%"], [75, "75% (₦15,000)"], [50, "Half (₦7,000–10,000)"], [25, "Quarter (₦5,000)"]];
 
 // Quick profiles: a level plus the checks switched off. "allowed" never gives
 // a warning; "counts" still gives warnings. Leaving the exam screen always counts.
@@ -108,6 +111,10 @@ export default function StudentSettings({ students, onClose, onSaved }) {
   const [appOnly, setAppOnly] = useState(many ? null : !!first.app_only);
   const [maxW, setMaxW] = useState(many ? null : (first.max_warnings_override ?? ""));
   const [counts, setCounts] = useState({}); // exam id -> "" | number | "all"
+  // Council: share of the questions by what they paid (100 = all).
+  const hasShare = getSpecialty() === "council" && "question_share" in first;
+  const [share, setShare] = useState(many ? null : (first.question_share ?? 100));
+  const [amount, setAmount] = useState(many ? null : (first.amount_paid ?? ""));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -147,6 +154,7 @@ export default function StudentSettings({ students, onClose, onSaved }) {
     setError("");
     const w = maxW === null ? null : String(maxW).trim();
     if (w !== null && w !== "" && !(Number(w) >= 1 && Number(w) <= 500)) return setError("Warning limit: enter a number from 1 to 500, or tap Exam's own.");
+    if (hasShare && share !== null && !(Number(share) >= 1 && Number(share) <= 100)) return setError("Share of questions: choose a percentage from 1 to 100.");
     for (const [id, v] of Object.entries(counts)) {
       if (v === "" || v === "all") continue;
       if (!(Number(v) >= 1 && Number(v) <= 2000)) return setError(`Questions for “${exams.find(e => e.id === id)?.title}”: enter a number from 1 to 2000.`);
@@ -159,6 +167,8 @@ export default function StudentSettings({ students, onClose, onSaved }) {
       if (watch !== null) patch.watch = watch;
       if (appOnly !== null) patch.app_only = appOnly;
       if (w !== null) patch.max_warnings_override = w === "" ? null : Math.floor(Number(w));
+      if (hasShare && share !== null) patch.question_share = Number(share) >= 100 ? null : Math.max(1, Math.floor(Number(share)));
+      if (hasShare && amount !== null) patch.amount_paid = String(amount).trim() === "" ? null : Math.max(0, Math.floor(Number(String(amount).replace(/[^0-9]/g, "")) || 0));
       if (Object.keys(patch).length) await chunked(ids, part => supabase.from("exam_candidates").update(patch).in("id", part));
 
       for (const e of exams || []) {
@@ -189,6 +199,7 @@ export default function StudentSettings({ students, onClose, onSaved }) {
     maxW ? `${maxW} warnings` : null,
     watch ? "watched" : null,
     appOnly ? "app only" : null,
+    hasShare && share !== null && Number(share) < 100 ? `${share}% of questions` : null,
   ].filter(Boolean).join(" · ");
 
   return (
@@ -271,6 +282,25 @@ export default function StudentSettings({ students, onClose, onSaved }) {
                 <Switch icon={Smartphone} label="App only" text="Android and Windows must use the exam app." checked={!!appOnly} indeterminate={appOnly === null} onChange={setAppOnly} />
               </div>
             </section>
+
+            {hasShare && (
+              <section>
+                <h3 className="sp-h3"><Percent size={13} /> Share of the questions (by payment)</h3>
+                <div className="chips">
+                  {SHARES.map(([v, label]) => <button key={v} className={Number(share) === v ? "on" : ""} onClick={() => setShare(v)}>{label}</button>)}
+                  <input type="number" min={1} max={100} aria-label="Share of questions, percent" placeholder={share === null ? "Mixed" : "%"}
+                    value={share ?? ""} onChange={e => setShare(e.target.value)} style={{ width: 80 }} />
+                </div>
+                <div className="field" style={{ maxWidth: 220, marginTop: 10 }}>
+                  <label htmlFor="amount-paid">Amount paid (₦, for your records)</label>
+                  <input id="amount-paid" inputMode="numeric" placeholder={amount === null ? "Mixed — not changing" : "e.g. 10000"} value={amount ?? ""} onChange={e => setAmount(e.target.value)} />
+                </div>
+                <p className="sp-note">
+                  {share === null ? "Mixed — tap a share to set it for everyone. " : Number(share) >= 100 ? "Full questions, like everyone who paid in full. " : `${share}% of the questions a full-paying student gets, in every paper. `}
+                  A number typed for one exam below still wins over the share. The student sees their share on their exams page.
+                </p>
+              </section>
+            )}
 
             <section>
               <h3 className="sp-h3"><ListOrdered size={13} /> Questions in each exam</h3>
