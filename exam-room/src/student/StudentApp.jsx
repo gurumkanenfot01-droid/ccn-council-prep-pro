@@ -266,6 +266,13 @@ function ExamCard({ exam, onStart }) {
   );
 }
 
+// Extra rules every paid (council) student sees before starting.
+const COUNCIL_RULES = [
+  "No talking at any time. Turning your head away from the screen for more than 45 seconds counts as a warning.",
+  "On a laptop the exam stays in full screen: leaving full screen, a second screen or moving the mouse off the exam hides the question and counts as a warning.",
+  "Your access code works on ONE device at a time. Sharing it is not allowed — it is locked to you and your face.",
+];
+
 function rulesFor(level, faceMode = "full") {
   if (faceMode === "mic" || faceMode === "start") {
     return [
@@ -333,6 +340,8 @@ const RESUME_KEY = "ccn-exam-resume";
 
 function PrepScreen({ exam, name, code, cam, faceMode, night = false, onStarted, onBack }) {
   const [agreed, setAgreed] = useState(false);
+  // Council: all the rules pop up first, before the student can begin.
+  const [showRules, setShowRules] = useState(night);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
   const [roomCheck, setRoomCheck] = useState(false);
@@ -378,6 +387,13 @@ function PrepScreen({ exam, name, code, cam, faceMode, night = false, onStarted,
     }
   }
   const ready = (cam.camera === "on" || faceMode === "mic") && cam.mic === "on";
+  const allRules = [
+    ...(night ? COUNCIL_RULES : []),
+    ...rulesFor(exam.proctor_level, faceMode),
+    "Use one device only. Opening this exam on another phone, laptop or browser tab locks this one and counts as a warning. Fake (virtual) cameras are not allowed.",
+    `You answer one question at a time and can’t go back.${exam.show_answers ? " The correct answer is shown right after you answer." : ""}`,
+    `Reaching ${exam.max_warnings} warnings submits your exam automatically.`,
+  ];
   return (
     <main className="wrap">
       <Header name={name} />
@@ -391,13 +407,25 @@ function PrepScreen({ exam, name, code, cam, faceMode, night = false, onStarted,
           {(exam.attempts_allowed || 1) > 1 && ` · attempt ${Math.min((exam.attempts_used || 0) + (exam.session_status === "in_progress" ? 0 : 1), exam.attempts_allowed)} of ${exam.attempts_allowed}`}
         </p>
         {exam.instructions && <div className="card" style={{ marginBottom: 12, whiteSpace: "pre-wrap" }}>{exam.instructions}</div>}
+        {showRules && (
+          <div className="overlay rules-pop" role="alertdialog" aria-modal="true" aria-labelledby="rp-h">
+            <div className="card">
+              <div className="rp-devices" id="rp-h"><Smartphone size={22} /> YOU CANNOT USE 2 DEVICES</div>
+              <p className="rp-sub">Your code works on <strong>ONE phone or laptop only</strong>. Opening the exam on a second device locks it and counts as a warning. Do not share your code.</p>
+              <h3 style={{ margin: "14px 0 6px", fontSize: 16 }}>Exam rules — read before you start</h3>
+              <ol className="rp-list">{allRules.map(r => <li key={r}>{r}</li>)}</ol>
+              <button className="btn btn-primary btn-full" onClick={() => setShowRules(false)}><CheckCircle2 size={16} /> I have read the rules</button>
+            </div>
+          </div>
+        )}
         <div className="card" style={{ marginBottom: 12 }}>
-          <strong>Exam rules</strong>
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <strong>Exam rules</strong>
+            {night && <button className="btn btn-ghost btn-sm" onClick={() => setShowRules(true)}>Read the rules again</button>}
+          </div>
+          {night && <div className="rp-devices small"><Smartphone size={16} /> YOU CANNOT USE 2 DEVICES</div>}
           <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 14 }}>
-            {rulesFor(exam.proctor_level, faceMode).map(r => <li key={r} style={{ marginBottom: 4 }}>{r}</li>)}
-            <li>Use one device only. Opening this exam on another phone, laptop or browser tab locks this one and counts as a warning. Fake (virtual) cameras are not allowed.</li>
-            <li>You answer one question at a time and can’t go back.{exam.show_answers ? " The correct answer is shown right after you answer." : ""}</li>
-            <li>Reaching {exam.max_warnings} warnings submits your exam automatically.</li>
+            {allRules.map(r => <li key={r} style={{ marginBottom: 4 }}>{r}</li>)}
           </ul>
         </div>
         {error && <div className="banner banner-bad">{error}</div>}
@@ -410,7 +438,7 @@ function PrepScreen({ exam, name, code, cam, faceMode, night = false, onStarted,
               <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} />
               I understand the rules and I am the person registered to code {code}.
             </label>
-            <button className="btn btn-primary btn-full" disabled={!agreed || cam.camera === "starting"} onClick={begin}>
+            <button className="btn btn-primary btn-full" disabled={!agreed || showRules || cam.camera === "starting"} onClick={begin}>
               <ShieldCheck size={16} /> {faceMode === "full" || faceMode === "start" ? <>Verify my face &amp; begin</> : "Begin exam"}
             </button>
           </>
