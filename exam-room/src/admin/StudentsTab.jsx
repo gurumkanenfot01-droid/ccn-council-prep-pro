@@ -5,7 +5,7 @@ import { adminDbMessage } from "../lib/api.js";
 import { Spinner, MoreMenu } from "../ui.jsx";
 import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL } from "../lib/app.js";
 import { getSpecialty, specialtyLabel } from "../lib/specialty.js";
-import StudentSettings, { securityLabel, exemptLabel } from "./StudentSettings.jsx";
+import StudentSettings, { securityLabel, exemptLabel, PRESETS, presetOf } from "./StudentSettings.jsx";
 
 // No look-alike characters (0/O, 1/I/L), so codes are easy to read out.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -533,6 +533,17 @@ export default function StudentsTab() {
                       </td>
                       <td className="cell-actions">
                         <div className="actions">
+                          {"exempt_checks" in r && (
+                            <select className="profile-pick" aria-label={`Quick profile for ${r.full_name}`} title="Quick profile — tap Rules to see what each one means"
+                              value={presetOf(r)?.id || "custom"}
+                              onChange={e => {
+                                const p = PRESETS.find(x => x.id === e.target.value);
+                                if (p) update(r.id, { security_level: p.level || null, exempt_checks: p.exempt, watch: p.watch }, `${r.full_name || "This student"}: ${p.title}. ${p.text}`);
+                              }}>
+                              {!presetOf(r) && <option value="custom">Custom rules</option>}
+                              {PRESETS.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                            </select>
+                          )}
                           <button className="btn btn-sm btn-primary" title="This student's own rules: security, checks, warning limit, questions" onClick={() => setSettingsFor([r])}><SlidersHorizontal size={13} /> Rules</button>
                           {r.face_status === "pending" && <>
                             <button className="btn btn-sm btn-success" onClick={() => update(r.id, { face_status: "approved" }, `Approved ${r.full_name}.`)}><Check size={13} /> Approve</button>

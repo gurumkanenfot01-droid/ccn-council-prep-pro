@@ -13,12 +13,14 @@ import { getSpecialty } from "../lib/specialty.js";
 //   app_only / watch       must use the app / shown first on the Live monitor
 //   exam_question_limits   how many questions they get in each exam
 
+// [id, name, one-line explanation]. The seconds are how long a problem must
+// last before it becomes a warning (from PROCTOR_LEVELS in lib/proctor.js).
 export const SECURITY_LEVELS = [
-  ["", "Exam's own", "Follows each exam's setting."],
-  ["relaxed", "Relaxed", "Murmuring and head turns are fine."],
-  ["normal", "Normal", "Quiet room."],
-  ["strict", "Strict", "Silence; face in view."],
-  ["maximum", "Maximum", "Council style, with ear check and room scan."],
+  ["", "Exam's own", "Uses the strictness you set on each exam in the Exams tab. Nothing extra for this student."],
+  ["relaxed", "Relaxed", "Gentle. Murmuring and reading quietly are fine; only clearly loud talking counts. Face may be out of view for 45 s and the room dark for 15 s before a warning. Another person 3 s, a phone 2 s."],
+  ["normal", "Normal", "Quiet room. Normal talking counts after 2 s. Face out of view 30 s, dark room 10 s, another person 2.5 s, a phone 1.5 s."],
+  ["strict", "Strict", "Silence. Even soft talking counts after about 1 s. Face out of view 20 s, dark room 8 s, another person 2 s, a phone 1.5 s."],
+  ["maximum", "Maximum", "Council style. Any whisper counts; face out of view 8 s, looking away 5 s, dark room 4 s, another person or phone about 1 s. Full screen, one device only, and an ear check and room scan before the exam."],
 ];
 export const securityLabel = l => (SECURITY_LEVELS.find(x => x[0] === (l || "")) || SECURITY_LEVELS[0])[1];
 
@@ -30,13 +32,27 @@ export const EXEMPTIONS = [
 ];
 export const exemptLabel = k => (EXEMPTIONS.find(x => x[0] === k) || [k, k])[1];
 
-const PRESETS = [
-  { id: "night", icon: Moon, title: "Night / low light", short: "Dark room or face not showing", text: "No light at night or the face doesn't show. Relaxed; darkness and face checks off.", level: "relaxed", exempt: ["dark", "no_face"], watch: false, tone: "calm" },
-  { id: "parent", icon: Baby, title: "Parent at home", short: "Children around, noise is fine", text: "Children around. Relaxed; other people and noise never count.", level: "relaxed", exempt: ["people", "noise"], watch: false, tone: "calm" },
-  { id: "anylight", icon: Lightbulb, title: "Any light — watched", short: "Any light, strict, watched", text: "Red, dim or any light and a busy background are fine. Strict on everything else, shown first on the Live monitor.", level: "strict", exempt: ["dark"], watch: true, tone: "sky" },
-  { id: "standard", icon: CheckCircle2, title: "Standard", short: "The exam's own rules", text: "Follows each exam's own rules. Nothing switched off.", level: "", exempt: [], watch: false, tone: "plain" },
-  { id: "strict", icon: Lock, title: "Strict", short: "Every check counts", text: "Silence and face in view. Every check counts.", level: "strict", exempt: [], watch: false, tone: "firm" },
-  { id: "maximum", icon: ShieldAlert, title: "Maximum + watch", short: "Council style, watched", text: "Council style, ear check and room scan, shown first on the Live monitor.", level: "maximum", exempt: [], watch: true, tone: "hard" },
+// Quick profiles: a level plus the checks switched off. "allowed" never gives
+// a warning; "counts" still gives warnings. Leaving the exam screen always counts.
+export const PRESETS = [
+  { id: "night", icon: Moon, title: "Night / low light", short: "Dark room or face not showing", text: "For a student with no light at night, or whose face doesn't show well. Relaxed level.", level: "relaxed", exempt: ["dark", "no_face"], watch: false, tone: "calm",
+    allowed: ["Dark room, no light, black camera picture", "Face not showing or looking away", "Murmuring / reading quietly"],
+    counts: ["Another person in view (3 s)", "Loud talking or noise (3 s)", "A phone in view", "Leaving the exam screen"] },
+  { id: "parent", icon: Baby, title: "Parent at home", short: "Children around, noise is fine", text: "For a student with children or family around. Relaxed level.", level: "relaxed", exempt: ["people", "noise"], watch: false, tone: "calm",
+    allowed: ["Children or family in the picture", "Noise, talking, crying, TV"],
+    counts: ["Face out of view (45 s)", "Dark room (15 s)", "A phone in view", "Leaving the exam screen"] },
+  { id: "anylight", icon: Lightbulb, title: "Any light — watched", short: "Any light, strict, watched", text: "For a student in a red, dim or coloured light. The light is forgiven, but everything else is Strict, and they are shown first on the Live monitor so you can watch them.", level: "strict", exempt: ["dark"], watch: true, tone: "sky",
+    allowed: ["Red, blue, dim or any colour of light", "Dark or black camera picture", "Busy background"],
+    counts: ["Face out of view (20 s)", "Any talking (about 1 s)", "Another person (2 s)", "A phone in view", "Leaving the exam screen"] },
+  { id: "standard", icon: CheckCircle2, title: "Standard", short: "The exam's own rules", text: "The normal choice. The student follows the strictness you set on each exam (Exams tab). Nothing is switched off.", level: "", exempt: [], watch: false, tone: "plain",
+    allowed: ["Whatever the exam's own strictness allows"],
+    counts: ["Everything the exam's strictness checks", "Leaving the exam screen"] },
+  { id: "strict", icon: Lock, title: "Strict", short: "Every check counts", text: "Silence and face in view, whatever the exam's own setting. Every check counts.", level: "strict", exempt: [], watch: false, tone: "firm",
+    allowed: ["Looking down at rough paper"],
+    counts: ["Any talking (about 1 s)", "Face out of view (20 s)", "Dark room (8 s)", "Another person (2 s)", "A phone in view", "Leaving the exam screen"] },
+  { id: "maximum", icon: ShieldAlert, title: "Maximum + watch", short: "Council style, watched", text: "The strictest. Council style, with an ear check (no earphones) and room scan before the exam. Shown first on the Live monitor.", level: "maximum", exempt: [], watch: true, tone: "hard",
+    allowed: ["Nothing extra"],
+    counts: ["Any whisper", "Face out of view (8 s)", "Looking away (5 s)", "Dark room (4 s)", "Another person or phone (about 1 s)", "Leaving full screen or a second screen", "Using a second device"] },
 ];
 
 async function chunked(ids, fn) {
@@ -46,6 +62,23 @@ async function chunked(ids, fn) {
   }
 }
 const same = (a, b) => a && b && a.length === b.length && a.every(x => b.includes(x));
+// The quick profile a student's saved rules match, or null for custom rules.
+export function presetOf(r) {
+  return PRESETS.find(p => (r.security_level || "") === p.level && same(r.exempt_checks || [], p.exempt) && !!r.watch === p.watch) || null;
+}
+
+// What a profile allows and what still counts, side by side.
+export function PresetExplain({ p }) {
+  return (
+    <div className="preset-explain">
+      <p>{p.text}</p>
+      <div className="pe-cols">
+        <div className="pe-ok"><strong>Never gives a warning</strong><ul>{p.allowed.map(t => <li key={t}>{t}</li>)}</ul></div>
+        <div className="pe-bad"><strong>Still gives a warning</strong><ul>{p.counts.map(t => <li key={t}>{t}</li>)}</ul></div>
+      </div>
+    </div>
+  );
+}
 const initials = n => (n || "?").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
 
 function Switch({ checked, onChange, label, text, icon: Icon, indeterminate = false }) {
@@ -182,7 +215,12 @@ export default function StudentSettings({ students, onClose, onSaved }) {
                 </button>
               ))}
             </div>
-            <p className="sp-note">{activePreset ? activePreset.text : "Pick a profile, then fine-tune the settings."}</p>
+            {activePreset ? <PresetExplain p={activePreset} /> : <p className="sp-note">Custom rules. Pick a profile to start from, then fine-tune the settings on the right.</p>}
+            <details className="pe-all">
+              <summary>What does each profile mean?</summary>
+              {PRESETS.map(p => <div key={p.id}><h4><p.icon size={14} /> {p.title}</h4><PresetExplain p={p} /></div>)}
+              <p className="sp-note">Numbers in brackets are how long it must last before it becomes a warning. When a student reaches their warning limit, the exam ends.</p>
+            </details>
           </aside>
 
           <div className="sp-right">
