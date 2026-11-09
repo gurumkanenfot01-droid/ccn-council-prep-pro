@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
-import { Spinner } from "../ui.jsx";
+import { Spinner, MoreMenu } from "../ui.jsx";
 import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL } from "../lib/app.js";
 import { getSpecialty, specialtyLabel } from "../lib/specialty.js";
 import StudentSettings, { securityLabel, exemptLabel } from "./StudentSettings.jsx";
@@ -433,7 +433,7 @@ export default function StudentsTab() {
         </div>
         {!rows ? <Spinner /> : (
           <div className="table-wrap">
-            <table className="data">
+            <table className="data stack">
               <thead><tr><th>Name</th><th>Access code</th><th>Face</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>
                 {filtered.map(r => {
@@ -452,14 +452,15 @@ export default function StudentsTab() {
                         )}
                         {r.batch && <div className="faint" style={{ fontSize: 12 }}>{r.batch}</div>}
                       </td>
-                      <td>
+                      <td data-label="Access code">
                         <button className="btn btn-sm btn-ghost num" style={{ letterSpacing: "0.12em" }}
                           onClick={() => copy(`${r.name_pending ? "Your" : `${r.full_name}, your`} exam access code is ${r.access_code}. Open ${site}, enter the code${r.no_face ? (r.name_pending ? " and your full name" : "") : ` and register your face${r.name_pending ? " and full name" : ""}`}. Don't share this code.`, r.id)}>
                           {r.access_code} {copied === r.id ? <Check size={13} /> : <Copy size={13} />}
                         </button>
                       </td>
-                      <td><span className={`pill ${cls}`}>{label}</span></td>
-                      <td>
+                      <td data-label="Face"><span className={`pill ${cls}`}>{label}</span></td>
+                      <td data-label="Status">
+                        <div className="chip-row" style={{ marginTop: 0 }}>
                         {r.active ? <span className="pill pill-ok">Active</span> : <span className="pill pill-bad">Disabled</span>}
                         {r.anytime && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Clock size={12} /> Anytime</span></div>}
                         {r.full_access === false && <div><span className="pill pill-warn" style={{ marginTop: 4 }}>Test Run only</span></div>}
@@ -467,35 +468,37 @@ export default function StudentsTab() {
                         {r.security_level && <div><span className={`pill ${r.security_level === "maximum" ? "pill-bad" : "pill-warn"}`} style={{ marginTop: 4 }}>{r.security_level === "maximum" ? <ShieldAlert size={12} /> : <Shield size={12} />} {securityLabel(r.security_level)}</span></div>}
                         {r.max_warnings_override != null && <div><span className="pill pill-warn" style={{ marginTop: 4 }}>{r.max_warnings_override} warning{r.max_warnings_override === 1 ? "" : "s"} max</span></div>}
                         {r.app_only && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Smartphone size={12} /> App only</span></div>}
+                        </div>
                       </td>
-                      <td>
-                        <div className="row" style={{ gap: 6 }}>
-                          <button className="btn btn-sm btn-primary" title="Security level, warning limit, app only and questions per exam" onClick={() => setSettingsFor([r])}><SlidersHorizontal size={13} /> Settings</button>
-                          {r.face_status !== "none" && <button className="btn btn-sm btn-ghost" onClick={() => viewPhoto(r)}><Image size={13} /> Photo</button>}
+                      <td className="cell-actions">
+                        <div className="actions">
+                          <button className="btn btn-sm btn-primary" title="This student's own rules: security, checks, warning limit, questions" onClick={() => setSettingsFor([r])}><SlidersHorizontal size={13} /> Rules</button>
                           {r.face_status === "pending" && <>
                             <button className="btn btn-sm btn-success" onClick={() => update(r.id, { face_status: "approved" }, `Approved ${r.full_name}.`)}><Check size={13} /> Approve</button>
                             <button className="btn btn-sm btn-ghost" onClick={() => update(r.id, { face_status: "rejected" }, `Rejected ${r.full_name}. They can register again.`)}><X size={13} /> Reject</button>
                           </>}
-                          {(r.face_status === "approved" || r.face_status === "rejected") &&
-                            <button className="btn btn-sm btn-ghost" onClick={() => confirm(`Reset ${r.full_name}'s face? They must register again before their next exam.`) && update(r.id, { face_status: "none", face_descriptor: null, face_photo: null }, "Face reset.")}>
-                              <RotateCcw size={13} /> Reset face
-                            </button>}
-                          <button className="btn btn-sm btn-ghost" title="Turn face registration and face checks off (or back on) for this student only"
-                            onClick={() => update(r.id, { no_face: !r.no_face }, r.no_face ? `${r.full_name || "This student"} must now register and match their face.` : `${r.full_name || "This student"} no longer needs face registration or face checks.`)}>
-                            <ScanFace size={13} /> {r.no_face ? "Face check on" : "No face"}
-                          </button>
-                          {r.full_access === false
-                            ? <button className="btn btn-sm btn-success" onClick={() => update(r.id, { full_access: true }, `${r.full_name || "This student"} now has full access to all exams.`)}><CheckCircle2 size={13} /> Give full access</button>
-                            : <button className="btn btn-sm btn-ghost" title="Allow only Test Run exams until you give full access again"
-                                onClick={() => confirm(`Limit ${r.full_name || "this student"} to the Test Run only?`) && update(r.id, { full_access: false }, `${r.full_name || "This student"} can now take only the Test Run.`)}>Test Run only</button>}
-                          <button className="btn btn-sm btn-ghost" title="Let this student take every exam (past, current and future) at any time, with unlimited retakes"
-                            onClick={() => update(r.id, { anytime: !r.anytime }, r.anytime ? `${r.full_name || "This student"} now follows the normal exam times.` : `${r.full_name || "This student"} can now take every exam at any time.`)}>
-                            <Clock size={13} /> {r.anytime ? "Normal times" : "Anytime access"}
-                          </button>
-                          <button className="btn btn-sm btn-ghost" onClick={() => update(r.id, { active: !r.active }, r.active ? "Code disabled — any exam in progress will end." : "Code enabled.")}>
-                            {r.active ? <><Ban size={13} /> Disable</> : <><CheckCircle2 size={13} /> Enable</>}
-                          </button>
-                          <button className="btn btn-sm btn-ghost" aria-label={`Delete ${r.full_name}`} onClick={() => remove(r)}><Trash2 size={13} /></button>
+                          {r.full_access === false && <button className="btn btn-sm btn-success" onClick={() => update(r.id, { full_access: true }, `${r.full_name || "This student"} now has full access to all exams.`)}><CheckCircle2 size={13} /> Give full access</button>}
+                          {r.face_status !== "none" && <button className="btn btn-sm btn-ghost" onClick={() => viewPhoto(r)}><Image size={13} /> Photo</button>}
+                          <MoreMenu ariaLabel={`More actions for ${r.full_name}`} icon={<MoreHorizontal size={15} />}>
+                              <button onClick={() => update(r.id, { no_face: !r.no_face }, r.no_face ? `${r.full_name || "This student"} must now register and match their face.` : `${r.full_name || "This student"} no longer needs face registration or face checks.`)}>
+                                <ScanFace size={15} /> {r.no_face ? "Turn face check back on" : "No face check for this student"}
+                              </button>
+                              {(r.face_status === "approved" || r.face_status === "rejected") &&
+                                <button onClick={() => confirm(`Reset ${r.full_name}'s face? They must register again before their next exam.`) && update(r.id, { face_status: "none", face_descriptor: null, face_photo: null }, "Face reset.")}>
+                                  <RotateCcw size={15} /> Reset face
+                                </button>}
+                              <button onClick={() => update(r.id, { anytime: !r.anytime }, r.anytime ? `${r.full_name || "This student"} now follows the normal exam times.` : `${r.full_name || "This student"} can now take every exam at any time.`)}>
+                                <Clock size={15} /> {r.anytime ? "Back to normal exam times" : "Anytime access (all exams, any time)"}
+                              </button>
+                              {r.full_access !== false && <button onClick={() => confirm(`Limit ${r.full_name || "this student"} to the Test Run only?`) && update(r.id, { full_access: false }, `${r.full_name || "This student"} can now take only the Test Run.`)}>
+                                <Layers size={15} /> Test Run only
+                              </button>}
+                              <hr />
+                              <button onClick={() => update(r.id, { active: !r.active }, r.active ? "Code disabled — any exam in progress will end." : "Code enabled.")}>
+                                {r.active ? <><Ban size={15} /> Disable code</> : <><CheckCircle2 size={15} /> Enable code</>}
+                              </button>
+                              <button className="danger" onClick={() => remove(r)}><Trash2 size={15} /> Delete student</button>
+                            </MoreMenu>
                         </div>
                       </td>
                     </tr>
