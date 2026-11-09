@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CameraOff, Loader2, ScanFace, Users, EyeOff, Moon, Mic, MicOff, Volume2, Smartphone } from "lucide-react";
 
 export function Spinner({ size = 22 }) {
@@ -88,4 +88,53 @@ export function PermissionHelp({ camera, mic }) {
 
 export function fmtDateTime(iso) {
   return new Date(iso).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+// "⋯ More" menu for row actions. The list floats above the page (position:
+// fixed), so it is never cut off inside a scrolling table, opens upwards near
+// the bottom of the screen, and closes on any choice, outside tap or Escape.
+export function MoreMenu({ label = "More", ariaLabel, compact = false, icon, children }) {
+  const ref = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = e => { if (!ref.current || !ref.current.contains(e.target)) setOpen(false); };
+    const esc = e => { if (e.key === "Escape") setOpen(false); };
+    const away = () => setOpen(false);
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", esc);
+    window.addEventListener("scroll", away, true);
+    window.addEventListener("resize", away);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", esc);
+      window.removeEventListener("scroll", away, true);
+      window.removeEventListener("resize", away);
+    };
+  }, [open]);
+  function toggle(e) {
+    const r = e.currentTarget.getBoundingClientRect();
+    const width = 230;
+    const below = window.innerHeight - r.bottom > 260;
+    setPos({
+      left: Math.max(8, Math.min(window.innerWidth - width - 8, r.right - width)),
+      ...(below ? { top: r.bottom + 6, bottom: "auto" } : { top: "auto", bottom: window.innerHeight - r.top + 6 }),
+      width,
+    });
+    setOpen(o => !o);
+  }
+  return (
+    <span className="menu" ref={ref}>
+      <button type="button" className="btn btn-sm btn-ghost" aria-haspopup="menu" aria-expanded={open} aria-label={ariaLabel || label} onClick={toggle}>
+        {icon}{!compact && ` ${label}`}
+      </button>
+      {open && pos && (
+        <div className="menu-list" role="menu" style={{ position: "fixed", right: "auto", ...pos }}
+          onClick={e => { if (e.target.closest("button")) setOpen(false); }}>
+          {children}
+        </div>
+      )}
+    </span>
+  );
 }

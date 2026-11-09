@@ -6,11 +6,11 @@ import {
 import { supabase } from "../lib/supabase.js";
 import { fmtClock } from "../lib/api.js";
 import { useLiveWatch, liveSupported } from "../lib/live.js";
-import { Spinner } from "../ui.jsx";
+import { Spinner, MoreMenu } from "../ui.jsx";
 import { examState } from "./ExamsTab.jsx";
 import { getSpecialty } from "../lib/specialty.js";
 import StudentSettings from "./StudentSettings.jsx";
-import { HeartHandshake, SlidersHorizontal as RulesIcon, Eye as EyeIcon } from "lucide-react";
+import { HeartHandshake, SlidersHorizontal as RulesIcon, Eye as EyeIcon, MoreHorizontal } from "lucide-react";
 
 const POLL_MS = 5000;
 const PHOTO_POLL_MS = 20000;
@@ -479,23 +479,28 @@ export default function MonitorTab() {
   const Actions = ({ s, c, compact }) => {
     const name = c?.full_name || "student";
     if (!s) return c ? <button className="btn btn-sm btn-ghost" onClick={() => openRules(c)}><RulesIcon size={13} />{!compact && " Rules"}</button> : null;
+    if (s.status !== "in_progress") {
+      return (
+        <div className="actions">
+          <button className="btn btn-sm btn-ghost" onClick={() => setOpen({ s, c })}><Eye size={13} />{!compact && " View"}</button>
+          <button className="btn btn-sm btn-primary" onClick={() => letContinue(s, name)}><PlayCircle size={13} /> Continue</button>
+          <button className="btn btn-sm btn-ghost" onClick={() => allowRetake(s, name)}><RotateCcw size={13} />{!compact && " Fresh retake"}</button>
+        </div>
+      );
+    }
     return (
-      <div className="row" style={{ gap: 6 }}>
-        <button className="btn btn-sm btn-ghost" onClick={() => setOpen({ s, c })}><Eye size={13} />{!compact && " View"}</button>
+      <div className="actions">
+        <button className="btn btn-sm btn-ghost" onClick={() => setOpen({ s, c })} aria-label="View"><Eye size={13} />{!compact && " View"}</button>
+        {!compact && liveSupported() && <button className="btn btn-sm btn-primary" onClick={() => setOpen({ s, c, live: true })} aria-label="Watch live"><Video size={13} /> Live</button>}
         <button className="btn btn-sm btn-ghost" onClick={() => openRules(c)} aria-label="This student's rules"><RulesIcon size={13} />{!compact && " Rules"}</button>
-        {s.status === "in_progress" ? <>
-          {!compact && liveSupported() && <button className="btn btn-sm btn-primary" onClick={() => setOpen({ s, c, live: true })} aria-label="Watch live"><Video size={13} /> Live</button>}
-          <button className="btn btn-sm btn-ghost" onClick={() => message(s, name)} aria-label="Message"><MessageSquare size={13} />{!compact && " Message"}</button>
-          <button className="btn btn-sm btn-ghost" style={{ color: "var(--amber)" }} onClick={() => warn(s, name)} aria-label="Give warning"><Flag size={13} />{!compact && " Warn"}</button>
-          {s.warnings > 0 && <button className="btn btn-sm btn-ghost" style={{ color: "var(--emerald)" }} onClick={() => forgive(s, name)} aria-label="Forgive warnings"><HeartHandshake size={13} />{!compact && " Forgive"}</button>}
-          <button className="btn btn-sm btn-ghost" onClick={() => addTime(s, name)} aria-label="Add time"><Clock size={13} />{!compact && " +Time"}</button>
-          <button className="btn btn-sm btn-ghost" style={{ color: "var(--red)" }} onClick={() => endSession(s, name)} aria-label="End exam"><XCircle size={13} />{!compact && " End"}</button>
-        </> : (
-          <>
-            <button className="btn btn-sm btn-primary" onClick={() => letContinue(s, name)}><PlayCircle size={13} /> Continue</button>
-            <button className="btn btn-sm btn-ghost" onClick={() => allowRetake(s, name)}><RotateCcw size={13} /> Fresh retake</button>
-          </>
-        )}
+        {s.warnings > 0 && <button className="btn btn-sm btn-ghost" style={{ color: "var(--emerald)" }} onClick={() => forgive(s, name)} aria-label="Forgive warnings"><HeartHandshake size={13} />{!compact && " Forgive"}</button>}
+        <MoreMenu ariaLabel={`More actions for ${name}`} icon={<MoreHorizontal size={15} />} compact={compact}>
+            <button onClick={() => message(s, name)}><MessageSquare size={15} /> Send a message</button>
+            <button onClick={() => warn(s, name)} style={{ color: "var(--amber)" }}><Flag size={15} /> Give a warning</button>
+            <button onClick={() => addTime(s, name)}><Clock size={15} /> Add extra time</button>
+            <hr />
+            <button className="danger" onClick={() => endSession(s, name)}><XCircle size={15} /> End this exam</button>
+          </MoreMenu>
       </div>
     );
   };
