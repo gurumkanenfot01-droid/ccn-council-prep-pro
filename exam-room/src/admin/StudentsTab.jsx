@@ -197,7 +197,7 @@ function CouncilCard({ rows, onCreated }) {
     <section className="card" style={{ borderColor: "var(--navy)" }}>
       <h2 style={{ fontSize: 16, marginTop: 0 }}><GraduationCap size={17} /> Council Exams — Paper 1, Paper 2 and OSCE</h2>
       <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
-        One code works for all three papers. After creating codes, tap <strong>Settings</strong> on a student (or <strong>Settings for all shown</strong>)
+        One code works for all three papers. After creating codes, tap <strong>Rules</strong> on a student (or <strong>Rules for all</strong>)
         to choose how many questions they get in each paper and how strict their security is.
       </p>
       <div className="row">
@@ -501,7 +501,7 @@ export default function StudentsTab() {
             </select>
           )}
           <button className="btn btn-primary btn-sm" disabled={!filtered.length} onClick={() => setSettingsFor(filtered)}>
-            <SlidersHorizontal size={14} /> Settings for all shown ({filtered.length})
+            <SlidersHorizontal size={14} /> Rules for all ({filtered.length})
           </button>
           <button className="btn btn-ghost btn-sm" disabled={!filtered.length} onClick={() => copy(listText(filtered), "all")}>
             {copied === "all" ? <Check size={14} /> : <Copy size={14} />} Copy list

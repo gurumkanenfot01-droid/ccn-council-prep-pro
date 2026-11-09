@@ -222,8 +222,11 @@ const DIM_FOR_MATCH = 55;
 // phoneCheck: look for a phone held up to the camera even when face checks are
 // off (any mode where the camera is on).
 // night: Council Exams only — night-friendly face matching (see below).
-export function useProctor({ cam, active, report, identity, level: strictness = "relaxed", video = true, phoneCheck = video, night = false }) {
-  const L = PROCTOR_LEVELS[strictness] || PROCTOR_LEVELS.relaxed;
+// turnAfter (Council Exams): head turned away for this long counts as a
+// warning at every level (Maximum keeps its own 5 s).
+export function useProctor({ cam, active, report, identity, level: strictness = "relaxed", video = true, phoneCheck = video, night = false, turnAfter = 0 }) {
+  const L0 = PROCTOR_LEVELS[strictness] || PROCTOR_LEVELS.relaxed;
+  const L = turnAfter && L0.yaw === Infinity ? { ...L0, yaw: 0.35, hold: { ...L0.hold, looking_away: turnAfter } } : L0;
   const [face, setFace] = useState("checking"); // ok | none | multiple | away | dark | checking
   const [phone, setPhone] = useState(false);
   const [noisy, setNoisy] = useState(false);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Shield, ShieldAlert, ListOrdered, Smartphone, X, Moon, Baby, CheckCircle2, Lock, Eye, Minus, Plus, Lightbulb, Percent } from "lucide-react";
+import { Shield, ShieldAlert, ListOrdered, Smartphone, X, Moon, Baby, CheckCircle2, Lock, Eye, Minus, Plus, Lightbulb, Percent, ListChecks, CheckCheck } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
@@ -29,6 +29,27 @@ export const EXEMPTIONS = [
   ["no_face", "Face not showing", "Face out of view or looking away never counts."],
   ["people", "Other people in view", "Children or family in the picture never count and never end the exam."],
   ["noise", "Noise or talking", "Children's noise, talking or TV never counts."],
+  ["turning", "Turning away", "Head turned away from the screen never counts."],
+  ["phone", "Phone in view", "A phone seen by the camera never counts."],
+  ["fullscreen", "Leaving full screen", "Full screen, second screen and mouse checks are off."],
+];
+
+// The rules as a tick list: ticked = the rule is checked for this student,
+// unticked = switched off for them (stored as exempt_checks). councilOnly rules
+// only exist in the Council section.
+export const RULES = [
+  { key: "noise", label: "No talking or noise", text: "Talking, whispering, TV or noise gives a warning." },
+  { key: "turning", label: "No turning away for more than 45 s", text: "Head turned from the screen for 45 seconds or longer gives a warning.", councilOnly: true },
+  { key: "no_face", label: "Face must stay in view", text: "Face leaving the camera gives a warning (after the level's time)." },
+  { key: "people", label: "No other person in view", text: "Another person in the picture gives a warning and can end the exam." },
+  { key: "dark", label: "Must have light", text: "A dark or black camera picture gives a warning. Untick for poor light — you can still watch them closely." },
+  { key: "phone", label: "No phone in view", text: "A phone seen by the camera gives a warning and ends the exam." },
+  { key: "fullscreen", label: "Laptop lock", text: "Full screen, one screen only, mouse stays on the exam.", councilOnly: true },
+];
+export const ALWAYS_RULES = [
+  "Leaving the exam screen or switching apps gives a warning",
+  "Copying, screenshots and printing are blocked",
+  "One device per code — no sharing",
 ];
 export const exemptLabel = k => (EXEMPTIONS.find(x => x[0] === k) || [k, k])[1];
 
@@ -145,6 +166,7 @@ export default function StudentSettings({ students, onClose, onSaved }) {
 
   const activePreset = PRESETS.find(p => level === p.level && exempt !== null && same(exempt, p.exempt) && (watch === null || !!watch === p.watch));
   function applyPreset(p) { setLevel(p.level); setExempt(p.exempt.slice()); setWatch(p.watch); }
+  const rules = RULES.filter(r => !r.councilOnly || getSpecialty() === "council");
   function toggleExempt(k, on) {
     setExempt(cur => { const base = cur || []; return on ? [...new Set([...base, k])] : base.filter(x => x !== k); });
   }
@@ -246,20 +268,28 @@ export default function StudentSettings({ students, onClose, onSaved }) {
             </section>
 
             <section>
-              <h3 className="sp-h3"><Eye size={13} /> Checks that won't count{many ? "" : " for this student"}</h3>
-              <div className="tile-grid">
-                {EXEMPTIONS.map(([k, label, text]) => {
-                  const on = exempt !== null && exempt.includes(k);
+              <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <h3 className="sp-h3" style={{ margin: 0 }}><ListChecks size={13} /> Rules{many ? " for all of them" : " for this student"} — ticked = checked</h3>
+                <div className="row" style={{ gap: 6 }}>
+                  <button className="btn btn-sm btn-primary" onClick={() => setExempt([])}><CheckCheck size={14} /> Tick all</button>
+                  <button className="btn btn-sm btn-ghost" onClick={() => setExempt(rules.map(r => r.key))}>Untick all</button>
+                </div>
+              </div>
+              <div className="rule-list">
+                {rules.map(r => {
+                  const enforced = exempt !== null && !exempt.includes(r.key);
                   return (
-                    <label key={k} className={`tile${on ? " on" : ""}`}>
-                      <span className="t-text"><strong>{label}</strong><span>{text}</span></span>
-                      <input type="checkbox" role="switch" checked={on} onChange={e => toggleExempt(k, e.target.checked)} />
-                      <span className="switch" aria-hidden="true" />
+                    <label key={r.key} className={`rule-row${enforced ? " on" : ""}${exempt === null ? " mixed" : ""}`}>
+                      <input type="checkbox" checked={enforced} onChange={e => toggleExempt(r.key, !e.target.checked)} />
+                      <span><strong>{r.label}</strong><small>{r.text}</small></span>
                     </label>
                   );
                 })}
+                {ALWAYS_RULES.map(t => (
+                  <div key={t} className="rule-row on locked"><Lock size={14} /><span><strong>{t}</strong><small>Always on for everyone</small></span></div>
+                ))}
               </div>
-              <p className="sp-note">{exempt === null ? "Mixed — tap a check to set it for everyone. " : ""}Changes reach a student who is already writing within about 30 seconds.</p>
+              <p className="sp-note">{exempt === null ? "Mixed — tap a rule to set it for all of them. " : ""}Poor light? Untick <strong>Must have light</strong> and switch on <strong>Watch closely</strong> below to keep them strict. Changes reach a student who is already writing within about 30 seconds.</p>
             </section>
 
             <section className="sp-grid2">

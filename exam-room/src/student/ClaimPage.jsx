@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { GraduationCap, ArrowRight, Copy, Check, UserRound, MessageCircle, PlayCircle, Lock } from "lucide-react";
 import { api } from "../lib/api.js";
+import HelpLine from "./HelpLine.jsx";
 import { ADMIN_WHATSAPP, ADMIN_WHATSAPP_DISPLAY, CODE_KEY } from "./StudentApp.jsx";
 
 // The link the administrator posts in the class group (/#/claim): a student
@@ -101,6 +102,7 @@ export default function ClaimPage() {
         <p className="muted" style={{ textAlign: "center", fontSize: 13.5, marginTop: 14 }}>
           Already have your code? <a href="#/">Log in here</a>
         </p>
+        <div style={{ marginTop: 12 }}><HelpLine /></div>
       </div>
     </main>
   );

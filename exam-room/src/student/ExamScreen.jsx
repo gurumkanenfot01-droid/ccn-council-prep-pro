@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { studentTitle } from "../lib/specialty.js";
+import HelpLine from "./HelpLine.jsx";
 import { AlertTriangle, Calculator as CalcIcon, Eye, VideoOff, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX, RefreshCw } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useProctor, VIOLATION_LABELS, pauseSoundChecks, enterFullscreen, virtualCameraName } from "../lib/proctor.js";
@@ -84,7 +85,11 @@ function alertStudent() {
 }
 
 // Checks the administrator switched off for one student (Students → Settings).
-const EXEMPT_TYPES = { dark: ["dark"], no_face: ["no_face", "looking_away"], people: ["multiple_faces"], noise: ["noise"] };
+// Rules the administrator switched off for one student (exempt_checks) → the warnings they cover.
+// "turning" is looking away (reported as no_face with a "Looking away" detail);
+// "fullscreen" is the laptop lock (full screen, second screen, mouse off the exam).
+const EXEMPT_TYPES = { dark: ["dark"], no_face: ["no_face", "looking_away"], people: ["multiple_faces"], noise: ["noise"], phone: ["phone"], fullscreen: ["fullscreen_exit"] };
+const TURNING_DETAIL = /^Looking away/;
 
 export default function ExamScreen({ cam, session, onFinished, code = "", council = false }) {
   const token = session.token;
@@ -311,6 +316,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
   const report = useCallback(async (type, detail, photo) => {
     if (ended.current || isReloading()) return; // refreshing for an update isn't leaving the exam
     if (exemptRef.current.some(k => (EXEMPT_TYPES[k] || []).includes(type))) return; // switched off for this student
+    if (exemptRef.current.includes("turning") && TURNING_DETAIL.test(detail || "")) return;
     if (noFaceChecks.current && CAMERA_TYPES.includes(type)) return;
     if (type === "phone" && micOnlyRef.current) return; // no camera in microphone-only mode
     setToast({ text: ((type === "window_blur" || type === "no_face") && detail) || VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
@@ -342,7 +348,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
   noFaceChecks.current = !watchFace;
   const micOnlyRef = useRef(micOnly);
   micOnlyRef.current = micOnly;
-  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: watchFace, phoneCheck: !micOnly, night: council });
+  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: watchFace, phoneCheck: !micOnly, night: council, turnAfter: council ? 45000 : 0 });
 
   // The administrator can watch (and listen) live; nothing is recorded.
   const watchers = useLiveShare({ token, getTracks: cam.getTracks, getVideo: cam.getVideo });
@@ -476,10 +482,13 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
   // can't be selected. Skipped where full screen isn't possible (iPhone Safari)
   // and inside the apps, which are always full screen.
   const maximum = session.proctor_level === "maximum";
+  // Laptop lock (full screen, one screen, mouse on the exam): Maximum, and every
+  // Council student unless the administrator switched it off for them.
+  const laptopLock = maximum || (council && !(Array.isArray(session.exempt) && session.exempt.includes("fullscreen")));
   const canFull = !IN_APP && !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
   const [notFull, setNotFull] = useState(false);
   useEffect(() => {
-    if (!maximum || !canFull) return undefined;
+    if (!laptopLock || !canFull) return undefined;
     const check = () => setNotFull(!(document.fullscreenElement || document.webkitFullscreenElement));
     check();
     document.addEventListener("fullscreenchange", check);
@@ -488,7 +497,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
       document.removeEventListener("fullscreenchange", check);
       document.removeEventListener("webkitfullscreenchange", check);
     };
-  }, [maximum, canFull]);
+  }, [laptopLock, canFull]);
 
   // Maximum security on laptops: a second screen connected, or the mouse
   // parked off the exam screen (on another monitor), hides the question and
@@ -496,7 +505,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
   const [secondScreen, setSecondScreen] = useState(false);
   const [pointerOut, setPointerOut] = useState(false);
   useEffect(() => {
-    if (!maximum) return undefined;
+    if (!laptopLock) return undefined;
     const last = {};
     const warn = (key, detail) => {
       if (last[key] && Date.now() - last[key] < 30000) return; // once per 30 s per kind
@@ -528,7 +537,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
       root.removeEventListener("mouseleave", leave);
       root.removeEventListener("mouseenter", enter);
     };
-  }, [maximum]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [laptopLock]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -770,20 +779,20 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
         </div>
       )}
 
-      {maximum && (secondScreen || pointerOut) && (
+      {laptopLock && (secondScreen || pointerOut) && (
         <div className="banner banner-bad">
-          <AlertTriangle size={16} /> <span><strong>Maximum security:</strong> {secondScreen ? "a second screen is connected. Unplug it (or set the display to this screen only) to see the question." : "keep the mouse on the exam screen. The question is hidden while it is off the screen."}</span>
+          <AlertTriangle size={16} /> <span><strong>Laptop lock:</strong> {secondScreen ? "a second screen is connected. Unplug it (or set the display to this screen only) to see the question." : "keep the mouse on the exam screen. The question is hidden while it is off the screen."}</span>
         </div>
       )}
-      {maximum && notFull && (
+      {laptopLock && notFull && (
         <div className="banner banner-bad" style={{ flexWrap: "wrap" }}>
-          <AlertTriangle size={16} /> <span style={{ flex: 1, minWidth: 180 }}><strong>Maximum security:</strong> the exam must stay in full screen. The question is hidden until you go back.</span>
+          <AlertTriangle size={16} /> <span style={{ flex: 1, minWidth: 180 }}><strong>Full screen required:</strong> the exam must stay in full screen. The question is hidden until you go back.</span>
           <button className="btn btn-sm btn-primary" onClick={enterFullscreen}>Back to full screen</button>
         </div>
       )}
 
       <div className="session" style={maximum ? { userSelect: "none", WebkitUserSelect: "none" } : undefined}>
-        <section className={`card ${hidden || locked || otherDevice || (maximum && (notFull || secondScreen || pointerOut)) ? "shield" : ""}`} aria-live="polite">
+        <section className={`card ${hidden || locked || otherDevice || (laptopLock && (notFull || secondScreen || pointerOut)) ? "shield" : ""}`} aria-live="polite">
           {paused ? (
             <div style={{ textAlign: "center", padding: "30px 0" }}>
               <PauseCircle size={36} color="var(--amber)" />
@@ -860,6 +869,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
             {cam.mic === "on" && <SoundMeter level={proctor.level} noisy={proctor.noisy} />}
             {(watchers > 0 || dbWatch) && <span className="pill pill-warn" style={{ alignSelf: "flex-start" }}><Eye size={13} /> Administrator is watching live</span>}
             <div className="faint" style={{ fontSize: 12 }}>{micOnly ? "Microphone on. Your administrator may listen live. Nothing is recorded." : !watchFace ? "Camera and microphone on. Your administrator may watch live. Nothing is recorded." : "Identity checked every minute. Your administrator may watch live. Video is not recorded."}</div>
+            {council && <div style={{ marginTop: 8 }}><HelpLine name={session.name || ""} inExam compact /></div>}
           </div>
         </aside>
       </div>
