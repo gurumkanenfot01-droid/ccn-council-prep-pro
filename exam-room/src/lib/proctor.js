@@ -170,6 +170,13 @@ export const PROCTOR_LEVELS = {
     hold: { no_face: 20000, multiple_faces: 2000, looking_away: Infinity, dark: 8000, noise: 1200, phone: 1500 },
     yaw: Infinity, voice: 8, loud: 10, floor: -62,
   },
+  // Maximum: council-style. The face may leave the camera only briefly, any
+  // whisper or sound counts quickly, and another person or a phone is caught
+  // almost at once.
+  maximum: {
+    hold: { no_face: 8000, multiple_faces: 1200, looking_away: Infinity, dark: 4000, noise: 700, phone: 1000 },
+    yaw: Infinity, voice: 6, loud: 8, floor: -66,
+  },
 };
 
 // While the page itself beeps (warning sound) the mic would hear it; skip sound checks briefly.

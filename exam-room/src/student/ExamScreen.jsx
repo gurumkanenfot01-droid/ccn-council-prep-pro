@@ -300,7 +300,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
       const data = absorb(await api.report(token, type, detail, photo));
       if (data && !data.finished && !data.ignored) {
         setToast(null);
-        setWarning({ count: data.warnings, max: data.max_warnings, label: VIOLATION_LABELS[type], type });
+        setWarning({ count: data.warnings, max: maxWarnings, label: VIOLATION_LABELS[type], type });
         alertStudent();
       }
     } catch (e) { onError(e); }

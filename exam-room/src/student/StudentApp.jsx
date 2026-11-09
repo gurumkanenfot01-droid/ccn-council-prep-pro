@@ -256,7 +256,9 @@ function rulesFor(level, faceMode = "full") {
       ...(faceMode === "start" ? ["Your face is checked once when you begin. After that the camera only shows you your own picture — nothing is captured."] : []),
       faceMode === "mic" ? "Your microphone stays on for the whole exam. The camera is not used." : "Your microphone stays on for the whole exam.",
       "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
-      level === "strict"
+      level === "maximum"
+        ? "MAXIMUM SECURITY: keep completely silent. Even a whisper or a short sound counts as a warning straight away."
+        : level === "strict"
         ? "Keep completely quiet. Any talking or noise counts as a warning."
         : level === "normal"
           ? "Keep quiet. Talking or loud noise counts as a warning."
@@ -271,7 +273,9 @@ function rulesFor(level, faceMode = "full") {
       : "Stay alone and in view of the camera for the whole exam.",
     "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
     "No phones in view of the camera — a phone seen by the camera ENDS your exam immediately.",
-    level === "strict"
+    level === "maximum"
+      ? "MAXIMUM SECURITY: stay silent and keep your whole face in the camera at all times. A whisper, a short sound, or your face leaving the camera for a few seconds counts as a warning straight away."
+      : level === "strict"
       ? "Keep completely quiet and face the screen. Any talking, noise or looking away counts as a warning."
       : level === "normal"
         ? "Keep quiet. Talking, loud noise or looking away for a long time counts as a warning."
@@ -406,6 +410,25 @@ function DoneScreen({ result, name, onBack }) {
   );
 }
 
+// The administrator can give a student their own strictness, warning limit and
+// "app only" rule. They replace the exam's own settings for that student.
+function withSecurity(data, sec) {
+  const security = sec && typeof sec === "object" ? sec : {};
+  return {
+    ...data,
+    security,
+    exams: (data.exams || []).map(e => ({
+      ...e,
+      proctor_level: security.level || e.proctor_level,
+      max_warnings: security.max_warnings || e.max_warnings,
+    })),
+  };
+}
+function sessionWithSecurity(s, security) {
+  if (!security) return s;
+  return { ...s, proctor_level: security.level || s.proctor_level, max_warnings: security.max_warnings || s.max_warnings };
+}
+
 export default function StudentApp({ updateReady = false }) {
   // The code is remembered on this device until the student taps Log out, so
   // closing the browser doesn't mean typing it again. Their face is still
@@ -455,7 +478,8 @@ export default function StudentApp({ updateReady = false }) {
   const cam = useCamera();
 
   const refresh = useCallback(async (c = code) => {
-    const data = await api.login(c);
+    const [raw, sec] = await Promise.all([api.login(c), api.mySecurity(c)]);
+    const data = withSecurity(raw, sec);
     setProfile(data);
     setRefreshError("");
     return data;
@@ -513,8 +537,9 @@ export default function StudentApp({ updateReady = false }) {
   if (!profile) return <CodeScreen onLogin={login} />;
 
   const faceMode = profile.face_mode || "full";
-  const needApp = (!!profile.require_app && isAndroidBrowser()) ? "android"
-    : (!!profile.require_desktop_app && isWindowsBrowser()) ? "windows" : null;
+  const appOnly = !!(profile.security && profile.security.app_only);
+  const needApp = ((!!profile.require_app || appOnly) && isAndroidBrowser()) ? "android"
+    : ((!!profile.require_desktop_app || appOnly) && isWindowsBrowser()) ? "windows" : null;
   const noFace = faceMode === "off" || faceMode === "mic";
   if (noFace && profile.name_needed) {
     return <NameScreen code={code} onDone={() => refresh()} onLogout={logout} />;
@@ -537,7 +562,7 @@ export default function StudentApp({ updateReady = false }) {
   if (view === "done" && result) return <DoneScreen result={result} name={profile.name} onBack={() => setView("exams")} />;
   if (view === "prep" && exam) {
     return <PrepScreen exam={exam} name={profile.name} code={code} cam={cam} faceMode={faceMode}
-      onStarted={s => { setSession(s); setView("exam"); }} onBack={() => { setView("exams"); refresh().catch(() => {}); }} />;
+      onStarted={s => { setSession(sessionWithSecurity(s, profile.security)); setView("exam"); }} onBack={() => { setView("exams"); refresh().catch(() => {}); }} />;
   }
 
   return (
