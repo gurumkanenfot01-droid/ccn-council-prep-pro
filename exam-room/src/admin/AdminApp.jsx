@@ -16,32 +16,31 @@ const MOCK_ICONS = { ccn: HeartPulse, periop: Scissors, anaes: Syringe, neph: Dr
 function SectionSwitcher({ specialty, onChoose }) {
   const councilOn = specialty === "council";
   return (
-    <div className="switcher">
-      <button className={`council-tile${councilOn ? " on" : ""}`} aria-pressed={councilOn} onClick={() => onChoose("council")}>
-        <span className="council-icon"><Award size={30} /></span>
+    <div className="switcher2">
+      <button className={`council-hero${councilOn ? " on" : ""}`} aria-pressed={councilOn} onClick={() => onChoose("council")}>
+        <span className="hero-icon"><Award size={30} /></span>
         <span className="council-text">
-          <span className="council-kicker">{councilOn ? "You are managing" : "Open"}</span>
+          <span className="council-kicker">{councilOn ? "You are managing" : "Tap to open"}</span>
           <span className="council-title serif">Council Exams</span>
-          <span className="council-papers">
-            <span>Paper 1</span><span>Paper 2</span><span>OSCE</span>
+          <span className="paper-chips">
+            <span className="pc pc1">Paper 1</span><span className="pc pc2">Paper 2</span><span className="pc pc3">OSCE</span>
           </span>
         </span>
         <ChevronRight className="council-arrow" size={22} />
       </button>
-      <div className="mock-panel" role="group" aria-label="Nursing mock exams">
-        <div className="mock-head">Nursing mock exams</div>
-        <div className="mock-grid">
-          {SPECIALTIES.filter(s => s.id !== "council").map(s => {
-            const Icon = MOCK_ICONS[s.id] || GraduationCap;
-            const on = specialty === s.id;
-            return (
-              <button key={s.id} className={`mock-chip${on ? " on" : ""}`} aria-pressed={on} onClick={() => onChoose(s.id)}>
-                <Icon size={15} /> <span>{s.label.replace(" Nursing", "")}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* The nursing mock sections: a quiet line of links, not a big panel. */}
+      <nav className="mock-links" aria-label="Nursing mock exam sections">
+        <span className="mock-label">Mock exams:</span>
+        {SPECIALTIES.filter(s => s.id !== "council").map(s => {
+          const Icon = MOCK_ICONS[s.id] || GraduationCap;
+          const on = specialty === s.id;
+          return (
+            <button key={s.id} className={`mock-link${on ? " on" : ""}`} aria-pressed={on} onClick={() => onChoose(s.id)}>
+              <Icon size={13} /> {s.label.replace(" Nursing", "")}
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }
@@ -135,7 +134,7 @@ export default function AdminApp() {
       </div>
       <nav className="tabs admin-tabs" role="tablist">
         {TABS.map(t => (
-          <button key={t.id} role="tab" className="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
+          <button key={t.id} role="tab" className={`tab tab-${t.id}`} aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
             <t.icon size={14} /> {t.label}
           </button>
         ))}
