@@ -8,7 +8,7 @@ import { ADMIN_WHATSAPP, ADMIN_WHATSAPP_DISPLAY, CODE_KEY } from "./StudentApp.j
 // who has paid types their name and sees their Council Exams access code.
 // Anyone not on the paid list gets nothing and is pointed to the administrator.
 const PROBLEMS = {
-  need_full_name: "Type at least two of your names, e.g. your first name and surname.",
+  need_full_name: "Type at least two of your names (e.g. first name and surname), in any order.",
   already_claimed: "This code has already been collected. Each code is shown only once. If you lost it, message the administrator.",
   ambiguous: "More than one student has that name. Type your full name, as on the class list.",
   too_many_attempts: "Too many tries from this network. Wait 10 minutes and try again.",
@@ -81,6 +81,7 @@ export default function ClaimPage() {
               <input id="claim-name" value={name} onChange={e => setName(e.target.value.slice(0, 80))} placeholder="e.g. Kasang Kevin Joy"
                 autoComplete="name" autoCapitalize="words" required />
             </div>
+            <p className="faint" style={{ fontSize: 12.5, margin: "-6px 0 0" }}>Type at least two of your names, in any order. Small spelling mistakes are fine.</p>
             {problem && <div className="error" role="alert">{problem}</div>}
             {lost && <a className="btn btn-sm btn-success" style={{ alignSelf: "flex-start" }} href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hello, I lost my Council Exams access code. My name is ${name.trim()}.`)}`} target="_blank" rel="noreferrer"><MessageCircle size={14} /> Message the administrator</a>}
             {notPaid && (
