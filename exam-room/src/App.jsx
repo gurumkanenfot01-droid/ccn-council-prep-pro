@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { isConfigured } from "./lib/supabase.js";
 import StudentApp from "./student/StudentApp.jsx";
 import AdminApp from "./admin/AdminApp.jsx";
+import ClaimPage from "./student/ClaimPage.jsx";
 import { useUpdateAvailable, reloadNow } from "./lib/update.js";
 
-// Students use the main page; admins open /#/admin.
+// Students use the main page; admins open /#/admin; paid council students get their code at /#/claim.
 function useRoute() {
   const [hash, setHash] = useState(window.location.hash);
   useEffect(() => {
@@ -12,7 +13,9 @@ function useRoute() {
     window.addEventListener("hashchange", on);
     return () => window.removeEventListener("hashchange", on);
   }, []);
-  return hash.startsWith("#/admin") ? "admin" : "student";
+  if (hash.startsWith("#/admin")) return "admin";
+  if (hash.startsWith("#/claim")) return "claim";
+  return "student";
 }
 
 // Shown when a newer version of the site has gone live since this page opened.
@@ -42,7 +45,7 @@ export default function App() {
   return (
     <>
       {updateReady && <UpdateBar inExam={route === "student"} />}
-      {route === "admin" ? <AdminApp /> : <StudentApp updateReady={updateReady} />}
+      {route === "admin" ? <AdminApp /> : route === "claim" ? <ClaimPage /> : <StudentApp updateReady={updateReady} />}
     </>
   );
 }
