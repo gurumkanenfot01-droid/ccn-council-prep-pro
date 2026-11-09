@@ -22,20 +22,23 @@ export default function TonightCard({ exams, now }) {
   if (!next) return null;
   const start = new Date(next.starts_at), end = new Date(next.ends_at), today = new Date(t);
   const open = t >= start.getTime();
+  const waiting = open && !next.question_count && next.session_status !== "in_progress"; // open but no questions loaded yet
   const tomorrow = new Date(t); tomorrow.setDate(tomorrow.getDate() + 1);
   const evening = start.getHours() >= 17;
-  const when = open ? "OPEN NOW"
+  const when = waiting ? "WAITING FOR QUESTIONS" : open ? "OPEN NOW"
     : sameDay(start, today) ? (evening ? "TONIGHT" : "TODAY")
     : sameDay(start, tomorrow) ? (evening ? "TOMORROW NIGHT" : "TOMORROW")
     : day(start).toUpperCase();
   return (
-    <section className={`tonight${open ? " open" : ""}`} aria-live="polite">
+    <section className={`tonight${waiting ? " waiting" : open ? " open" : ""}`} aria-live="polite">
       <div className="tn-when"><CalendarClock size={18} /> {when}</div>
       <div className="tn-title">{studentTitle(next.title)}</div>
       <div className="tn-time">{time(start)} – {time(end)}</div>
       <div className="tn-day">{day(start)}{!sameDay(start, end) ? ` (ends ${day(end)})` : ""}</div>
       <div className="tn-count">
-        {open
+        {waiting
+          ? <>Questions are being decided — please hold on. This changes to <strong>Start exam</strong> by itself when they are ready. Closes at {time(end)}.</>
+          : open
           ? <><PlayCircle size={16} /> Tap <strong>Start exam</strong> below · closes at {time(end)} ({left(end - t)} left)</>
           : <>Starts in <strong>{left(start - t)}</strong> · be ready 10 minutes early</>}
       </div>
