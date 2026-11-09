@@ -95,14 +95,14 @@ export async function rpc(fn, args) {
 // "next" before the new one is answered, changes nothing): on a weak network,
 // keep trying quietly for about two minutes before showing an error. Waits for
 // the phone to come back online instead of failing straight away.
-async function retry(fn, args) {
+async function retry(fn, args, max = 40) {
   for (let attempt = 0; ; attempt++) {
     try {
       const data = await rpc(fn, args);
       if (attempt > 0) networkState(false);
       return data;
     } catch (e) {
-      if (e.code !== "network" || attempt >= 10) { if (attempt > 0) networkState(false); throw e; }
+      if (e.code !== "network" || attempt >= max) { if (attempt > 0) networkState(false); throw e; }
       networkState(true);
       await new Promise(r => setTimeout(r, Math.min(1000 * 2 ** attempt, 8000)));
       await online();
@@ -111,11 +111,16 @@ async function retry(fn, args) {
 }
 
 export const api = {
-  login: code => rpc("exam_login", { p_code: code }),
+  // Signing in and starting are safe to repeat (a started exam is simply
+  // returned again), so on a weak network they quietly try a few more times.
+  login: code => retry("exam_login", { p_code: code }, 4),
   // p_name is only sent for blank codes, so registration keeps working on a
   // database that hasn't been updated with the blank-code version yet.
+  // If the first try reached the server but the reply was lost, the retry
+  // says "already registered" — that is a success.
   enroll: (code, descriptor, photo, name = null) =>
-    rpc("exam_enroll", { p_code: code, p_descriptor: descriptor, p_photo: photo, ...(name ? { p_name: name } : {}) }),
+    retry("exam_enroll", { p_code: code, p_descriptor: descriptor, p_photo: photo, ...(name ? { p_name: name } : {}) }, 4)
+      .catch(e => { if (e.code === "already_enrolled") return {}; throw e; }),
   // The student's own security settings (strictness, warning limit, app only).
   // Missing on a database without the update: then the exams' own settings apply.
   // One device per exam: claim the session for this device; check it's still ours.
@@ -130,7 +135,7 @@ export const api = {
   myExamNumber: code => rpc("exam_my_exam_number", { p_code: code }).catch(() => null),
   mySecurity: code => rpc("exam_my_security", { p_code: code }).catch(() => ({})),
   start: (code, examId, descriptor, photo) =>
-    rpc("exam_start", { p_code: code, p_exam_id: examId, p_descriptor: descriptor, p_photo: photo, p_user_agent: navigator.userAgent }),
+    retry("exam_start", { p_code: code, p_exam_id: examId, p_descriptor: descriptor, p_photo: photo, p_user_agent: navigator.userAgent }, 4),
   question: token => retry("exam_question", { p_token: token }),
   answer: (token, questionId, choice) => retry("exam_answer", { p_token: token, p_question_id: questionId, p_choice: choice }),
   next: token => retry("exam_next", { p_token: token }),

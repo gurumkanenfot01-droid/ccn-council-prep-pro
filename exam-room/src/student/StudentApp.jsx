@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { reloadNow } from "../lib/update.js";
+import { newVersionReady } from "../lib/net.js";
 import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock, RotateCcw, Smartphone, Download } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useCamera, enterFullscreen, exitFullscreen, virtualCameraLabel } from "../lib/proctor.js";
-import { snapshot } from "../lib/face.js";
+import { snapshot, loadFaceModels } from "../lib/face.js";
 import { specialtyLabel } from "../lib/specialty.js";
 import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL, isAndroidBrowser, isWindowsBrowser } from "../lib/app.js";
 import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
@@ -466,17 +467,38 @@ export default function StudentApp({ updateReady = false }) {
   // A newer version went live: reload straight away when the student isn't
   // in the middle of an exam (the update bar asks them otherwise).
   useEffect(() => {
-    if (updateReady && profile && (view === "exams" || view === "done")) reloadNow();
+    if (!(updateReady && profile && (view === "exams" || view === "done"))) return undefined;
+    let alive = true, t;
+    const attempt = async () => {
+      if (await newVersionReady()) { if (alive) reloadNow(); } else if (alive) t = setTimeout(attempt, 60000);
+    };
+    attempt();
+    return () => { alive = false; clearTimeout(t); };
   }, [updateReady, profile, view]);
+  // While the student is on their exam list, quietly download the face check
+  // (about 8 MB, kept by the browser afterwards), so "Start" opens at once
+  // even on a weak network.
+  useEffect(() => {
+    if (!profile || view !== "exams") return undefined;
+    const mode = profile.face_mode || "full";
+    if (mode === "off" || mode === "mic" || profile.no_face) return undefined;
+    const t = setTimeout(() => { loadFaceModels().catch(() => { /* tried again when needed */ }); }, 4000);
+    return () => clearTimeout(t);
+  }, [profile, view]);
   // During an exam, give them a minute to tap Refresh, then refresh anyway so
   // nobody stays on an old version (answers and time are kept on the server).
   useEffect(() => {
     if (!updateReady || view !== "exam") return undefined;
-    const t = setTimeout(() => {
+    let t;
+    const attempt = async () => {
+      // Only refresh once the new version has downloaded; with a bad signal,
+      // stay on this page and try again in a minute.
+      if (!(await newVersionReady())) { t = setTimeout(attempt, 60000); return; }
       // Come straight back to this exam after the refresh.
       try { sessionStorage.setItem(RESUME_KEY, exam ? exam.id : ""); } catch (e) { /* ignore */ }
       reloadNow();
-    }, 60000);
+    };
+    t = setTimeout(attempt, 60000);
     return () => clearTimeout(t);
   }, [updateReady, view, exam]);
   // After an automatic refresh during an exam, open that exam's start screen
