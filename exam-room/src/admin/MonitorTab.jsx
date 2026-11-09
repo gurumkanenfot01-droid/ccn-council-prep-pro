@@ -22,6 +22,7 @@ export const EVENT_TEXT = {
   screenshot_key: "Screenshot attempt", copy_attempt: "Copy / print / right-click", camera_off: "Camera turned off",
   mic_off: "Microphone turned off", admin_warning: "Warning from administrator", time_added: "Extra time added",
   resumed_by_admin: "Allowed to continue by administrator",
+  device_switch: "Opened on another device / tab", ear_check: "Ear check (before the exam)", room_scan: "Room scan (before the exam)",
 };
 
 export function statusPill(s) {

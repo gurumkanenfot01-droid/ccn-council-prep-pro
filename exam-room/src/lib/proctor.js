@@ -174,10 +174,19 @@ export const PROCTOR_LEVELS = {
   // whisper or sound counts quickly, and another person or a phone is caught
   // almost at once.
   maximum: {
-    hold: { no_face: 8000, multiple_faces: 1200, looking_away: Infinity, dark: 4000, noise: 700, phone: 1000 },
-    yaw: Infinity, voice: 6, loud: 8, floor: -66,
+    hold: { no_face: 8000, multiple_faces: 1200, looking_away: 5000, dark: 4000, noise: 700, phone: 1000 },
+    yaw: 0.35, voice: 6, loud: 8, floor: -66,
   },
 };
+
+// Fake ("virtual") cameras play a video or another app's picture instead of
+// the real camera. Recognised by the camera's name.
+const VIRTUAL_CAMERA = /\b(obs|virtual|manycam|xsplit|snap ?camera|camtwist|mmhmm|splitcam|vcam|e2esoft|youcam|chromacam|camo studio|webcamoid|v4l2 ?loopback|unity video capture)\b/i;
+export function virtualCameraLabel(label) { return VIRTUAL_CAMERA.test(label || "") ? label : ""; }
+export function virtualCameraName(stream) {
+  const t = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+  return virtualCameraLabel(t ? t.label : "");
+}
 
 // While the page itself beeps (warning sound) the mic would hear it; skip sound checks briefly.
 let audioChecksPausedUntil = 0;
@@ -228,6 +237,9 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
 
     const fire = (type, detail = "") => {
       const photo = video || phoneCheck ? snapshot(cam.getVideo()) : null;
+      // Looking away (Maximum only) is sent as "face not visible" with its own
+      // description, so the server counts it like the face leaving the camera.
+      if (type === "looking_away") { type = "no_face"; detail = "Looking away from the screen (head turned)"; }
       cb.current.report(type, detail, photo);
     };
     // A condition is reported once it has lasted HOLD ms, then re-arms only

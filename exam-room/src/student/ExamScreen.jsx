@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Calculator as CalcIcon, Eye, VideoOff, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX, RefreshCw } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
-import { useProctor, VIOLATION_LABELS, pauseSoundChecks, enterFullscreen } from "../lib/proctor.js";
+import { useProctor, VIOLATION_LABELS, pauseSoundChecks, enterFullscreen, virtualCameraName } from "../lib/proctor.js";
 import { useLiveShare } from "../lib/live.js";
 import Calculator from "./Calculator.jsx";
 import { isReloading, reloadNow } from "../lib/update.js";
@@ -51,6 +51,9 @@ function deviceHelp(reason, { camBlocked, micBlocked } = {}) {
       ? [what, "• Swipe down from the top of the screen and turn ON Camera access and Microphone access.", "• Make sure nothing is covering the camera."].join("\n")
       : [what, laptopKey, "• Make sure the microphone is not muted (a microphone key on the keyboard, or the taskbar sound settings)."].join("\n");
   }
+  if (reason === "virtual") return ["A fake (virtual) camera is in use — for example OBS, ManyCam or a “virtual camera”. Only a real camera is allowed.",
+    "• Close the virtual camera program.",
+    phone ? "" : "• In the browser, click the camera icon in the address bar and choose your real (built-in or USB) camera, then press the button below."].filter(Boolean).join("\n");
   if (reason === "error") return ["The camera or microphone couldn't start.", closeApps, phone ? "" : laptopKey].filter(Boolean).join("\n");
   return "";
 }
@@ -295,12 +298,12 @@ export default function ExamScreen({ cam, session, onFinished }) {
     if (ended.current || isReloading()) return; // refreshing for an update isn't leaving the exam
     if (noFaceChecks.current && CAMERA_TYPES.includes(type)) return;
     if (type === "phone" && micOnlyRef.current) return; // no camera in microphone-only mode
-    setToast({ text: (type === "window_blur" && detail) || VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
+    setToast({ text: ((type === "window_blur" || type === "no_face") && detail) || VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
     try {
       const data = absorb(await api.report(token, type, detail, photo));
       if (data && !data.finished && !data.ignored) {
         setToast(null);
-        setWarning({ count: data.warnings, max: maxWarnings, label: type === "window_blur" && detail ? detail : VIOLATION_LABELS[type], type });
+        setWarning({ count: data.warnings, max: maxWarnings, label: (type === "window_blur" || type === "no_face") && detail ? detail : VIOLATION_LABELS[type], type });
         alertStudent();
       }
     } catch (e) { onError(e); }
@@ -421,6 +424,37 @@ export default function ExamScreen({ cam, session, onFinished }) {
     };
   }, []);
 
+  // One device per exam. This page claims the exam for this browser tab; if the
+  // exam is opened on another device or tab, that one takes over (counted as a
+  // warning on the server) and this page locks.
+  const deviceId = useRef(null);
+  if (!deviceId.current) {
+    try {
+      deviceId.current = sessionStorage.getItem("exam-device-id");
+      if (!deviceId.current) { deviceId.current = crypto.randomUUID(); sessionStorage.setItem("exam-device-id", deviceId.current); }
+    } catch (e) { deviceId.current = crypto.randomUUID(); }
+  }
+  const [otherDevice, setOtherDevice] = useState(false);
+  useEffect(() => {
+    let off = false;
+    api.claimDevice(token, deviceId.current);
+    const check = () => api.deviceOk(token, deviceId.current).then(r => { if (!off && r && r.current === false) setOtherDevice(true); });
+    const t = setInterval(check, 8000);
+    window.addEventListener("focus", check);
+    return () => { off = true; clearInterval(t); window.removeEventListener("focus", check); };
+  }, [token]);
+  async function takeOverHere() {
+    await api.claimDevice(token, deviceId.current);
+    setOtherDevice(false);
+  }
+  // Ear check / room scan photos taken on the start screen (Maximum security).
+  const checksSent = useRef(false);
+  useEffect(() => {
+    if (checksSent.current || !Array.isArray(session.checks) || !session.checks.length) return;
+    checksSent.current = true;
+    session.checks.forEach(c => api.recordCheck(token, c.kind, c.photo));
+  }, [token, session.checks]);
+
   // Maximum security on the website (no app needed): the question is hidden
   // whenever the page leaves full screen, until the student taps to go back.
   // (Leaving full screen also counts as a warning, as at every level.) Text
@@ -536,7 +570,8 @@ export default function ExamScreen({ cam, session, onFinished }) {
     return () => { clearInterval(t); clearInterval(a); };
   }, [needCamera, cam.camera, cam.mic, cam.version]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const devicesOff = cam.mic !== "on" || micBlocked || (needCamera && (cam.camera !== "on" || camBlocked));
+  const virtualCam = needCamera && cam.camera === "on" && !!virtualCameraName(cam.stream);
+  const devicesOff = cam.mic !== "on" || micBlocked || (needCamera && (cam.camera !== "on" || camBlocked)) || virtualCam;
   const [locked, setLocked] = useState(false);
   useEffect(() => {
     if (!devicesOff) { setLocked(false); return undefined; }
@@ -549,7 +584,8 @@ export default function ExamScreen({ cam, session, onFinished }) {
   }
   // Why the devices are off, in the words the help text needs.
   const offStates = needCamera ? [cam.camera, cam.mic] : [cam.mic];
-  const offReason = offStates.includes("denied") ? "denied"
+  const offReason = virtualCam ? "virtual"
+    : offStates.includes("denied") ? "denied"
     : offStates.includes("busy") ? "busy"
     : offStates.includes("unavailable") ? "unavailable"
     : offStates.includes("error") ? "error"
@@ -582,7 +618,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
       const a = autoRef.current;
       if (cancelled || a.running || document.visibilityState !== "visible") return;
       if (cam.camera === "starting" || cam.mic === "starting") return;
-      if (offReason === "blank") return; // stream is live; it unlocks by itself when the picture/sound returns
+      if (offReason === "blank" || offReason === "virtual") return; // stream is live; fixed by the student (picture/sound returns, real camera chosen)
       const perm = await permState();
       if (cancelled || perm === "denied") return; // still blocked — waiting for the student
       if (perm === "prompt") { if (a.prompted) return; a.prompted = true; } // ask the browser once, not over and over
@@ -732,7 +768,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
       )}
 
       <div className="session" style={maximum ? { userSelect: "none", WebkitUserSelect: "none" } : undefined}>
-        <section className={`card ${hidden || locked || (maximum && (notFull || secondScreen || pointerOut)) ? "shield" : ""}`} aria-live="polite">
+        <section className={`card ${hidden || locked || otherDevice || (maximum && (notFull || secondScreen || pointerOut)) ? "shield" : ""}`} aria-live="polite">
           {paused ? (
             <div style={{ textAlign: "center", padding: "30px 0" }}>
               <PauseCircle size={36} color="var(--amber)" />
@@ -815,7 +851,18 @@ export default function ExamScreen({ cam, session, onFinished }) {
 
       {showCalc && <Calculator onClose={() => setShowCalc(false)} />}
 
-      {locked && (
+      {otherDevice && (
+        <div className="overlay" role="alertdialog" aria-modal="true" aria-labelledby="od-h">
+          <div className="card" style={{ borderColor: "var(--red)", textAlign: "center" }}>
+            <AlertTriangle size={40} color="var(--red)" />
+            <h2 id="od-h" style={{ fontSize: 20, margin: "8px 0 4px", color: "var(--red)" }}>This exam was opened on another device</h2>
+            <p className="muted" style={{ marginTop: 0 }}>Only one device can write the exam. This screen is locked. Opening it elsewhere counted as a warning, and your administrator can see it. <strong>Your time is still running.</strong></p>
+            <button className="btn btn-primary btn-full" onClick={takeOverHere}>Continue on this device instead (counts as another warning)</button>
+          </div>
+        </div>
+      )}
+
+      {locked && !otherDevice && (
         <div className="overlay" role="alertdialog" aria-modal="true" aria-labelledby="dev-h">
           <div className="card" style={{ borderColor: "var(--red)", textAlign: "center" }}>
             <VideoOff size={40} color="var(--red)" />

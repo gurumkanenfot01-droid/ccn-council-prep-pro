@@ -117,6 +117,11 @@ export const api = {
     rpc("exam_enroll", { p_code: code, p_descriptor: descriptor, p_photo: photo, ...(name ? { p_name: name } : {}) }),
   // The student's own security settings (strictness, warning limit, app only).
   // Missing on a database without the update: then the exams' own settings apply.
+  // One device per exam: claim the session for this device; check it's still ours.
+  claimDevice: (token, device) => rpc("exam_claim_device", { p_token: token, p_device: device }).catch(() => ({})),
+  deviceOk: (token, device) => rpc("exam_device_ok", { p_token: token, p_device: device }).catch(() => ({ current: true })),
+  // Ear check / room scan photos taken before a Maximum-security exam.
+  recordCheck: (token, kind, photo) => rpc("exam_record_check", { p_token: token, p_kind: kind, p_photo: photo }).catch(() => ({})),
   mySecurity: code => rpc("exam_my_security", { p_code: code }).catch(() => ({})),
   start: (code, examId, descriptor, photo) =>
     rpc("exam_start", { p_code: code, p_exam_id: examId, p_descriptor: descriptor, p_photo: photo, p_user_agent: navigator.userAgent }),

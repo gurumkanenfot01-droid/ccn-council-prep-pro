@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { reloadNow } from "../lib/update.js";
 import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock, RotateCcw, Smartphone, Download } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
-import { useCamera, enterFullscreen, exitFullscreen } from "../lib/proctor.js";
+import { useCamera, enterFullscreen, exitFullscreen, virtualCameraLabel } from "../lib/proctor.js";
 import { snapshot } from "../lib/face.js";
 import { specialtyLabel } from "../lib/specialty.js";
 import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL, isAndroidBrowser, isWindowsBrowser } from "../lib/app.js";
 import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
 import Liveness from "./Liveness.jsx";
 import ExamScreen from "./ExamScreen.jsx";
+import RoomCheck from "./RoomCheck.jsx";
 
 const ADMIN_WHATSAPP = "2349031853995";
 const ADMIN_WHATSAPP_DISPLAY = "+234 903 185 3995";
@@ -257,7 +258,7 @@ function rulesFor(level, faceMode = "full") {
       faceMode === "mic" ? "Your microphone stays on for the whole exam. The camera is not used." : "Your microphone stays on for the whole exam.",
       "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
       level === "maximum"
-        ? "MAXIMUM SECURITY: keep completely silent. Even a whisper or a short sound counts as a warning straight away. The exam stays in full screen: if you leave it, the question is hidden and it counts as a warning. On a laptop, use one screen only (no second monitor) and keep the mouse on the exam."
+        ? "MAXIMUM SECURITY: keep completely silent. Even a whisper or a short sound counts as a warning straight away. The exam stays in full screen: if you leave it, the question is hidden and it counts as a warning. On a laptop, use one screen only (no second monitor) and keep the mouse on the exam. Turning your head away from the screen for a few seconds counts as a warning. Before you start you will show both ears (no earphones or earbuds) and slowly turn the camera around the room."
         : level === "strict"
         ? "Keep completely quiet. Any talking or noise counts as a warning."
         : level === "normal"
@@ -274,7 +275,7 @@ function rulesFor(level, faceMode = "full") {
     "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
     "No phones in view of the camera — a phone seen by the camera ENDS your exam immediately.",
     level === "maximum"
-      ? "MAXIMUM SECURITY: stay silent and keep your whole face in the camera at all times. A whisper, a short sound, or your face leaving the camera for a few seconds counts as a warning straight away. The exam stays in full screen: if you leave it, the question is hidden and it counts as a warning. On a laptop, use one screen only (no second monitor) and keep the mouse on the exam."
+      ? "MAXIMUM SECURITY: stay silent and keep your whole face in the camera at all times. A whisper, a short sound, or your face leaving the camera for a few seconds counts as a warning straight away. The exam stays in full screen: if you leave it, the question is hidden and it counts as a warning. On a laptop, use one screen only (no second monitor) and keep the mouse on the exam. Turning your head away from the screen for a few seconds counts as a warning. Before you start you will show both ears (no earphones or earbuds) and slowly turn the camera around the room."
       : level === "strict"
       ? "Keep completely quiet and face the screen. Any talking, noise or looking away counts as a warning."
       : level === "normal"
@@ -319,10 +320,26 @@ function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
   const [agreed, setAgreed] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
+  const [roomCheck, setRoomCheck] = useState(false);
+  const checks = useRef([]); // ear check / room scan photos, sent once the exam starts
+  const maximum = exam.proctor_level === "maximum" && faceMode !== "mic";
   async function begin() {
     setError("");
     enterFullscreen(); // must happen straight from the tap
     await cam.start({ video: faceMode !== "mic" });
+    // Fake (virtual) cameras are never allowed.
+    const vt = faceMode !== "mic" && cam.getTracks().find(t => t.kind === "video");
+    const fake = vt ? virtualCameraLabel(vt.label) : "";
+    if (fake) {
+      cam.stop(); exitFullscreen();
+      setError(`“${fake}” is a fake (virtual) camera, which is not allowed. Close the virtual camera program, choose your real camera in the browser (camera icon in the address bar), then try again.`);
+      return;
+    }
+    if (maximum) { setRoomCheck(true); return; }
+    await afterChecks();
+  }
+  async function afterChecks() {
+    setRoomCheck(false);
     if (faceMode !== "full" && faceMode !== "start") { await startWithoutMatch(); return; }
     setChecking(true);
   }
@@ -340,7 +357,7 @@ function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
   async function verified({ descriptor, photo }) {
     try {
       const session = await api.start(code, exam.id, descriptor, photo);
-      onStarted(session);
+      onStarted({ ...session, checks: checks.current });
     } catch (e) {
       setError(e.message); setChecking(false); exitFullscreen();
     }
@@ -363,12 +380,15 @@ function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
           <strong>Exam rules</strong>
           <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 14 }}>
             {rulesFor(exam.proctor_level, faceMode).map(r => <li key={r} style={{ marginBottom: 4 }}>{r}</li>)}
+            <li>Use one device only. Opening this exam on another phone, laptop or browser tab locks this one and counts as a warning. Fake (virtual) cameras are not allowed.</li>
             <li>You answer one question at a time and can’t go back.{exam.show_answers ? " The correct answer is shown right after you answer." : ""}</li>
             <li>Reaching {exam.max_warnings} warnings submits your exam automatically.</li>
           </ul>
         </div>
         {error && <div className="banner banner-bad">{error}</div>}
-        {!checking || !ready ? (
+        {roomCheck && ready ? (
+          <RoomCheck cam={cam} onDone={photos => { checks.current = photos; afterChecks(); }} />
+        ) : !checking || !ready ? (
           <>
             <PermissionHelp camera={cam.camera} mic={cam.mic} />
             <label className="toggle-row" style={{ marginBottom: 12 }}>
