@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Shield, ShieldAlert, ListOrdered, Smartphone, X, Moon, Baby, CheckCircle2, Lock, Eye, Minus, Plus, SlidersHorizontal, Lightbulb } from "lucide-react";
+import { Shield, ShieldAlert, ListOrdered, Smartphone, X, Moon, Baby, CheckCircle2, Lock, Eye, Minus, Plus, Lightbulb } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
@@ -31,12 +31,12 @@ export const EXEMPTIONS = [
 export const exemptLabel = k => (EXEMPTIONS.find(x => x[0] === k) || [k, k])[1];
 
 const PRESETS = [
-  { id: "night", icon: Moon, title: "Night / low light", text: "No light at night or the face doesn't show. Relaxed; darkness and face checks off.", level: "relaxed", exempt: ["dark", "no_face"], watch: false, tone: "calm" },
-  { id: "parent", icon: Baby, title: "Parent at home", text: "Children around. Relaxed; other people and noise never count.", level: "relaxed", exempt: ["people", "noise"], watch: false, tone: "calm" },
-  { id: "anylight", icon: Lightbulb, title: "Any light — watched", text: "Red, dim or any light and a busy background are fine. Strict on everything else, shown first on the Live monitor.", level: "strict", exempt: ["dark"], watch: true, tone: "firm" },
-  { id: "standard", icon: CheckCircle2, title: "Standard", text: "Follows each exam's own rules. Nothing switched off.", level: "", exempt: [], watch: false, tone: "plain" },
-  { id: "strict", icon: Lock, title: "Strict", text: "Silence and face in view. Every check counts.", level: "strict", exempt: [], watch: false, tone: "firm" },
-  { id: "maximum", icon: ShieldAlert, title: "Maximum + watch", text: "Council style, ear check and room scan, shown first on the Live monitor.", level: "maximum", exempt: [], watch: true, tone: "hard" },
+  { id: "night", icon: Moon, title: "Night / low light", short: "Dark room or face not showing", text: "No light at night or the face doesn't show. Relaxed; darkness and face checks off.", level: "relaxed", exempt: ["dark", "no_face"], watch: false, tone: "calm" },
+  { id: "parent", icon: Baby, title: "Parent at home", short: "Children around, noise is fine", text: "Children around. Relaxed; other people and noise never count.", level: "relaxed", exempt: ["people", "noise"], watch: false, tone: "calm" },
+  { id: "anylight", icon: Lightbulb, title: "Any light — watched", short: "Any light, strict, watched", text: "Red, dim or any light and a busy background are fine. Strict on everything else, shown first on the Live monitor.", level: "strict", exempt: ["dark"], watch: true, tone: "sky" },
+  { id: "standard", icon: CheckCircle2, title: "Standard", short: "The exam's own rules", text: "Follows each exam's own rules. Nothing switched off.", level: "", exempt: [], watch: false, tone: "plain" },
+  { id: "strict", icon: Lock, title: "Strict", short: "Every check counts", text: "Silence and face in view. Every check counts.", level: "strict", exempt: [], watch: false, tone: "firm" },
+  { id: "maximum", icon: ShieldAlert, title: "Maximum + watch", short: "Council style, watched", text: "Council style, ear check and room scan, shown first on the Live monitor.", level: "maximum", exempt: [], watch: true, tone: "hard" },
 ];
 
 async function chunked(ids, fn) {
@@ -150,6 +150,13 @@ export default function StudentSettings({ students, onClose, onSaved }) {
 
   const name = many ? `${ids.length} students` : (first.name_pending ? `Code ${first.access_code}` : first.full_name);
   const poolOf = e => (e.question_ids || []).length;
+  const summary = [
+    level === null ? null : `Level: ${SECURITY_LEVELS.find(x => x[0] === level)[1]}`,
+    exempt && exempt.length ? `${exempt.length} check${exempt.length === 1 ? "" : "s"} off` : null,
+    maxW ? `${maxW} warnings` : null,
+    watch ? "watched" : null,
+    appOnly ? "app only" : null,
+  ].filter(Boolean).join(" · ");
 
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="ss-h" onClick={onClose}>
@@ -163,86 +170,100 @@ export default function StudentSettings({ students, onClose, onSaved }) {
           <button className="btn btn-sm btn-ghost" onClick={onClose} aria-label="Close"><X size={16} /></button>
         </header>
 
-        <section>
-          <h3 className="sp-h3"><SlidersHorizontal size={15} /> Choose a profile</h3>
-          <div className="preset-grid">
-            {PRESETS.map(p => (
-              <button key={p.id} className={`preset tone-${p.tone}${activePreset === p ? " on" : ""}`} onClick={() => applyPreset(p)} aria-pressed={activePreset === p}>
-                <span className="preset-icon"><p.icon size={20} /></span>
-                <strong>{p.title}</strong>
-                <span>{p.text}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <h3 className="sp-h3"><Shield size={15} /> Security level</h3>
-          <div className="seg" role="radiogroup" aria-label="Security level">
-            {SECURITY_LEVELS.map(([id, label]) => (
-              <button key={id || "exam"} role="radio" aria-checked={level === id} className={`seg-btn${level === id ? " on" : ""}${id === "maximum" ? " hard" : ""}`} onClick={() => setLevel(id)}>{label}</button>
-            ))}
-          </div>
-          <p className="faint" style={{ fontSize: 12.5, margin: "6px 0 0" }}>{level === null ? "Not changing the level." : SECURITY_LEVELS.find(x => x[0] === level)[2]}</p>
-        </section>
-
-        <section>
-          <h3 className="sp-h3"><Eye size={15} /> Checks that won't count for {many ? "them" : "this student"}</h3>
-          <div className="switch-list">
-            {EXEMPTIONS.map(([k, label, text]) => (
-              <Switch key={k} label={label} text={text} checked={exempt !== null && exempt.includes(k)} indeterminate={exempt === null} onChange={v => toggleExempt(k, v)} />
-            ))}
-          </div>
-          <p className="faint" style={{ fontSize: 12.5, margin: "6px 0 0" }}>Changes reach a student who is already writing within about 30 seconds.</p>
-        </section>
-
-        <section className="sp-two">
-          <div>
-            <h3 className="sp-h3">Warning limit</h3>
-            <div className="stepper">
-              <button className="btn btn-sm btn-ghost" onClick={() => stepW(-1)} aria-label="Fewer warnings"><Minus size={14} /></button>
-              <input type="number" min={1} max={500} aria-label="Warning limit" placeholder={maxW === null ? "No change" : "Exam's"} value={maxW ?? ""} onChange={e => setMaxW(e.target.value)} />
-              <button className="btn btn-sm btn-ghost" onClick={() => stepW(1)} aria-label="More warnings"><Plus size={14} /></button>
+        <div className="sp-body">
+          <aside className="sp-left">
+            <h3 className="sp-h3">Quick profile</h3>
+            <div className="preset-list">
+              {PRESETS.map(p => (
+                <button key={p.id} className={`preset-row${activePreset === p ? " on" : ""}`} onClick={() => applyPreset(p)} aria-pressed={activePreset === p} title={p.text}>
+                  <span className={`p-icon p-${p.tone}`}><p.icon size={19} /></span>
+                  <span style={{ minWidth: 0 }}><strong>{p.title}</strong><small>{p.short}</small></span>
+                  <CheckCircle2 className="p-check" size={18} />
+                </button>
+              ))}
             </div>
-            <div className="row" style={{ gap: 6, marginTop: 6 }}>
-              <button className={`btn btn-sm ${maxW === "" ? "btn-primary" : "btn-ghost"}`} onClick={() => setMaxW("")}>Exam's own</button>
-              {[3, 5, 20, 100].map(n => <button key={n} className={`btn btn-sm ${String(maxW) === String(n) ? "btn-primary" : "btn-ghost"}`} onClick={() => setMaxW(String(n))}>{n}</button>)}
-            </div>
-            <p className="faint" style={{ fontSize: 12, margin: "6px 0 0" }}>A high limit (e.g. 100) means they won't be locked out.</p>
-          </div>
-          <div className="switch-list">
-            <Switch icon={Eye} label="Watch closely" text="Shown first and highlighted on the Live monitor." checked={!!watch} indeterminate={watch === null} onChange={setWatch} />
-            <Switch icon={Smartphone} label="App only" text="On Android and Windows they must use the exam app." checked={!!appOnly} indeterminate={appOnly === null} onChange={setAppOnly} />
-          </div>
-        </section>
+            <p className="sp-note">{activePreset ? activePreset.text : "Pick a profile, then fine-tune the settings."}</p>
+          </aside>
 
-        <section>
-          <h3 className="sp-h3"><ListOrdered size={15} /> Questions in each exam</h3>
-          {exams === null ? <Spinner /> : exams.length === 0 ? <p className="muted">No exams in this section yet.</p> : (
-            <div className="q-list">
-              {exams.map(e => {
-                const v = counts[e.id] ?? "";
-                const pool = poolOf(e);
-                return (
-                  <div key={e.id} className="q-row">
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{e.title}</div>
-                      <div className="faint" style={{ fontSize: 12 }}>{pool ? `${pool} questions in the paper` : "No questions loaded yet"}{e.closed ? " · closed" : ""}</div>
-                    </div>
-                    <input type="number" min={1} max={2000} aria-label={`Questions in ${e.title}`} style={{ width: 90 }}
-                      placeholder={many ? "No change" : "Full"} value={v === "all" ? "" : v}
-                      onChange={ev => setCounts(c => ({ ...c, [e.id]: ev.target.value }))} />
-                    <button className={`btn btn-sm ${v === "all" || (!many && v === "") ? "btn-primary" : "btn-ghost"}`}
-                      onClick={() => setCounts(c => ({ ...c, [e.id]: many ? "all" : "" }))}>Full</button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+          <div className="sp-right">
+            <section>
+              <h3 className="sp-h3"><Shield size={13} /> Security level</h3>
+              <div className="seg5" role="radiogroup" aria-label="Security level">
+                {SECURITY_LEVELS.map(([id, label]) => (
+                  <button key={id || "exam"} role="radio" aria-checked={level === id} className={`${level === id ? "on" : ""}${id === "maximum" ? " hard" : ""}`} onClick={() => setLevel(id)}>{label}</button>
+                ))}
+              </div>
+              <p className="sp-note">{level === null ? "Not changing the level." : SECURITY_LEVELS.find(x => x[0] === level)[2]}</p>
+            </section>
 
-        {error && <div className="banner banner-bad">{error}</div>}
+            <section>
+              <h3 className="sp-h3"><Eye size={13} /> Checks that won't count{many ? "" : " for this student"}</h3>
+              <div className="tile-grid">
+                {EXEMPTIONS.map(([k, label, text]) => {
+                  const on = exempt !== null && exempt.includes(k);
+                  return (
+                    <label key={k} className={`tile${on ? " on" : ""}`}>
+                      <span className="t-text"><strong>{label}</strong><span>{text}</span></span>
+                      <input type="checkbox" role="switch" checked={on} onChange={e => toggleExempt(k, e.target.checked)} />
+                      <span className="switch" aria-hidden="true" />
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="sp-note">{exempt === null ? "Mixed — tap a check to set it for everyone. " : ""}Changes reach a student who is already writing within about 30 seconds.</p>
+            </section>
+
+            <section className="sp-grid2">
+              <div className="box">
+                <h3 className="sp-h3">Warning limit</h3>
+                <div className="limit-row">
+                  <button className="btn btn-sm btn-ghost" onClick={() => stepW(-1)} aria-label="Fewer warnings"><Minus size={14} /></button>
+                  <input type="number" min={1} max={500} aria-label="Warning limit" placeholder={maxW === null ? "—" : "Exam"} value={maxW ?? ""} onChange={e => setMaxW(e.target.value)} />
+                  <button className="btn btn-sm btn-ghost" onClick={() => stepW(1)} aria-label="More warnings"><Plus size={14} /></button>
+                </div>
+                <div className="chips">
+                  <button className={maxW === "" ? "on" : ""} onClick={() => setMaxW("")}>Exam's own</button>
+                  {[3, 5, 20, 100].map(n => <button key={n} className={String(maxW) === String(n) ? "on" : ""} onClick={() => setMaxW(String(n))}>{n}</button>)}
+                </div>
+                <p className="sp-note">A high limit (e.g. 100) means they won't be locked out.</p>
+              </div>
+              <div className="box">
+                <h3 className="sp-h3">Options</h3>
+                <Switch icon={Eye} label="Watch closely" text="First and highlighted on the Live monitor." checked={!!watch} indeterminate={watch === null} onChange={setWatch} />
+                <Switch icon={Smartphone} label="App only" text="Android and Windows must use the exam app." checked={!!appOnly} indeterminate={appOnly === null} onChange={setAppOnly} />
+              </div>
+            </section>
+
+            <section>
+              <h3 className="sp-h3"><ListOrdered size={13} /> Questions in each exam</h3>
+              {exams === null ? <Spinner /> : exams.length === 0 ? <p className="muted">No exams in this section yet.</p> : (
+                <div className="q-list">
+                  {exams.map(e => {
+                    const v = counts[e.id] ?? "";
+                    const pool = poolOf(e);
+                    return (
+                      <div key={e.id} className="q-row">
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 14 }}>{e.title}</div>
+                          <div className="faint" style={{ fontSize: 12 }}>{pool ? `${pool} questions in the paper` : "No questions loaded yet"}{e.closed ? " · closed" : ""}</div>
+                        </div>
+                        <input type="number" min={1} max={2000} aria-label={`Questions in ${e.title}`}
+                          placeholder={many ? "—" : "All"} value={v === "all" ? "" : v}
+                          onChange={ev => setCounts(c => ({ ...c, [e.id]: ev.target.value }))} />
+                        <button className={`btn btn-sm ${v === "all" || (!many && v === "") ? "btn-primary" : "btn-ghost"}`}
+                          onClick={() => setCounts(c => ({ ...c, [e.id]: many ? "all" : "" }))}>Full paper</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+            {error && <div className="banner banner-bad">{error}</div>}
+          </div>
+        </div>
+
         <footer className="sp-foot">
+          <span className="sp-summary">{summary || "No changes yet"}</span>
           <button className="btn btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
           <button className="btn btn-primary" onClick={save} disabled={busy || exams === null}>{busy ? <Spinner size={16} /> : <CheckCircle2 size={16} />} Save {many ? `for ${ids.length}` : ""}</button>
         </footer>
