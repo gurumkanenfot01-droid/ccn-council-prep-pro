@@ -14,8 +14,8 @@ import RoomCheck from "./RoomCheck.jsx";
 import ExamNumberCard from "./ExamNumberCard.jsx";
 import PlanCard from "./PlanCard.jsx";
 
-export const ADMIN_WHATSAPP = "2349031853995";
-export const ADMIN_WHATSAPP_DISPLAY = "+234 903 185 3995";
+export const ADMIN_WHATSAPP = "2347073813109";
+export const ADMIN_WHATSAPP_DISPLAY = "+234 707 381 3109";
 
 export const CODE_KEY = "exam-room-code";
 
