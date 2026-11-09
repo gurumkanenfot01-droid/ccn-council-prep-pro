@@ -62,14 +62,17 @@ export default function Liveness({ cam, onDone, actionLabel, night = false }) {
           const video = camRef.current.getVideo();
           if (night) setDim(frameBrightness(video) < DIM);
           if (state === "capture") {
+            // Council (night): after 12 s, accept a slightly tilted head and
+            // fewer readings, so a dim room doesn't keep the student waiting.
+            const relaxed = night && Date.now() - stepStarted > 12000;
             const r = await readDescriptor(video, { night });
             if (r.error === "multiple_faces") setHint("Only you should be in view.");
-            else if (r.error) setHint("Keep your face in the frame.");
-            else if (Math.abs(r.yaw) > S.captureYaw) setHint("Look straight at the camera.");
+            else if (r.error) setHint(night ? "Keep your face in the frame — tap “Use screen light” and hold the phone at eye level." : "Keep your face in the frame.");
+            else if (Math.abs(r.yaw) > (relaxed ? 0.45 : S.captureYaw)) setHint("Look straight at the camera.");
             else {
               setHint("");
               readings.push(r.descriptor);
-              if (readings.length >= 3) {
+              if (readings.length >= (night ? (relaxed ? 1 : 2) : 3)) {
                 const photo = snapshot(video, 320, { night });
                 go("done");
                 done.current({ descriptor: averageDescriptors(readings), photo });
