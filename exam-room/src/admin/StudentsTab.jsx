@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
 import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL } from "../lib/app.js";
 import { getSpecialty, specialtyLabel } from "../lib/specialty.js";
-import StudentSettings, { securityLabel } from "./StudentSettings.jsx";
+import StudentSettings, { securityLabel, exemptLabel } from "./StudentSettings.jsx";
 
 // No look-alike characters (0/O, 1/I/L), so codes are easy to read out.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -17,7 +17,8 @@ export function newCode(length = 8) {
 
 const FIELDS_BASE = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime, specialty, full_access, no_face";
 // Per-student security (added by supabase/updates/2026-11-09_council_and_student_security.sql).
-const FIELDS = FIELDS_BASE + ", security_level, max_warnings_override, app_only";
+const FIELDS = FIELDS_BASE + ", security_level, max_warnings_override, app_only, exempt_checks, watch";
+const FIELDS_MID = FIELDS_BASE + ", security_level, max_warnings_override, app_only";
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -227,7 +228,8 @@ export default function StudentsTab() {
   const load = useCallback(async () => {
     const q = fields => supabase.from("exam_candidates").select(fields).eq("specialty", getSpecialty()).order("created_at", { ascending: false });
     let { data, error } = await q(FIELDS);
-    if (error && /security_level|max_warnings_override|app_only/.test(error.message || "")) ({ data, error } = await q(FIELDS_BASE)); // database not updated yet
+    if (error && /exempt_checks|watch/.test(error.message || "")) ({ data, error } = await q(FIELDS_MID)); // database not updated yet
+    if (error && /security_level|max_warnings_override|app_only/.test(error.message || "")) ({ data, error } = await q(FIELDS_BASE));
     if (error) { setLoadError(adminDbMessage(error)); setRows([]); } else { setLoadError(""); setRows(data); }
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -439,7 +441,15 @@ export default function StudentsTab() {
                   return (
                     <tr key={r.id}>
                       <td>
-                        {r.name_pending ? <span className="muted">Not used yet</span> : <strong>{r.full_name}</strong>}
+                        <button className="name-link" title="Open this student's own rules" onClick={() => setSettingsFor([r])}>
+                          {r.name_pending ? <span className="muted">Not used yet</span> : r.full_name}
+                        </button>
+                        {(r.watch || (r.exempt_checks || []).length > 0) && (
+                          <div className="chip-row">
+                            {r.watch && <span className="pill pill-bad"><Eye size={11} /> Watch closely</span>}
+                            {(r.exempt_checks || []).map(k => <span key={k} className="pill pill-ok"><Moon size={11} /> {exemptLabel(k)} OK</span>)}
+                          </div>
+                        )}
                         {r.batch && <div className="faint" style={{ fontSize: 12 }}>{r.batch}</div>}
                       </td>
                       <td>
