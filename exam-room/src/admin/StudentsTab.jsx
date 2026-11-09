@@ -215,6 +215,18 @@ function CouncilCard({ rows, onCreated }) {
 // get their council code straight away. Students not marked as paid get nothing.
 function ClaimLinkCard({ rows, onCopy, copied }) {
   const link = `${window.location.origin}/#/claim`;
+  // Message at the top of every council student's exams page.
+  const [notice, setNotice] = useState(null); // null = not available (database not updated)
+  const [noticeMsg, setNoticeMsg] = useState("");
+  useEffect(() => {
+    supabase.from("exam_settings").select("council_notice").eq("id", 1).maybeSingle()
+      .then(({ data, error }) => { if (!error) setNotice(data?.council_notice ?? ""); });
+  }, []);
+  async function saveNotice() {
+    const { error } = await supabase.from("exam_settings").upsert({ id: 1, council_notice: notice.trim(), updated_at: new Date().toISOString() });
+    setNoticeMsg(error ? adminDbMessage(error) : notice.trim() ? "Saved — students see it next time they open or refresh their exams page." : "Saved — no message is shown now.");
+    setTimeout(() => setNoticeMsg(""), 5000);
+  }
   const list = (rows || []).filter(r => !r.name_pending && r.active);
   if (rows && list.length && !list.some(r => "claimable" in r)) {
     return (
@@ -251,6 +263,18 @@ function ClaimLinkCard({ rows, onCopy, copied }) {
         <span className="pill pill-ok"><Hash size={12} /> {numbered.length} sent their exam number</span>
         {repeat.length > 0 && <span className="pill pill-bad" title="You let them collect the code again. Check the face photo is the right student.">{repeat.length} collected more than once</span>}
       </div>
+      {notice !== null && (
+        <div className="field" style={{ marginTop: 14 }}>
+          <label htmlFor="council-notice"><Clock size={11} /> Message on students’ exams page</label>
+          <div className="row" style={{ gap: 8, alignItems: "flex-start" }}>
+            <textarea id="council-notice" rows={2} maxLength={300} value={notice} onChange={e => setNotice(e.target.value)}
+              placeholder="e.g. Your exams will be available from 11:00 pm to 2:00 am." style={{ flex: 1, minWidth: 220 }} />
+            <button className="btn btn-primary btn-sm" onClick={saveNotice}><Check size={14} /> Save message</button>
+          </div>
+          <span className="faint" style={{ fontSize: 12.5 }}>Shown at the top of every paid student’s exams page. Leave it empty to show nothing.</span>
+          {noticeMsg && <span className="notice">{noticeMsg}</span>}
+        </div>
+      )}
       <p className="faint" style={{ fontSize: 12.5, margin: "10px 0 0" }}>
         To add or remove a student, open <MoreHorizontal size={12} /> on their row → <em>Paid</em>. If a student lost their code, send it to them yourself, or use <em>Let them collect the code again</em> in the same menu. The face photo they register is the check that the right person took the code.
       </p>
