@@ -837,3 +837,6 @@ select.profile-pick { font-size: 12.5px; padding: 5px 8px; border-radius: 9px; m
 .helpline.compact { padding: 8px 10px; font-size: 12.5px; gap: 8px; }
 .tonight.waiting { background: linear-gradient(135deg, #92400e, #b45309 60%, #d97706); box-shadow: 0 10px 28px rgba(180, 83, 9, .3); }
 .pill.waiting-q { font-size: 13px; padding: 6px 10px; }
+.site-switch.closed { border: 2px solid var(--c-rose); background: color-mix(in srgb, var(--c-rose) 6%, var(--surface)); }
+.btn-danger { background: var(--c-rose); color: #fff; border-color: transparent; }
+.btn-danger:hover { filter: brightness(1.05); }

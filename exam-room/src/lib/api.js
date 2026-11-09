@@ -137,6 +137,8 @@ export const api = {
   // A missing function or a network problem never blocks the student.
   loginDevice: (code, device) => rpc("exam_login_device", { p_code: code, p_device: device }).catch(() => ({ ok: true })),
   logoutDevice: (code, device) => rpc("exam_logout_device", { p_code: code, p_device: device }).catch(() => ({})),
+  // Is the student site closed by the administrator? Never blocks on an error.
+  siteStatus: () => rpc("exam_site_status", {}).catch(() => ({ closed: false })),
   // Council: the student's share of the questions (by what they paid).
   myPlan: code => rpc("exam_my_plan", { p_code: code }).catch(() => null),
   myExamNumber: code => rpc("exam_my_exam_number", { p_code: code }).catch(() => null),

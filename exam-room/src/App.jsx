@@ -3,6 +3,7 @@ import { isConfigured } from "./lib/supabase.js";
 import StudentApp from "./student/StudentApp.jsx";
 import AdminApp from "./admin/AdminApp.jsx";
 import ClaimPage from "./student/ClaimPage.jsx";
+import SiteClosed, { useSiteClosed } from "./student/SiteClosed.jsx";
 import { useUpdateAvailable, reloadNow } from "./lib/update.js";
 
 // Students use the main page; admins open /#/admin; paid council students get their code at /#/claim.
@@ -34,6 +35,7 @@ function UpdateBar({ inExam }) {
 export default function App() {
   const route = useRoute();
   const updateReady = useUpdateAvailable();
+  const site = useSiteClosed(); // the administrator closed the student site for now
   if (!isConfigured) {
     return (
       <main className="wrap narrow" style={{ paddingTop: 80, textAlign: "center" }}>
@@ -45,7 +47,9 @@ export default function App() {
   return (
     <>
       {updateReady && <UpdateBar inExam={route === "student"} />}
-      {route === "admin" ? <AdminApp /> : route === "claim" ? <ClaimPage /> : <StudentApp updateReady={updateReady} />}
+      {route === "admin" ? <AdminApp />
+        : site && site.closed ? <SiteClosed message={site.message} />
+        : route === "claim" ? <ClaimPage /> : <StudentApp updateReady={updateReady} />}
     </>
   );
 }
