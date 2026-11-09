@@ -14,6 +14,7 @@ import ExamScreen from "./ExamScreen.jsx";
 import RoomCheck from "./RoomCheck.jsx";
 import ExamNumberCard from "./ExamNumberCard.jsx";
 import PlanCard from "./PlanCard.jsx";
+import TonightCard from "./TonightCard.jsx";
 
 export const ADMIN_WHATSAPP = "2347073813109";
 export const ADMIN_WHATSAPP_DISPLAY = "+234 707 381 3109";
@@ -183,6 +184,12 @@ function useCountdown() {
   const [, setTick] = useState(0);
   useEffect(() => { const t = setInterval(() => setTick(x => x + 1), 1000); return () => clearInterval(t); }, []);
   return serverNow();
+}
+
+// Re-draws the "tonight" box every second (countdown).
+function TonightTicker({ exams }) {
+  const now = useCountdown();
+  return <TonightCard exams={exams} now={now} />;
 }
 
 function ExamCard({ exam, onStart }) {
@@ -670,7 +677,7 @@ export default function StudentApp({ updateReady = false }) {
       ) : (
         <div className="banner banner-warn"><Hourglass size={16} /> Start with the <strong>Test Run</strong> below (5 questions) to see how the exams work. Your full mock exams will appear here once the administrator gives you full access.</div>
       ))}
-      {profile.specialty === "council" && <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}><PlanCard code={code} name={profile.name} /><ExamNumberCard code={code} /></div>}
+      {profile.specialty === "council" && <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}><TonightTicker exams={profile.exams} /><PlanCard code={code} name={profile.name} /><ExamNumberCard code={code} /></div>}
       {profile.specialty !== "council" && !profile.exams.some(e => !e.session_status || e.session_status === "in_progress") && (
         <div className="banner banner-info" style={{ flexWrap: "wrap" }}>
           <Lock size={16} />
