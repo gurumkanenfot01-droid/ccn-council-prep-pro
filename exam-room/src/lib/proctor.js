@@ -221,7 +221,8 @@ const DIM_FOR_MATCH = 55;
 // face/phone models are downloaded (much lighter on a slow network).
 // phoneCheck: look for a phone held up to the camera even when face checks are
 // off (any mode where the camera is on).
-export function useProctor({ cam, active, report, identity, level: strictness = "relaxed", video = true, phoneCheck = video }) {
+// night: Council Exams only — night-friendly face matching (see below).
+export function useProctor({ cam, active, report, identity, level: strictness = "relaxed", video = true, phoneCheck = video, night = false }) {
   const L = PROCTOR_LEVELS[strictness] || PROCTOR_LEVELS.relaxed;
   const [face, setFace] = useState("checking"); // ok | none | multiple | away | dark | checking
   const [phone, setPhone] = useState(false);
@@ -284,9 +285,9 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
           // In a very dim picture the face can't be matched fairly, so only the
           // photo is sent (the administrator sees it); no mismatch is counted.
           const v = cam.getVideo();
-          if (frameBrightness(v) < DIM_FOR_MATCH) { if (alive) cb.current.identity(null, snapshot(v)); return; }
-          const r = await readDescriptor(v);
-          if (alive && r.descriptor) cb.current.identity(r.descriptor, snapshot(v));
+          if (night && frameBrightness(v) < DIM_FOR_MATCH) { if (alive) cb.current.identity(null, snapshot(v, 240, { night })); return; }
+          const r = await readDescriptor(v, { night });
+          if (alive && r.descriptor) cb.current.identity(r.descriptor, snapshot(v, 240, { night }));
         } catch (e) { /* try again next minute */ }
       }, IDENTITY_EVERY_MS));
     }).catch(() => setFace("checking"));

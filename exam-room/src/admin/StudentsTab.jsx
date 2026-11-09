@@ -554,7 +554,7 @@ export default function StudentsTab() {
                               {r.full_access !== false && <button onClick={() => confirm(`Limit ${r.full_name || "this student"} to the Test Run only?`) && update(r.id, { full_access: false }, `${r.full_name || "This student"} can now take only the Test Run.`)}>
                                 <Layers size={15} /> Test Run only
                               </button>}
-                              {"claimable" in r && !r.name_pending && <button onClick={() => update(r.id, { claimable: !r.claimable }, r.claimable ? `${r.full_name} removed from the paid list — the claim link no longer shows their code.` : `${r.full_name} marked as paid — they can get their code on the claim link.`)}>
+                              {getSpecialty() === "council" && "claimable" in r && !r.name_pending && <button onClick={() => update(r.id, { claimable: !r.claimable }, r.claimable ? `${r.full_name} removed from the paid list — the claim link no longer shows their code.` : `${r.full_name} marked as paid — they can get their code on the claim link.`)}>
                                 <BadgeCheck size={15} /> {r.claimable ? "Remove from paid list" : "Paid — can get code by name"}
                               </button>}
                               {r.claimable && r.claimed_at && <button onClick={() => confirm(`Let ${r.full_name} collect their code on the claim link one more time?`) && update(r.id, { claimed_at: null }, `${r.full_name} can collect their code on the claim link once more.`)}>

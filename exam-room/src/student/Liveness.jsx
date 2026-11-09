@@ -14,11 +14,16 @@ const STEP_TEXT = {
   capture: "Look straight at the camera and hold still",
   done: "Done",
 };
-const TURN = 0.15; // ≈20° head turn: easy for a person, impossible for a still photo
-const STEP_TIMEOUT_MS = 75000; // generous: dim rooms and slow phones take longer
+// Mock exams keep the original settings; Council Exams (night) are easier:
+// a smaller head turn, more time, and a screen light for dark rooms.
+const SETTINGS = {
+  normal: { turn: 0.2, timeout: 40000, centre: 0.12, hold: 800, captureYaw: 0.18 }, // ≈27° head turn
+  night: { turn: 0.15, timeout: 75000, centre: 0.15, hold: 500, captureYaw: 0.25 }, // ≈20° head turn
+};
 const DIM = 70; // average brightness below which the screen light is offered
 
-export default function Liveness({ cam, onDone, actionLabel }) {
+export default function Liveness({ cam, onDone, actionLabel, night = false }) {
+  const S = night ? SETTINGS.night : SETTINGS.normal;
   const [step, setStep] = useState("loading");
   const [hint, setHint] = useState("");
   const [failed, setFailed] = useState("");
@@ -48,22 +53,24 @@ export default function Liveness({ cam, onDone, actionLabel }) {
       const tick = async () => {
         if (!alive) return;
         try {
-          if (Date.now() - stepStarted > STEP_TIMEOUT_MS) {
-            setFailed("That took too long. Make sure your whole face is visible. In a dark room, tap “Use screen light” and hold the phone close to your face, then try again.");
+          if (Date.now() - stepStarted > S.timeout) {
+            setFailed(night
+              ? "That took too long. Make sure your whole face is visible. In a dark room, tap “Use screen light” and hold the phone close to your face, then try again."
+              : "That took too long. Make sure your whole face is visible in good light, then try again.");
             return;
           }
           const video = camRef.current.getVideo();
-          setDim(frameBrightness(video) < DIM);
+          if (night) setDim(frameBrightness(video) < DIM);
           if (state === "capture") {
-            const r = await readDescriptor(video);
+            const r = await readDescriptor(video, { night });
             if (r.error === "multiple_faces") setHint("Only you should be in view.");
             else if (r.error) setHint("Keep your face in the frame.");
-            else if (Math.abs(r.yaw) > 0.25) setHint("Look straight at the camera.");
+            else if (Math.abs(r.yaw) > S.captureYaw) setHint("Look straight at the camera.");
             else {
               setHint("");
               readings.push(r.descriptor);
               if (readings.length >= 3) {
-                const photo = snapshot(video, 320);
+                const photo = snapshot(video, 320, { night });
                 go("done");
                 done.current({ descriptor: averageDescriptors(readings), photo });
                 return;
@@ -78,12 +85,12 @@ export default function Liveness({ cam, onDone, actionLabel }) {
               setHint("");
               const yaw = faces[0].yaw;
               if (state === "center") {
-                if (Math.abs(yaw) < 0.15) { since = since || Date.now(); if (Date.now() - since > 500) go("sideA"); }
+                if (Math.abs(yaw) < S.centre) { since = since || Date.now(); if (Date.now() - since > S.hold) go("sideA"); }
                 else since = 0;
-              } else if (state === "sideA" && Math.abs(yaw) > TURN) {
+              } else if (state === "sideA" && Math.abs(yaw) > S.turn) {
                 firstSide = Math.sign(yaw);
                 go("sideB");
-              } else if (state === "sideB" && Math.sign(yaw) === -firstSide && Math.abs(yaw) > TURN) {
+              } else if (state === "sideB" && Math.sign(yaw) === -firstSide && Math.abs(yaw) > S.turn) {
                 go("capture");
               }
             }
@@ -117,7 +124,7 @@ export default function Liveness({ cam, onDone, actionLabel }) {
         </div>
       )}
       <CameraView stream={cam.stream} status={cam.camera} />
-      {!light && step !== "done" && !failed && (
+      {night && !light && step !== "done" && !failed && (
         <button type="button" className={`btn ${dim ? "btn-primary" : "btn-ghost"} btn-sm`} style={{ alignSelf: "center" }} onClick={() => setLight(true)}>
           <Lightbulb size={15} /> {dim ? "It’s dark — use screen light" : "Dark room? Use screen light"}
         </button>
@@ -136,7 +143,7 @@ export default function Liveness({ cam, onDone, actionLabel }) {
       {failed && (
         <>
           <div className="error" role="alert">{failed}</div>
-          {!light && <button className="btn btn-primary" onClick={() => { setLight(true); setFailed(""); setStep("loading"); setAttempt(a => a + 1); }}><Lightbulb size={16} /> Try again with screen light</button>}
+          {night && !light && <button className="btn btn-primary" onClick={() => { setLight(true); setFailed(""); setStep("loading"); setAttempt(a => a + 1); }}><Lightbulb size={16} /> Try again with screen light</button>}
           <button className="btn btn-ghost" onClick={() => { setFailed(""); setStep("loading"); setAttempt(a => a + 1); }}>
             <RotateCcw size={16} /> Try again
           </button>
