@@ -50,7 +50,6 @@ function CodeScreen({ onLogin }) {
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div className="brand-mark" style={{ margin: "0 auto 10px", width: 52, height: 52, borderRadius: 16 }}><ShieldCheck size={26} /></div>
           <h1 className="serif" style={{ fontSize: 24, margin: "0 0 4px" }}>Nursing Exam Room</h1>
-          <p className="faint" style={{ margin: "0 0 6px", fontSize: 12.5 }}>Critical Care · Perioperative · Anaesthesia · Nephrology Nursing</p>
           <p className="muted" style={{ margin: 0, fontSize: 14 }}>Enter the personal access code your administrator gave you.</p>
         </div>
         <form className="card" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
