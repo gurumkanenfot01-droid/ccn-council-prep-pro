@@ -15,6 +15,7 @@ import RoomCheck from "./RoomCheck.jsx";
 import ExamNumberCard from "./ExamNumberCard.jsx";
 import PlanCard from "./PlanCard.jsx";
 import TonightCard from "./TonightCard.jsx";
+import HelpLine from "./HelpLine.jsx";
 
 export const ADMIN_WHATSAPP = "2347073813109";
 export const ADMIN_WHATSAPP_DISPLAY = "+234 707 381 3109";
@@ -71,6 +72,7 @@ function CodeScreen({ onLogin }) {
         <p className="muted" style={{ textAlign: "center", fontSize: 14, marginTop: 14 }}>
           Paid but don’t have your code yet? <a href="#/claim"><strong>Get your code</strong></a>
         </p>
+        <div style={{ marginTop: 12 }}><HelpLine /></div>
         {isWindowsBrowser() && (
           <p className="muted" style={{ textAlign: "center", fontSize: 13.5, marginTop: 14 }}>
             On a Windows laptop? <a href={DESKTOP_DOWNLOAD_URL}><Download size={13} /> Download the Nursing Exam Room app</a>
@@ -428,6 +430,7 @@ function PrepScreen({ exam, name, code, cam, faceMode, night = false, onStarted,
             {allRules.map(r => <li key={r} style={{ marginBottom: 4 }}>{r}</li>)}
           </ul>
         </div>
+        {night && <div style={{ marginBottom: 12 }}><HelpLine name={name} /></div>}
         {error && <div className="banner banner-bad">{error}</div>}
         {roomCheck && ready ? (
           <RoomCheck cam={cam} onDone={photos => { checks.current = photos; afterChecks(); }} />
@@ -705,7 +708,7 @@ export default function StudentApp({ updateReady = false }) {
       ) : (
         <div className="banner banner-warn"><Hourglass size={16} /> Start with the <strong>Test Run</strong> below (5 questions) to see how the exams work. Your full mock exams will appear here once the administrator gives you full access.</div>
       ))}
-      {profile.specialty === "council" && <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}><TonightTicker exams={profile.exams} /><PlanCard code={code} name={profile.name} /><ExamNumberCard code={code} /></div>}
+      {profile.specialty === "council" && <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}><TonightTicker exams={profile.exams} /><HelpLine name={profile.name} /><PlanCard code={code} name={profile.name} /><ExamNumberCard code={code} /></div>}
       {profile.specialty !== "council" && !profile.exams.some(e => !e.session_status || e.session_status === "in_progress") && (
         <div className="banner banner-info" style={{ flexWrap: "wrap" }}>
           <Lock size={16} />

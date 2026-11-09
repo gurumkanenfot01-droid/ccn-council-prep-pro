@@ -827,3 +827,11 @@ select.profile-pick { font-size: 12.5px; padding: 5px 8px; border-radius: 9px; m
 .rp-sub { margin: 10px 0 0; font-size: 15px; text-align: center; }
 .rp-list { margin: 0 0 16px; padding-left: 20px; font-size: 14.5px; display: flex; flex-direction: column; gap: 6px; }
 .rp-list li:first-child, .rp-list li:nth-child(2), .rp-list li:nth-child(3) { font-weight: 700; }
+
+/* Administrator's WhatsApp number on student screens */
+.helpline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 14px; border-radius: 14px; font-size: 14px;
+  background: color-mix(in srgb, var(--c-green) 9%, var(--surface)); border: 1px solid color-mix(in srgb, var(--c-green) 35%, transparent); }
+.helpline > span { flex: 1; min-width: 180px; }
+.helpline strong { white-space: nowrap; }
+.helpline svg { flex: none; color: var(--c-green); }
+.helpline.compact { padding: 8px 10px; font-size: 12.5px; gap: 8px; }

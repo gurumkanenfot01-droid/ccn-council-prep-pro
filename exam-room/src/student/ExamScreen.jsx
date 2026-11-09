@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { studentTitle } from "../lib/specialty.js";
+import HelpLine from "./HelpLine.jsx";
 import { AlertTriangle, Calculator as CalcIcon, Eye, VideoOff, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX, RefreshCw } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useProctor, VIOLATION_LABELS, pauseSoundChecks, enterFullscreen, virtualCameraName } from "../lib/proctor.js";
@@ -868,6 +869,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
             {cam.mic === "on" && <SoundMeter level={proctor.level} noisy={proctor.noisy} />}
             {(watchers > 0 || dbWatch) && <span className="pill pill-warn" style={{ alignSelf: "flex-start" }}><Eye size={13} /> Administrator is watching live</span>}
             <div className="faint" style={{ fontSize: 12 }}>{micOnly ? "Microphone on. Your administrator may listen live. Nothing is recorded." : !watchFace ? "Camera and microphone on. Your administrator may watch live. Nothing is recorded." : "Identity checked every minute. Your administrator may watch live. Video is not recorded."}</div>
+            {council && <div style={{ marginTop: 8 }}><HelpLine name={session.name || ""} inExam compact /></div>}
           </div>
         </aside>
       </div>
