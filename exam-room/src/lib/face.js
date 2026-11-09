@@ -151,6 +151,11 @@ export async function readDescriptor(video, { night = false } = {}) {
   if (found.length === 0) {
     try { found = await faceapi.detectAllFaces(brightFrame(video), gentle).withFaceLandmarks().withFaceDescriptors(); } catch (e) { found = []; }
   }
+  // Last try: the same high-contrast copy the face finder uses in poor or
+  // coloured light, so a face that was found can also be read.
+  if (found.length === 0) {
+    try { found = await faceapi.detectAllFaces(boostedFrame(video), gentle).withFaceLandmarks().withFaceDescriptors(); } catch (e) { found = []; }
+  }
   if (found.length === 0) return { error: "no_face" };
   if (found.length > 1) return { error: "multiple_faces" };
   return { descriptor: Array.from(found[0].descriptor), yaw: yawOf(found[0].landmarks) };
