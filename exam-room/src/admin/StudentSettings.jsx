@@ -16,7 +16,7 @@ export const SECURITY_LEVELS = [
   ["relaxed", "Relaxed", "Murmuring and head turns are fine. Only loud talking, leaving the camera for a long time, another person or a phone count."],
   ["normal", "Normal", "Quiet room. Talking or loud noise counts; the face may be out of view for about 30 seconds."],
   ["strict", "Strict", "Silence. Any talking or noise counts; the face may be out of view for about 20 seconds."],
-  ["maximum", "Maximum", "Council style. A whisper or short sound counts at once, the face may leave the camera for only a few seconds, another person or a phone ends the exam. Best with a low warning limit and App only."],
+  ["maximum", "Maximum", "Council style. A whisper or short sound counts at once, the face may leave the camera for only a few seconds, another person or a phone ends the exam, and the question is hidden whenever the page leaves full screen. Works on the website — no app download needed."],
 ];
 export const securityLabel = l => (SECURITY_LEVELS.find(x => x[0] === (l || "")) || SECURITY_LEVELS[0])[1];
 
