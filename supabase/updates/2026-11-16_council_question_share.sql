@@ -1,7 +1,7 @@
 -- Council Exams: each student gets a share of the questions, by what they paid.
 --   question_share   percent of the questions a full-paying student gets (null = all)
 --   amount_paid      naira, for the administrator's reference
--- 20,000 or more → 100% · 15,000 → 75% · 7,000–10,000 → 50% · 5,000 → 25%
+-- 20,000 or more → 100% · 15,000 → 80% · 7,000–10,000 → 50% · 5,000 → 25%
 -- The six added later (Kasang, Pate, Panji, Etek, Clementina, Mercy) → 80%.
 -- A number set for one exam in the student's Rules still wins over the share.
 -- Mock exam students have no share, so nothing changes for them. Safe to run again.
@@ -51,8 +51,8 @@ begin
     ('JOHN JENNIFER', 20000, 100), ('JOSHUA-EWETO LOIS', 20000, 100), ('KWASAU PHILIP JADACKSON', 20000, 100),
     ('LERAMO STANLEY', 20000, 100), ('MALLAN SAMUEL ALFRED', 20000, 100), ('MARKUS MURNA', 20000, 100),
     ('NANRET HASEL', 20000, 100), ('SHADRACK JANE', 20000, 100), ('VIRGINIA IDOGBE LOVETH', 20000, 100),
-    ('YAKUBU NERAT SYLVIA', 15000, 75), ('ANANG FRANCIS', 10000, 50), ('JESSICA ILIYA', 15000, 75),
-    ('JANET ILIYA', 15000, 75), ('SADIYA SULEIMAN', 10000, 50),
+    ('YAKUBU NERAT SYLVIA', 15000, 80), ('ANANG FRANCIS', 10000, 50), ('JESSICA ILIYA', 15000, 80),
+    ('JANET ILIYA', 15000, 80), ('SADIYA SULEIMAN', 10000, 50),
     ('KASANG KEVIN JOY', null, 80), ('ISSAC NUHU PATE', null, 80), ('PYELSHAK GODWIN PANJI', null, 80),
     ('BOT ETEK JERRY', null, 80), ('DABOK CLEMENTINA MOENMI', null, 80), ('MALLE MERCY ASHEADZI', null, 80)
   ) v(name, amount, share) loop

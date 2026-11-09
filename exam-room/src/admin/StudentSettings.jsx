@@ -33,7 +33,7 @@ export const EXEMPTIONS = [
 export const exemptLabel = k => (EXEMPTIONS.find(x => x[0] === k) || [k, k])[1];
 
 // Council: share of questions by amount paid.
-export const SHARES = [[100, "Full (₦20,000)"], [80, "80%"], [75, "75% (₦15,000)"], [50, "Half (₦7,000–10,000)"], [25, "Quarter (₦5,000)"]];
+export const SHARES = [[100, "Full (₦20,000)"], [80, "80% (₦15,000)"], [75, "75%"], [50, "Half (₦7,000–10,000)"], [25, "Quarter (₦5,000)"]];
 
 // Quick profiles: a level plus the checks switched off. "allowed" never gives
 // a warning; "counts" still gives warnings. Leaving the exam screen always counts.
