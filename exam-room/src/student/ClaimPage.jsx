@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { GraduationCap, ArrowRight, Copy, Check, UserRound, MessageCircle, PlayCircle, Lock } from "lucide-react";
 import { api } from "../lib/api.js";
-import ExamNumberCard from "./ExamNumberCard.jsx";
 import { ADMIN_WHATSAPP, ADMIN_WHATSAPP_DISPLAY, CODE_KEY } from "./StudentApp.jsx";
 
 // The link the administrator posts in the class group (/#/claim): a student
@@ -68,17 +67,21 @@ export default function ClaimPage() {
               <button className="btn btn-ghost" onClick={copy}>{copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "Copied" : "Copy code"}</button>
               <button className="btn btn-primary" onClick={startNow}><PlayCircle size={16} /> Open my exams</button>
             </div>
+            <ol className="claim-next">
+              <li>Tap <strong>Open my exams</strong> (or open the exam site later and type your code).</li>
+              <li>Register your face — the page asks you once, straight after you sign in.</li>
+              <li>Then type your <strong>exam number</strong> on your exams page and send it to the administrator.</li>
+            </ol>
             <p className="faint" style={{ fontSize: 12.5, margin: 0, display: "flex", gap: 6, textAlign: "left" }}>
               <Lock size={14} style={{ flex: "none", marginTop: 2 }} />
               The code is only for you: your face is registered with it and checked at every exam, so nobody else can use it.
             </p>
           </div>
-          <div style={{ marginTop: 14 }}><ExamNumberCard code={got.code} /></div>
         </>) : (
           <form className="card" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="field">
               <label htmlFor="claim-name"><UserRound size={11} /> Your full name</label>
-              <input id="claim-name" value={name} onChange={e => setName(e.target.value.slice(0, 80))} placeholder="e.g. Kasang Kevin Joy"
+              <input id="claim-name" value={name} onChange={e => setName(e.target.value.slice(0, 80))} placeholder="e.g. Dan James"
                 autoComplete="name" autoCapitalize="words" required />
             </div>
             <p className="faint" style={{ fontSize: 12.5, margin: "-6px 0 0" }}>Type at least two of your names, in any order. Small spelling mistakes are fine.</p>

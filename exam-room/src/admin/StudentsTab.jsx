@@ -229,13 +229,13 @@ function ClaimLinkCard({ rows, onCopy, copied }) {
   const numbered = list.filter(r => r.exam_number);
   const numbersText = list.filter(r => r.claimable || r.exam_number).slice().sort((a, b) => a.full_name.localeCompare(b.full_name))
     .map((r, i) => `${i + 1}. ${r.full_name} — ${r.exam_number || "(no exam number yet)"}`).join("\n");
-  const groupText = `Council Exams access codes (paid students only):\n1. Open ${link}\n2. Type your full name\n3. Your personal code appears straight away. It is shown ONLY ONCE, so write it down and don't share it.\n4. Type your exam number and send it.\nIf it says you're not on the list, or you lose your code, message the administrator.`;
+  const groupText = `Council Exams access codes (paid students only):\n1. Open ${link}\n2. Type your full name\n3. Your personal code appears straight away. It is shown ONLY ONCE, so write it down and don't share it.\n4. Tap Open my exams, register your face, then type your exam number on your exams page.\nIf it says you're not on the list, or you lose your code, message the administrator.`;
   return (
     <section className="card">
       <h2 style={{ fontSize: 16, marginTop: 0 }}><Link2 size={17} /> Claim link for paid students</h2>
       <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
         Post this link in the class group. A student who has paid types their name and sees their code at once — <strong>only once</strong>: typing the same name again says the code was already collected. Anyone not marked <strong>Paid</strong> gets nothing.
-        After getting their code, students type their <strong>exam number</strong>; it appears under their name in the list below.
+        After signing in with their code and registering their face, students type their <strong>exam number</strong> on their own exams page; it appears under their name in the list below.
       </p>
       <div className="claim-link">
         <code>{link}</code>
