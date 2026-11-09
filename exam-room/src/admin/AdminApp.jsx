@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ShieldCheck, Activity, ClipboardList, Users, BarChart3, LogOut, GraduationCap } from "lucide-react";
+import { ShieldCheck, Activity, ClipboardList, Users, BarChart3, LogOut, GraduationCap, Award, HeartPulse, Scissors, Syringe, Droplets, ChevronRight } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { Spinner } from "../ui.jsx";
 import { SPECIALTIES, getSpecialty, setSpecialty } from "../lib/specialty.js";
@@ -8,6 +8,43 @@ import ExamsTab from "./ExamsTab.jsx";
 import StudentsTab from "./StudentsTab.jsx";
 import ResultsTab from "./ResultsTab.jsx";
 import StudyTab from "./StudyTab.jsx";
+
+// Council Exams is the headline section; the four nursing mock sections sit
+// together in a smaller panel beside it.
+const MOCK_ICONS = { ccn: HeartPulse, periop: Scissors, anaes: Syringe, neph: Droplets };
+
+function SectionSwitcher({ specialty, onChoose }) {
+  const councilOn = specialty === "council";
+  return (
+    <div className="switcher">
+      <button className={`council-tile${councilOn ? " on" : ""}`} aria-pressed={councilOn} onClick={() => onChoose("council")}>
+        <span className="council-icon"><Award size={30} /></span>
+        <span className="council-text">
+          <span className="council-kicker">{councilOn ? "You are managing" : "Open"}</span>
+          <span className="council-title serif">Council Exams</span>
+          <span className="council-papers">
+            <span>Paper 1</span><span>Paper 2</span><span>OSCE</span>
+          </span>
+        </span>
+        <ChevronRight className="council-arrow" size={22} />
+      </button>
+      <div className="mock-panel" role="group" aria-label="Nursing mock exams">
+        <div className="mock-head">Nursing mock exams</div>
+        <div className="mock-grid">
+          {SPECIALTIES.filter(s => s.id !== "council").map(s => {
+            const Icon = MOCK_ICONS[s.id] || GraduationCap;
+            const on = specialty === s.id;
+            return (
+              <button key={s.id} className={`mock-chip${on ? " on" : ""}`} aria-pressed={on} onClick={() => onChoose(s.id)}>
+                <Icon size={15} /> <span>{s.label.replace(" Nursing", "")}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const TABS = [
   { id: "monitor", label: "Live monitor", icon: Activity, Comp: MonitorTab },
@@ -91,15 +128,12 @@ export default function AdminApp() {
         </div>
         <button className="btn btn-ghost btn-sm" onClick={() => supabase.auth.signOut()}><LogOut size={14} /> Log out</button>
       </header>
-      <div className="row" role="tablist" aria-label="Specialty" style={{ gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-        {SPECIALTIES.map(s => (
-          <button key={s.id} role="tab" aria-selected={specialty === s.id}
-            className={`btn btn-sm ${specialty === s.id ? "btn-primary" : "btn-ghost"}`} onClick={() => chooseSpecialty(s.id)}>
-            {s.label}
-          </button>
-        ))}
+      <SectionSwitcher specialty={specialty} onChoose={chooseSpecialty} />
+      <div className="section-title">
+        {specialty === "council" ? <Award size={18} /> : <GraduationCap size={18} />}
+        <span>{specialty === "council" ? "Council Exams" : `${SPECIALTIES.find(s => s.id === specialty)?.label || ""} · mock exams`}</span>
       </div>
-      <nav className="tabs" role="tablist">
+      <nav className="tabs admin-tabs" role="tablist">
         {TABS.map(t => (
           <button key={t.id} role="tab" className="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
             <t.icon size={14} /> {t.label}
