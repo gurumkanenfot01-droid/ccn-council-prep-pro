@@ -446,7 +446,7 @@ function withSecurity(data, sec) {
 }
 function sessionWithSecurity(s, security) {
   if (!security) return s;
-  return { ...s, proctor_level: security.level || s.proctor_level, max_warnings: security.max_warnings || s.max_warnings };
+  return { ...s, proctor_level: security.level || s.proctor_level, max_warnings: security.max_warnings || s.max_warnings, exempt: Array.isArray(security.exempt) ? security.exempt : [] };
 }
 
 export default function StudentApp({ updateReady = false }) {
@@ -575,7 +575,7 @@ export default function StudentApp({ updateReady = false }) {
 
   if (view === "exam" && session) {
     return (
-      <ExamScreen cam={cam} session={session}
+      <ExamScreen cam={cam} session={session} code={code}
         onFinished={r => { cam.stop(); exitFullscreen(); setResult(r); setView("done"); refresh().catch(() => {}); }} />
     );
   }

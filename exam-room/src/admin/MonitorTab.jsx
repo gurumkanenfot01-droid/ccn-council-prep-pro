@@ -9,6 +9,8 @@ import { useLiveWatch, liveSupported } from "../lib/live.js";
 import { Spinner } from "../ui.jsx";
 import { examState } from "./ExamsTab.jsx";
 import { getSpecialty } from "../lib/specialty.js";
+import StudentSettings from "./StudentSettings.jsx";
+import { HeartHandshake, SlidersHorizontal as RulesIcon, Eye as EyeIcon } from "lucide-react";
 
 const POLL_MS = 5000;
 const PHOTO_POLL_MS = 20000;
@@ -22,7 +24,7 @@ export const EVENT_TEXT = {
   screenshot_key: "Screenshot attempt", copy_attempt: "Copy / print / right-click", camera_off: "Camera turned off",
   mic_off: "Microphone turned off", admin_warning: "Warning from administrator", time_added: "Extra time added",
   resumed_by_admin: "Allowed to continue by administrator",
-  device_switch: "Opened on another device / tab", ear_check: "Ear check (before the exam)", room_scan: "Room scan (before the exam)",
+  device_switch: "Opened on another device / tab", warnings_forgiven: "Warnings cleared by administrator", ear_check: "Ear check (before the exam)", room_scan: "Room scan (before the exam)",
 };
 
 export function statusPill(s) {
@@ -314,7 +316,11 @@ export default function MonitorTab() {
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    supabase.from("exam_candidates").select("id, full_name, access_code, active, specialty").order("full_name").then(({ data }) => setCandidates(data || []));
+    const base = "id, full_name, access_code, active, specialty";
+    supabase.from("exam_candidates").select(base + ", watch, exempt_checks, security_level").order("full_name").then(({ data, error: err }) => {
+      if (!err) setCandidates(data || []);
+      else supabase.from("exam_candidates").select(base).order("full_name").then(({ data: d2 }) => setCandidates(d2 || [])); // database not updated yet
+    });
   }, []);
   useEffect(() => { setExamRow(exam || null); seen.current = null; setAlerts([]); }, [exam]);
 
@@ -391,7 +397,9 @@ export default function MonitorTab() {
       candidates.filter(c => c.active && (c.specialty || "ccn") === spec && !started.has(c.id)).forEach(c => list.push({ s: null, c }));
     }
     const rank = r => (!r.s ? 3 : r.s.status === "in_progress" ? (r.s.warnings ? 0 : 1) : 2);
-    return list.sort((a, b) => rank(a) - rank(b) || (b.s?.warnings || 0) - (a.s?.warnings || 0));
+    // Students marked "Watch closely" always come first.
+    const watched = r => (r.c && r.c.watch ? 0 : 1);
+    return list.sort((a, b) => watched(a) - watched(b) || rank(a) - rank(b) || (b.s?.warnings || 0) - (a.s?.warnings || 0));
   }, [sessions, candidates, byCandidate, examRow]);
 
   const matches = (r, f) => {
@@ -429,6 +437,22 @@ export default function MonitorTab() {
     const reason = prompt(`Give ${name} a warning. Reason (shown to them):`, "Talking during the exam");
     if (reason !== null) act("exam_admin_warn", { p_session: s.id, p_reason: reason });
   }
+  // Clear a student's warnings so they are not locked out (kept on their timeline).
+  async function forgive(s, name) {
+    if (!s.warnings) return;
+    if (!confirm(`Clear all ${s.warnings} warning${s.warnings === 1 ? "" : "s"} for ${name}? They stay on the timeline, but no longer count towards the limit.`)) return;
+    const { error: err } = await supabase.from("exam_sessions").update({ warnings: 0 }).eq("id", s.id).eq("status", "in_progress");
+    if (err) { setError(err.message); return; }
+    await supabase.from("exam_events").insert({ exam_id: s.exam_id || examId, candidate_id: s.candidate_id, session_id: s.id, type: "warnings_forgiven", detail: `${s.warnings} warning${s.warnings === 1 ? "" : "s"} cleared by the administrator`, counted: false });
+    poll();
+  }
+  // One student's own rules (security level, checks that don't count, warning limit…).
+  const [rulesFor, setRulesFor] = useState(null);
+  async function openRules(c) {
+    if (!c) return;
+    const { data } = await supabase.from("exam_candidates").select("*").eq("id", c.id).maybeSingle();
+    if (data) setRulesFor([data]);
+  }
   function addTime(s, name) {
     const mins = prompt(`Extra minutes for ${name}:`, "5");
     const n = parseInt(mins, 10);
@@ -454,14 +478,16 @@ export default function MonitorTab() {
 
   const Actions = ({ s, c, compact }) => {
     const name = c?.full_name || "student";
-    if (!s) return null;
+    if (!s) return c ? <button className="btn btn-sm btn-ghost" onClick={() => openRules(c)}><RulesIcon size={13} />{!compact && " Rules"}</button> : null;
     return (
       <div className="row" style={{ gap: 6 }}>
         <button className="btn btn-sm btn-ghost" onClick={() => setOpen({ s, c })}><Eye size={13} />{!compact && " View"}</button>
+        <button className="btn btn-sm btn-ghost" onClick={() => openRules(c)} aria-label="This student's rules"><RulesIcon size={13} />{!compact && " Rules"}</button>
         {s.status === "in_progress" ? <>
           {!compact && liveSupported() && <button className="btn btn-sm btn-primary" onClick={() => setOpen({ s, c, live: true })} aria-label="Watch live"><Video size={13} /> Live</button>}
           <button className="btn btn-sm btn-ghost" onClick={() => message(s, name)} aria-label="Message"><MessageSquare size={13} />{!compact && " Message"}</button>
           <button className="btn btn-sm btn-ghost" style={{ color: "var(--amber)" }} onClick={() => warn(s, name)} aria-label="Give warning"><Flag size={13} />{!compact && " Warn"}</button>
+          {s.warnings > 0 && <button className="btn btn-sm btn-ghost" style={{ color: "var(--emerald)" }} onClick={() => forgive(s, name)} aria-label="Forgive warnings"><HeartHandshake size={13} />{!compact && " Forgive"}</button>}
           <button className="btn btn-sm btn-ghost" onClick={() => addTime(s, name)} aria-label="Add time"><Clock size={13} />{!compact && " +Time"}</button>
           <button className="btn btn-sm btn-ghost" style={{ color: "var(--red)" }} onClick={() => endSession(s, name)} aria-label="End exam"><XCircle size={13} />{!compact && " End"}</button>
         </> : (
@@ -591,12 +617,13 @@ export default function MonitorTab() {
                 const name = c?.full_name || "Unknown";
                 const on = isOnline(s);
                 return (
-                  <tr key={s ? s.id : c.id}>
+                  <tr key={s ? s.id : c.id} className={c?.watch ? "watched" : undefined}>
                     {livePhotos && <td>{s && photos[s.id] ? <img className="thumb" src={photos[s.id]} alt={`Live photo of ${name}`} /> : <div className="thumb" />}</td>}
                     <td>
                       <div className="row" style={{ gap: 6 }}>
                         {s && s.status === "in_progress" && <span className="dot" style={{ background: on ? "var(--emerald)" : "var(--red)" }} title={on ? "Online" : "Not responding"} />}
                         <strong>{name}</strong>
+                        {c?.watch && <span className="pill pill-bad"><EyeIcon size={11} /> Watch</span>}
                       </div>
                       <div className="faint num" style={{ fontSize: 12 }}>{c?.access_code}{s && s.attempt > 1 ? ` · attempt ${s.attempt}` : ""}</div>
                     </td>
@@ -636,6 +663,9 @@ export default function MonitorTab() {
           </ul>
         </section>
       )}
+
+      {rulesFor && <StudentSettings students={rulesFor} onClose={() => setRulesFor(null)}
+        onSaved={() => { setRulesFor(null); supabase.from("exam_candidates").select("id, full_name, access_code, active, specialty, watch, exempt_checks, security_level").order("full_name").then(({ data }) => data && setCandidates(data)); }} />}
 
       {composing && (
         <MessageDialog

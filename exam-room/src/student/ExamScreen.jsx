@@ -82,8 +82,21 @@ function alertStudent() {
   } catch (e) { /* sound is a bonus */ }
 }
 
-export default function ExamScreen({ cam, session, onFinished }) {
+// Checks the administrator switched off for one student (Students → Settings).
+const EXEMPT_TYPES = { dark: ["dark"], no_face: ["no_face", "looking_away"], people: ["multiple_faces"], noise: ["noise"] };
+
+export default function ExamScreen({ cam, session, onFinished, code = "" }) {
   const token = session.token;
+  // The student's exemptions; re-read every 30 s so the administrator's changes
+  // apply during the exam (e.g. "no light" or "children around").
+  const exemptRef = useRef(Array.isArray(session.exempt) ? session.exempt : []);
+  useEffect(() => {
+    if (!code) return undefined;
+    const t = setInterval(() => api.mySecurity(code).then(sec => {
+      if (sec && Array.isArray(sec.exempt)) exemptRef.current = sec.exempt;
+    }), 30000);
+    return () => clearInterval(t);
+  }, [code]);
   const [q, setQ] = useState(null);              // current question payload
   const [feedback, setFeedback] = useState(null); // { chosen, correct, correct_index, explanation }
   const [busy, setBusy] = useState(false);
@@ -296,6 +309,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
   // Proctoring: violations go straight to the server, which counts them.
   const report = useCallback(async (type, detail, photo) => {
     if (ended.current || isReloading()) return; // refreshing for an update isn't leaving the exam
+    if (exemptRef.current.some(k => (EXEMPT_TYPES[k] || []).includes(type))) return; // switched off for this student
     if (noFaceChecks.current && CAMERA_TYPES.includes(type)) return;
     if (type === "phone" && micOnlyRef.current) return; // no camera in microphone-only mode
     setToast({ text: ((type === "window_blur" || type === "no_face") && detail) || VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
@@ -557,12 +571,12 @@ export default function ExamScreen({ cam, session, onFinished }) {
             ctx.drawImage(v, 0, 0, 16, 12);
             const px = ctx.getImageData(0, 0, 16, 12).data;
             let sum = 0; let max = 0;
-            for (let i = 0; i < px.length; i += 4) { const l = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]; sum += l; if (l > max) max = l; }
+            for (let i = 0; i < px.length; i += 4) { const l = Math.max(px[i], px[i + 1], px[i + 2]); sum += l; if (l > max) max = l; } // any colour of light counts as light
             blackSecs = sum / (px.length / 4) < 3 && max < 10 ? blackSecs + 1 : 0;
           } catch (e) { blackSecs = 0; }
         }
       } else blackSecs = 0;
-      setCamBlocked(blackSecs >= 5);
+      setCamBlocked(blackSecs >= 5 && !exemptRef.current.includes("dark"));
       silentSecs = audioPeak < 1e-6 ? silentSecs + 1 : 0;
       audioPeak = 0;
       setMicBlocked(silentSecs >= 15);
