@@ -67,6 +67,9 @@ function CodeScreen({ onLogin }) {
             Your code is personal. Don’t share it with anyone.
           </p>
         </form>
+        <p className="muted" style={{ textAlign: "center", fontSize: 14, marginTop: 14 }}>
+          Paid but don’t have your code yet? <a href="#/claim"><strong>Get your code</strong></a>
+        </p>
         {isWindowsBrowser() && (
           <p className="muted" style={{ textAlign: "center", fontSize: 13.5, marginTop: 14 }}>
             On a Windows laptop? <a href={DESKTOP_DOWNLOAD_URL}><Download size={13} /> Download the Nursing Exam Room app</a>
