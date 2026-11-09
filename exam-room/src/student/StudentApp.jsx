@@ -145,7 +145,7 @@ function EnrollScreen({ name, nameNeeded, code, cam, faceMode, onEnrolled, onLog
           </p>
         )}
         <ul className="muted" style={{ fontSize: 14, paddingLeft: 18 }}>
-          <li>Sit in good light, facing the camera, with nothing covering your face.</li>
+          <li>Face the camera with nothing covering your face. At night or in a dark room, tap <strong>Use screen light</strong>: your screen turns white and lights up your face.</li>
           <li>Make sure you are alone in view.</li>
         </ul>
         {error && <div className="banner banner-bad">{error}</div>}

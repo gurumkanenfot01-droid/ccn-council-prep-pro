@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadFaceModels, scanFaces, readDescriptor, snapshot } from "./face.js";
+import { loadFaceModels, scanFaces, readDescriptor, snapshot, frameBrightness } from "./face.js";
 import { loadPhoneDetector, phoneInView } from "./phone.js";
 import { IN_APP } from "./app.js";
 
@@ -211,6 +211,9 @@ export const VIOLATION_LABELS = {
   face_mismatch: "Face did not match the registered student",
 };
 
+// Average brightness (0–255) below which faces aren't matched (night, dim room).
+const DIM_FOR_MATCH = 55;
+
 // Runs while `active`. Calls report(type, detail, photo) for each violation
 // and identity(descriptor, photo) about once a minute.
 // video: false = microphone-only mode: no face, phone or camera checks, and no
@@ -277,8 +280,12 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
       // Identity check about once a minute (the database does the matching).
       timers.push(setInterval(async () => {
         try {
-          const r = await readDescriptor(cam.getVideo());
-          if (alive && r.descriptor) cb.current.identity(r.descriptor, snapshot(cam.getVideo()));
+          // In a very dim picture the face can't be matched fairly, so only the
+          // photo is sent (the administrator sees it); no mismatch is counted.
+          const v = cam.getVideo();
+          if (frameBrightness(v) < DIM_FOR_MATCH) { if (alive) cb.current.identity(null, snapshot(v)); return; }
+          const r = await readDescriptor(v);
+          if (alive && r.descriptor) cb.current.identity(r.descriptor, snapshot(v));
         } catch (e) { /* try again next minute */ }
       }, IDENTITY_EVERY_MS));
     }).catch(() => setFace("checking"));

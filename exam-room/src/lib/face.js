@@ -89,11 +89,63 @@ export async function scanFaces(video) {
   return found.map(f => ({ score: f.detection.score, box: f.detection.box, yaw: yawOf(f.landmarks) }));
 }
 
+// How bright the picture is, 0–255 (each pixel's brightest colour channel,
+// so a red or blue bulb still counts as light).
+let meterCanvas = null;
+export function frameBrightness(video) {
+  if (!videoReady(video)) return 255;
+  meterCanvas = meterCanvas || document.createElement("canvas");
+  meterCanvas.width = 32; meterCanvas.height = 24;
+  const ctx = meterCanvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0, 32, 24);
+  const px = ctx.getImageData(0, 0, 32, 24).data;
+  let sum = 0;
+  for (let i = 0; i < px.length; i += 4) sum += Math.max(px[i], px[i + 1], px[i + 2]);
+  return sum / (px.length / 4);
+}
+
+// Brightens a dark picture while keeping its colours (all channels get the
+// same gain), so the face reads like one taken in better light.
+function brighten(ctx, w, h) {
+  const img = ctx.getImageData(0, 0, w, h);
+  const px = img.data;
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < px.length; i += 4) hist[Math.max(px[i], px[i + 1], px[i + 2])]++;
+  let hi = 255, acc = 0;
+  for (let v = 255; v >= 0; v--) { acc += hist[v]; if (acc >= (px.length / 4) * 0.02) { hi = v; break; } }
+  const gain = Math.min(4, 230 / Math.max(hi, 1));
+  if (gain <= 1.15) return false;
+  for (let i = 0; i < px.length; i += 4) {
+    px[i] = Math.min(255, px[i] * gain); px[i + 1] = Math.min(255, px[i + 1] * gain); px[i + 2] = Math.min(255, px[i + 2] * gain);
+  }
+  ctx.putImageData(img, 0, 0);
+  return true;
+}
+
+let brightCanvas = null;
+function brightFrame(video) {
+  const w = Math.min(640, video.videoWidth);
+  const h = Math.round((video.videoHeight / video.videoWidth) * w) || 480;
+  brightCanvas = brightCanvas || document.createElement("canvas");
+  brightCanvas.width = w; brightCanvas.height = h;
+  const ctx = brightCanvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0, w, h);
+  brighten(ctx, w, h);
+  return brightCanvas;
+}
+
 // The face descriptor of the single face in view.
 // Returns { descriptor } or { error: "no_face" | "multiple_faces" }.
+// At night: if the normal picture shows no face, a gentler detector and then
+// a brightened copy of the picture are tried.
 export async function readDescriptor(video) {
   if (!faceapi || !videoReady(video)) return { error: "no_face" };
-  const found = await faceapi.detectAllFaces(video, detectorOptions()).withFaceLandmarks().withFaceDescriptors();
+  let found = await faceapi.detectAllFaces(video, detectorOptions()).withFaceLandmarks().withFaceDescriptors();
+  const gentle = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 });
+  if (found.length === 0) found = await faceapi.detectAllFaces(video, gentle).withFaceLandmarks().withFaceDescriptors();
+  if (found.length === 0) {
+    try { found = await faceapi.detectAllFaces(brightFrame(video), gentle).withFaceLandmarks().withFaceDescriptors(); } catch (e) { found = []; }
+  }
   if (found.length === 0) return { error: "no_face" };
   if (found.length > 1) return { error: "multiple_faces" };
   return { descriptor: Array.from(found[0].descriptor), yaw: yawOf(found[0].landmarks) };
@@ -120,6 +172,9 @@ export function snapshot(video, width = 240) {
   const height = Math.round((video.videoHeight / video.videoWidth) * width);
   snapCanvas.width = width;
   snapCanvas.height = height;
-  snapCanvas.getContext("2d").drawImage(video, 0, 0, width, height);
+  const ctx = snapCanvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0, width, height);
+  // A dark room: brighten the photo so the administrator can see the face.
+  try { brighten(ctx, width, height); } catch (e) { /* keep the plain photo */ }
   try { return snapCanvas.toDataURL("image/jpeg", 0.6); } catch (e) { return null; }
 }

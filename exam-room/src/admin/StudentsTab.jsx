@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck, Hash } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck, Hash, KeyRound } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner, MoreMenu } from "../ui.jsx";
@@ -559,6 +559,9 @@ export default function StudentsTab() {
                               </button>}
                               {r.claimable && r.claimed_at && <button onClick={() => confirm(`Let ${r.full_name} collect their code on the claim link one more time?`) && update(r.id, { claimed_at: null }, `${r.full_name} can collect their code on the claim link once more.`)}>
                                 <RotateCcw size={15} /> Let them collect the code again
+                              </button>}
+                              {!r.name_pending && <button onClick={() => confirm(`Give ${r.full_name} a new access code? The old code (${r.access_code}) stops working at once.${"claimable" in r && r.claimable ? " They can collect the new code once on the claim link." : ""}`) && update(r.id, { access_code: newCode(), ...("claimable" in r && r.claimable ? { claimed_at: null } : {}) }, `${r.full_name} has a new code. The old one no longer works.`)}>
+                                <KeyRound size={15} /> New code (old one stops working)
                               </button>}
                               <hr />
                               <button onClick={() => update(r.id, { active: !r.active }, r.active ? "Code disabled — any exam in progress will end." : "Code enabled.")}>
