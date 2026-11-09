@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Layers, MessageCircle } from "lucide-react";
+import { Layers, MessageCircle, Clock } from "lucide-react";
 import { api } from "../lib/api.js";
 import { ADMIN_WHATSAPP } from "./StudentApp.jsx";
 
@@ -9,12 +9,19 @@ const NAMES = { 100: "Full questions", 80: "80% of the questions", 75: "Three qu
 
 export default function PlanCard({ code, name }) {
   const [share, setShare] = useState(null);
+  const [notice, setNotice] = useState("");
   useEffect(() => {
-    api.myPlan(code).then(r => { if (r && r.share) setShare(Number(r.share)); });
+    api.myPlan(code).then(r => {
+      if (r && r.share) setShare(Number(r.share));
+      if (r && r.notice) setNotice(String(r.notice));
+    });
   }, [code]);
   if (!share) return null;
   const full = share >= 100;
-  return (
+  return (<>
+    {notice && (
+      <div className="exam-notice" role="note"><Clock size={20} /><span>{notice}</span></div>
+    )}
     <section className={`card plan-card${full ? " full" : ""}`}>
       <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
         <span className="plan-pct">{share}%</span>
@@ -35,5 +42,5 @@ export default function PlanCard({ code, name }) {
         <Layers size={18} className="faint" />
       </div>
     </section>
-  );
+  </>);
 }
