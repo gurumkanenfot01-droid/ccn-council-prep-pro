@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { studentTitle } from "../lib/specialty.js";
 import { AlertTriangle, Calculator as CalcIcon, Eye, VideoOff, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX, RefreshCw } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useProctor, VIOLATION_LABELS, pauseSoundChecks, enterFullscreen, virtualCameraName } from "../lib/proctor.js";
@@ -744,7 +745,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "", counci
 
       <header className="topbar" style={{ flexWrap: "wrap" }}>
         <div className="row">
-          <strong>{session.title}</strong>
+          <strong>{studentTitle(session.title)}</strong>
           {q && <span className="pill pill-off">Question {q.index + 1} / {q.total}</span>}
         </div>
         <div className="row">

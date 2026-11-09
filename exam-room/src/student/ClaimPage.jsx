@@ -47,15 +47,15 @@ export default function ClaimPage() {
     window.location.hash = "#/";
   }
 
-  const wa = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hello, I want my Council Exams access code. My name is ${name.trim()}.`)}`;
+  const wa = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hello, I want my exam access code. My name is ${name.trim()}.`)}`;
 
   return (
     <main className="wrap" style={{ minHeight: "100vh", display: "flex", alignItems: "center" }}>
       <div className="narrow" style={{ width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div className="brand-mark" style={{ margin: "0 auto 10px", width: 52, height: 52, borderRadius: 16 }}><GraduationCap size={26} /></div>
-          <h1 className="serif" style={{ fontSize: 24, margin: "0 0 4px" }}>Council Exams — get your access code</h1>
-          <p className="muted" style={{ margin: 0, fontSize: 14 }}>Paid students: type your name to see your personal code for Paper 1, Paper 2 and the OSCE.</p>
+          <h1 className="serif" style={{ fontSize: 24, margin: "0 0 4px" }}>Get your exam access code</h1>
+          <p className="muted" style={{ margin: 0, fontSize: 14 }}>Paid students: type your name to see your personal access code.</p>
         </div>
 
         {got ? (<>
@@ -86,10 +86,10 @@ export default function ClaimPage() {
             </div>
             <p className="faint" style={{ fontSize: 12.5, margin: "-6px 0 0" }}>Type at least two of your names, in any order. Small spelling mistakes are fine.</p>
             {problem && <div className="error" role="alert">{problem}</div>}
-            {lost && <a className="btn btn-sm btn-success" style={{ alignSelf: "flex-start" }} href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hello, I lost my Council Exams access code. My name is ${name.trim()}.`)}`} target="_blank" rel="noreferrer"><MessageCircle size={14} /> Message the administrator</a>}
+            {lost && <a className="btn btn-sm btn-success" style={{ alignSelf: "flex-start" }} href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hello, I lost my exam access code. My name is ${name.trim()}.`)}`} target="_blank" rel="noreferrer"><MessageCircle size={14} /> Message the administrator</a>}
             {notPaid && (
               <div className="banner banner-bad" role="alert" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <span>That name is not on the list of students who have paid for the Council Exams. Check the spelling, or message the administrator ({ADMIN_WHATSAPP_DISPLAY}).</span>
+                <span>That name is not on the list of students who have paid. Check the spelling, or message the administrator ({ADMIN_WHATSAPP_DISPLAY}).</span>
                 <a className="btn btn-sm btn-success" style={{ alignSelf: "flex-start" }} href={wa} target="_blank" rel="noreferrer"><MessageCircle size={14} /> Message the administrator</a>
               </div>
             )}

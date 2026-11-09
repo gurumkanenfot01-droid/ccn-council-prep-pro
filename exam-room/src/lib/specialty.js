@@ -19,3 +19,9 @@ export function setSpecialty(id) {
   current = id;
   try { localStorage.setItem(KEY, id); } catch (e) { /* ignore */ }
 }
+
+// What students see as an exam's name: "Council Exam — Paper 1" → "Paper 1",
+// so the word "Council" never shows on the student side.
+export function studentTitle(title) {
+  return String(title || "").replace(/^\s*council\s+exams?\s*[—–:-]\s*/i, "").replace(/\bcouncil\s+/gi, "") || String(title || "");
+}

@@ -5,7 +5,7 @@ import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckC
 import { api, serverNow, fmtClock } from "../lib/api.js";
 import { useCamera, enterFullscreen, exitFullscreen, virtualCameraLabel } from "../lib/proctor.js";
 import { snapshot, loadFaceModels } from "../lib/face.js";
-import { specialtyLabel } from "../lib/specialty.js";
+import { specialtyLabel, studentTitle } from "../lib/specialty.js";
 import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL, isAndroidBrowser, isWindowsBrowser } from "../lib/app.js";
 import { PermissionHelp, Spinner, fmtDateTime } from "../ui.jsx";
 import Liveness from "./Liveness.jsx";
@@ -246,7 +246,7 @@ function ExamCard({ exam, onStart }) {
   }
   return (
     <div className="card exam-card">
-      <div className="row"><strong style={{ fontSize: 16 }}>{exam.title}</strong></div>
+      <div className="row"><strong style={{ fontSize: 16 }}>{studentTitle(exam.title)}</strong></div>
       <div className="muted" style={{ fontSize: 13.5 }}>
         <Clock size={13} /> {anytime ? "Available anytime" : `${fmtDateTime(exam.starts_at)} – ${fmtDateTime(exam.ends_at)}`} · {exam.duration_minutes} min · {exam.question_count} questions
         {allowed > 1 && ` · ${allowed} attempts allowed`}
@@ -373,7 +373,7 @@ function PrepScreen({ exam, name, code, cam, faceMode, night = false, onStarted,
       <Header name={name} />
       <div className="narrow" style={{ maxWidth: 560 }}>
         <button className="btn btn-ghost btn-sm" onClick={() => { cam.stop(); exitFullscreen(); onBack(); }} style={{ marginBottom: 12 }}>← Back</button>
-        <h1 className="serif" style={{ fontSize: 22, margin: "0 0 4px" }}>{exam.title}</h1>
+        <h1 className="serif" style={{ fontSize: 22, margin: "0 0 4px" }}>{studentTitle(exam.title)}</h1>
         <p className="muted" style={{ marginTop: 0 }}>
           {exam.question_count} questions · {exam.duration_minutes} minutes
           {exam.per_question_seconds ? ` · ${exam.per_question_seconds} seconds per question` : ""}
@@ -615,7 +615,7 @@ export default function StudentApp({ updateReady = false }) {
     <main className="wrap">
       <Header name={profile.name} onLogout={logout} />
       <h1 className="serif" style={{ fontSize: 24, margin: "0 0 4px" }}>Welcome, {profile.name.split(" ")[0]}</h1>
-      <p className="muted" style={{ margin: "0 0 12px", fontSize: 13.5 }}>{specialtyLabel(profile.specialty)}</p>
+      {profile.specialty !== "council" && <p className="muted" style={{ margin: "0 0 12px", fontSize: 13.5 }}>{specialtyLabel(profile.specialty)}</p>}
       {faceMode === "full" && profile.face_status === "pending" && (
         <div className="banner banner-warn"><Hourglass size={16} /> Your face registration is waiting for approval. You can start exams once it’s approved.</div>
       )}
