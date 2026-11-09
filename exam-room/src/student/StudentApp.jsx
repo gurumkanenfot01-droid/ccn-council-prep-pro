@@ -249,6 +249,9 @@ function ExamCard({ exam, onStart }) {
     action = <span className="pill pill-off">Closed</span>;
   } else if (exam.paused) {
     action = <span className="pill pill-warn">Paused by administrator</span>;
+  } else if (!exam.question_count && exam.session_status !== "in_progress") {
+    // Open, but the questions aren't loaded yet. Shows Start by itself once they are (the list refreshes every 30 s).
+    action = <span className="pill pill-warn waiting-q"><Hourglass size={13} /> Waiting for questions to be decided — please hold on</span>;
   } else {
     action = (
       <button className="btn btn-primary" onClick={() => onStart(exam)}>
