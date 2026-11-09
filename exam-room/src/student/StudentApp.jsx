@@ -248,7 +248,7 @@ function ExamCard({ exam, onStart }) {
     <div className="card exam-card">
       <div className="row"><strong style={{ fontSize: 16 }}>{studentTitle(exam.title)}</strong></div>
       <div className="muted" style={{ fontSize: 13.5 }}>
-        <Clock size={13} /> {anytime ? "Available anytime" : `${fmtDateTime(exam.starts_at)} – ${fmtDateTime(exam.ends_at)}`} · {exam.duration_minutes} min · {exam.question_count} questions
+        <Clock size={13} /> {anytime ? "Available anytime" : `${fmtDateTime(exam.starts_at)} – ${fmtDateTime(exam.ends_at)}`} · {exam.duration_minutes} min{exam.question_count ? ` · ${exam.question_count} questions` : ""}
         {allowed > 1 && ` · ${allowed} attempts allowed`}
       </div>
       <div>{action}</div>

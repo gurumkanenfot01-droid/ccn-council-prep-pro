@@ -4,8 +4,11 @@
 set lock_timeout = '10s';
 
 alter table public.exam_settings add column if not exists council_notice text not null
-  default 'Your exams will be available from 11:00 pm to 2:00 am.';
+  default 'Paper 1: Tuesday 10 November · Paper 2: Wednesday 11 November · OSCE: Friday 13 November — each from 11:00 pm to 2:00 am.';
 insert into public.exam_settings(id) values (1) on conflict (id) do nothing;
+-- The first wording, if nobody has changed it yet → the exam dates.
+update public.exam_settings set council_notice = 'Paper 1: Tuesday 10 November · Paper 2: Wednesday 11 November · OSCE: Friday 13 November — each from 11:00 pm to 2:00 am.'
+ where id = 1 and council_notice = 'Your exams will be available from 11:00 pm to 2:00 am.';
 
 -- The student's share of the questions, plus the message (for council students only).
 create or replace function public.exam_my_plan(p_code text) returns jsonb
