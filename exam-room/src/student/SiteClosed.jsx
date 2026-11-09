@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 import { api } from "../lib/api.js";
-import HelpLine from "./HelpLine.jsx";
 
 // The administrator can close the student site for a while (Students page).
 // Checked on open and every 30 s, so it closes / reopens by itself.
@@ -23,10 +22,9 @@ export default function SiteClosed({ message }) {
       <div className="narrow" style={{ width: "100%", textAlign: "center" }}>
         <div className="brand-mark" style={{ margin: "0 auto 12px", width: 56, height: 56, borderRadius: 16 }}><Lock size={26} /></div>
         <h1 className="serif" style={{ fontSize: 24, margin: "0 0 8px" }}>Nursing Exam Room</h1>
-        <div className="card" style={{ fontSize: 16, fontWeight: 600, marginBottom: 14 }}>
+        <div className="card" style={{ fontSize: 16, fontWeight: 600 }}>
           {message || "The exam site is closed for now. Please check back later."}
         </div>
-        <HelpLine />
       </div>
     </main>
   );
