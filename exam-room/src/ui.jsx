@@ -93,7 +93,7 @@ export function fmtDateTime(iso) {
 // "⋯ More" menu for row actions. The list floats above the page (position:
 // fixed), so it is never cut off inside a scrolling table, opens upwards near
 // the bottom of the screen, and closes on any choice, outside tap or Escape.
-export function MoreMenu({ label = "More", ariaLabel, compact = false, icon, children }) {
+export function MoreMenu({ label = "More", ariaLabel, compact = false, icon, children, keepOpen = false }) {
   const ref = useRef(null);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
@@ -131,7 +131,7 @@ export function MoreMenu({ label = "More", ariaLabel, compact = false, icon, chi
       </button>
       {open && pos && (
         <div className="menu-list" role="menu" style={{ position: "fixed", right: "auto", ...pos }}
-          onClick={e => { if (e.target.closest("button")) setOpen(false); }}>
+          onClick={e => { const b = e.target.closest("button"); if (b && (!keepOpen || b.dataset.close)) setOpen(false); }}>
           {children}
         </div>
       )}

@@ -10,7 +10,7 @@ import { Spinner, MoreMenu } from "../ui.jsx";
 import { examState } from "./ExamsTab.jsx";
 import { getSpecialty } from "../lib/specialty.js";
 import StudentSettings from "./StudentSettings.jsx";
-import { HeartHandshake, SlidersHorizontal as RulesIcon, Eye as EyeIcon, MoreHorizontal } from "lucide-react";
+import { HeartHandshake, SlidersHorizontal as RulesIcon, Eye as EyeIcon, MoreHorizontal, BadgeCheck, Lightbulb } from "lucide-react";
 
 const POLL_MS = 5000;
 const PHOTO_POLL_MS = 20000;
@@ -26,6 +26,17 @@ export const EVENT_TEXT = {
   resumed_by_admin: "Allowed to continue by administrator",
   device_switch: "Opened on another device / tab", warnings_forgiven: "Warnings cleared by administrator", ear_check: "Ear check (before the exam)", room_scan: "Room scan (before the exam)",
 };
+
+// One-tap permissions on the Live monitor (same as the student's "checks that
+// won't count"). Everything not permitted stays as strict as before.
+const PERMITS = [
+  ["dark", "Low light / dark room", Moon],
+  ["no_face", "Face not showing", EyeOff],
+  ["people", "Other people in view", Users],
+  ["noise", "Noise or talking", Volume2],
+];
+const PERMIT_FOR_EVENT = { dark: "dark", no_face: "no_face", looking_away: "no_face", multiple_faces: "people", noise: "noise" };
+const PERMIT_SHORT = { dark: "low light", no_face: "face not showing", people: "other people", noise: "noise" };
 
 export function statusPill(s) {
   if (!s) return <span className="pill pill-off">Not started</span>;
@@ -446,6 +457,26 @@ export default function MonitorTab() {
     await supabase.from("exam_events").insert({ exam_id: s.exam_id || examId, candidate_id: s.candidate_id, session_id: s.id, type: "warnings_forgiven", detail: `${s.warnings} warning${s.warnings === 1 ? "" : "s"} cleared by the administrator`, counted: false });
     poll();
   }
+  // Permit (or take back) one check for one student, straight from the monitor.
+  async function setPermit(c, key, on) {
+    if (!c) return;
+    const cur = Array.isArray(c.exempt_checks) ? c.exempt_checks : [];
+    const next = on ? [...new Set([...cur, key])] : cur.filter(k => k !== key);
+    const { error: err } = await supabase.from("exam_candidates").update({ exempt_checks: next }).eq("id", c.id);
+    if (err) { setError(/exempt_checks/.test(err.message) ? "The database hasn't been updated for permissions yet. Merge the latest update on GitHub and wait 3 minutes." : err.message); return; }
+    setError("");
+    setCandidates(prev => prev.map(x => (x.id === c.id ? { ...x, exempt_checks: next } : x)));
+  }
+  const permitted = (c, key) => !!(c && Array.isArray(c.exempt_checks) && c.exempt_checks.includes(key));
+  // A permit button for a warning in the alert box / warning log.
+  const PermitFor = ({ e }) => {
+    const key = PERMIT_FOR_EVENT[e.type];
+    const c = byCandidate[e.candidate_id];
+    if (!key || !c) return null;
+    return permitted(c, key)
+      ? <span className="pill pill-ok" style={{ marginLeft: 6 }}><BadgeCheck size={12} /> {PERMIT_SHORT[key]} allowed</span>
+      : <button className="btn btn-sm btn-success" style={{ marginLeft: 6, padding: "3px 10px" }} onClick={() => setPermit(c, key, true)}><BadgeCheck size={12} /> Permit {PERMIT_SHORT[key]}</button>;
+  };
   // One student's own rules (security level, checks that don't count, warning limit…).
   const [rulesFor, setRulesFor] = useState(null);
   async function openRules(c) {
@@ -494,6 +525,25 @@ export default function MonitorTab() {
         {!compact && liveSupported() && <button className="btn btn-sm btn-primary" onClick={() => setOpen({ s, c, live: true })} aria-label="Watch live"><Video size={13} /> Live</button>}
         <button className="btn btn-sm btn-ghost" onClick={() => openRules(c)} aria-label="This student's rules"><RulesIcon size={13} />{!compact && " Rules"}</button>
         {s.warnings > 0 && <button className="btn btn-sm btn-ghost" style={{ color: "var(--emerald)" }} onClick={() => forgive(s, name)} aria-label="Forgive warnings"><HeartHandshake size={13} />{!compact && " Forgive"}</button>}
+        {!permitted(c, "dark") && ((s.live_status && s.live_status.face === "dark") || feed.some(e => e.session_id === s.id && e.type === "dark")) && (
+          <button className="btn btn-sm btn-success" onClick={() => setPermit(c, "dark", true)} title="The camera is dark: allow low light for this student (everything else stays strict)">
+            <Lightbulb size={13} /> Allow low light
+          </button>
+        )}
+        <MoreMenu label="Permit" ariaLabel={`Permit checks for ${name}`} icon={<BadgeCheck size={14} />} compact={compact} keepOpen>
+          <div className="menu-head">Allow for {name.split(" ")[0]} only</div>
+          {PERMITS.map(([key, label, Icon]) => {
+            const on = permitted(c, key);
+            return (
+              <button key={key} onClick={() => setPermit(c, key, !on)} className={on ? "is-on" : ""}>
+                <Icon size={15} /> <span style={{ flex: 1 }}>{label}</span>
+                <span className={`mini-switch${on ? " on" : ""}`} aria-hidden="true" />
+              </button>
+            );
+          })}
+          <hr />
+          <button data-close="1" onClick={() => openRules(c)}><RulesIcon size={15} /> All rules for this student…</button>
+        </MoreMenu>
         <MoreMenu ariaLabel={`More actions for ${name}`} icon={<MoreHorizontal size={15} />} compact={compact}>
             <button onClick={() => message(s, name)}><MessageSquare size={15} /> Send a message</button>
             <button onClick={() => warn(s, name)} style={{ color: "var(--amber)" }}><Flag size={15} /> Give a warning</button>
@@ -560,6 +610,7 @@ export default function MonitorTab() {
                 </button>{" "}
                 — {e.type === "phone" ? "📱 " : ""}{EVENT_TEXT[e.type] || e.type}
                 {e.detail ? ` (${e.detail})` : ""}{e.type === "phone" ? " — tap the name to see the photo and watch live" : ""}
+                <PermitFor e={e} />
               </li>
             ))}
           </ul>
@@ -607,7 +658,7 @@ export default function MonitorTab() {
                   Q {Math.min(s.current_index + 1, s.total)}/{s.total} · {fmtClock(new Date(s.deadline).getTime() - now)} left
                 </div>
                 <LiveStatus s={s} online={on} />
-                <div style={{ marginTop: 8 }}><Actions s={s} c={c} compact /></div>
+                <div style={{ marginTop: 8 }}>{Actions({ s, c, compact: true })}</div>
               </div>
             );
           })}
@@ -630,6 +681,11 @@ export default function MonitorTab() {
                         <strong>{name}</strong>
                         {c?.watch && <span className="pill pill-bad"><EyeIcon size={11} /> Watch</span>}
                       </div>
+                      {Array.isArray(c?.exempt_checks) && c.exempt_checks.length > 0 && (
+                        <div className="chip-row" style={{ marginTop: 3 }}>
+                          {c.exempt_checks.map(k => <span key={k} className="pill pill-ok" style={{ fontSize: 10.5 }}><BadgeCheck size={10} /> {PERMIT_SHORT[k] || k} OK</span>)}
+                        </div>
+                      )}
                       <div className="faint num" style={{ fontSize: 12 }}>{c?.access_code}{s && s.attempt > 1 ? ` · attempt ${s.attempt}` : ""}</div>
                     </td>
                     <td>{statusPill(s)}{s && s.status !== "in_progress" && s.ended_reason && <div className="faint" style={{ fontSize: 11.5 }}>{s.ended_reason}</div>}</td>
@@ -639,7 +695,7 @@ export default function MonitorTab() {
                     <td>{s ? <span className={`pill ${s.warnings ? "pill-warn" : "pill-ok"}`}><AlertTriangle size={12} /> {s.warnings}/{examRow?.max_warnings}</span> : "–"}
                       {s && s.face_fail_streak > 0 && <div className="error" style={{ fontSize: 11.5 }}>Face mismatch</div>}</td>
                     <td className="num">{s && s.status === "in_progress" ? fmtClock(new Date(s.deadline).getTime() - now) : "–"}</td>
-                    <td><Actions s={s} c={c} /></td>
+                    <td>{Actions({ s, c })}</td>
                   </tr>
                 );
               })}
@@ -662,6 +718,7 @@ export default function MonitorTab() {
                     onClick={() => row && setOpen(row)}>{byCandidate[e.candidate_id]?.full_name || "?"}</button>
                   <span>{EVENT_TEXT[e.type] || e.type}</span>
                   {e.detail && <span className="faint">· {e.detail}</span>}
+                  <PermitFor e={e} />
                 </li>
               );
             })}
