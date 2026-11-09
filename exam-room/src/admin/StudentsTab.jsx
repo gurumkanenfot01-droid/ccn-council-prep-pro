@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck, Hash, KeyRound } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck, Hash, KeyRound, Percent } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner, MoreMenu } from "../ui.jsx";
@@ -21,6 +21,7 @@ const FIELDS = FIELDS_BASE + ", security_level, max_warnings_override, app_only,
 const FIELDS_MID = FIELDS_BASE + ", security_level, max_warnings_override, app_only";
 // Council claim link (supabase/updates/2026-11-12_council_claim_by_name.sql).
 const FIELDS_CLAIM = FIELDS + ", claimable, claimed_at, claim_count, exam_number";
+const FIELDS_SHARE = FIELDS_CLAIM + ", question_share, amount_paid"; // 2026-11-16 update
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -277,7 +278,8 @@ export default function StudentsTab() {
 
   const load = useCallback(async () => {
     const q = fields => supabase.from("exam_candidates").select(fields).eq("specialty", getSpecialty()).order("created_at", { ascending: false });
-    let { data, error } = await q(FIELDS_CLAIM);
+    let { data, error } = await q(FIELDS_SHARE);
+    if (error && /question_share|amount_paid/.test(error.message || "")) ({ data, error } = await q(FIELDS_CLAIM)); // database not updated yet
     if (error && /claim/.test(error.message || "")) ({ data, error } = await q(FIELDS)); // database not updated yet
     if (error && /exempt_checks|watch/.test(error.message || "")) ({ data, error } = await q(FIELDS_MID)); // database not updated yet
     if (error && /security_level|max_warnings_override|app_only/.test(error.message || "")) ({ data, error } = await q(FIELDS_BASE));
@@ -522,6 +524,7 @@ export default function StudentsTab() {
                       <td data-label="Status">
                         <div className="chip-row" style={{ marginTop: 0 }}>
                         {r.active ? <span className="pill pill-ok">Active</span> : <span className="pill pill-bad">Disabled</span>}
+                        {getSpecialty() === "council" && "question_share" in r && !r.name_pending && <div><span className={`pill ${(r.question_share ?? 100) >= 100 ? "pill-ok" : "pill-warn"}`} style={{ marginTop: 4 }}><Percent size={12} /> {(r.question_share ?? 100) >= 100 ? "Full questions" : `${r.question_share}% of questions`}{r.amount_paid != null ? ` · ₦${Number(r.amount_paid).toLocaleString()}` : ""}</span></div>}
                         {r.claimable && <div><span className="pill pill-ok" style={{ marginTop: 4 }} title={r.claimed_at ? `Collected ${new Date(r.claimed_at).toLocaleString()}` : "Not collected yet"}><BadgeCheck size={12} /> Paid{r.claimed_at ? ` · code collected${r.claim_count > 1 ? ` (${r.claim_count}×)` : ""}` : r.claim_count > 0 ? " · can collect again" : ""}</span></div>}
                         {r.anytime && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Clock size={12} /> Anytime</span></div>}
                         {r.full_access === false && <div><span className="pill pill-warn" style={{ marginTop: 4 }}>Test Run only</span></div>}
