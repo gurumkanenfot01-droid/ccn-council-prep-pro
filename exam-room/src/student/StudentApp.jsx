@@ -629,6 +629,13 @@ export default function StudentApp({ updateReady = false }) {
         <div className="banner banner-warn"><Hourglass size={16} /> Start with the <strong>Test Run</strong> below (5 questions) to see how the exams work. Your full mock exams will appear here once the administrator gives you full access.</div>
       ))}
       {profile.specialty === "council" && <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}><PlanCard code={code} name={profile.name} /><ExamNumberCard code={code} /></div>}
+      {profile.specialty !== "council" && !profile.exams.some(e => !e.session_status || e.session_status === "in_progress") && (
+        <div className="banner banner-info" style={{ flexWrap: "wrap" }}>
+          <Lock size={16} />
+          <span style={{ flex: 1, minWidth: 200 }}>The mock exams are closed for now. <strong>Paid for the exams?</strong> They use a different access code, not this one.</span>
+          <a className="btn btn-sm btn-primary" href="#/claim" onClick={() => { cam.stop(); }}>Get my exam code</a>
+        </div>
+      )}
       {refreshError && <div className="banner banner-warn">{refreshError}</div>}
       {needApp && <AppRequired kind={needApp} />}
       <div className="row" style={{ marginBottom: 10 }}>
