@@ -1,8 +1,10 @@
 -- Council Exams: students who have paid get their access code by typing their
 -- name on the claim page (/#/claim). Safe to run again.
 --   claimable    this student may get their code by typing their name (paid)
---   claimed_at   last time the code was shown on the claim page
---   claim_count  how many times it was shown (more than 1 = check it was the right person)
+--   claimed_at   when the code was shown on the claim page. It is shown ONCE:
+--                after that the page says "already collected" until the
+--                administrator taps "Let them collect the code again" (sets it back to null)
+--   claim_count  how many times it was shown in total
 set lock_timeout = '10s';
 
 alter table public.exam_candidates add column if not exists claimable boolean not null default false;
@@ -42,6 +44,7 @@ $$;
 -- At least two words of their name must match, in any order; with three or
 -- more words typed, one extra word (e.g. a name not on the list) is allowed.
 -- Wrong names count towards the same 15-in-10-minutes limit as wrong codes.
+-- Each code is shown only once: a second try gets 'already_claimed'.
 create or replace function public.exam_claim_code(p_name text) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
@@ -72,8 +75,12 @@ begin
   if hits > 1 then return exam__err('ambiguous'); end if;
 
   update exam_candidates set claimed_at = now(), claim_count = claim_count + 1
-  where id = pick
+  where id = pick and claimed_at is null
   returning * into c;
+  if c.id is null then
+    insert into exam_login_attempts(ip, ok) values (exam__client_ip(), false);
+    return exam__err('already_claimed');
+  end if;
   insert into exam_login_attempts(ip, ok) values (exam__client_ip(), true);
   return jsonb_build_object('code', c.access_code, 'name', c.full_name);
 end; $$;
