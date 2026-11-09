@@ -637,3 +637,108 @@ table.data tbody tr:hover td { background: color-mix(in srgb, var(--brand-b) 5%,
 .mini-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .15s; }
 .mini-switch.on { background: var(--emerald); }
 .mini-switch.on::after { transform: translateX(14px); }
+
+/* =====================================================================
+   Palette 3: colourful, calm base. Ocean-blue primary, each area its
+   own colour (overrides earlier palettes).
+   ===================================================================== */
+:root {
+  --bg: #F3F6FA; --surface: #FFFFFF; --surface-alt: #F1F5F9; --border: #E2E8F0;
+  --text: #0F172A; --muted: #55627A; --faint: #8A97AD;
+  --navy: #2563EB; --navy-soft: #E8F0FF; --on-navy: #FFFFFF;
+  --emerald: #059669; --emerald-soft: #E3F8EF;
+  --red: #E11D48; --red-soft: #FFE8EE;
+  --amber: #C2410C; --amber-soft: #FFF1E6;
+  --brand-a: #2563EB; --brand-b: #0891B2; --brand-c: #10B981;
+  --c-blue: #2563EB; --c-teal: #0D9488; --c-green: #059669; --c-amber: #D97706; --c-rose: #E11D48; --c-violet: #7C3AED; --c-slate: #64748B;
+  --ring: 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0A1120; --surface: #111A2E; --surface-alt: #16213A; --border: #24324F;
+    --text: #E8EEF8; --muted: #9DAACB; --faint: #6C7A99;
+    --navy: #3B82F6; --navy-soft: #142A4D; --on-navy: #FFFFFF;
+    --emerald: #34D399; --emerald-soft: #0E2F27;
+    --red: #FB7185; --red-soft: #3A1621;
+    --amber: #FBBF24; --amber-soft: #33260C;
+    --brand-a: #3B82F6; --brand-b: #06B6D4; --brand-c: #34D399;
+    --c-blue: #60A5FA; --c-teal: #2DD4BF; --c-green: #34D399; --c-amber: #FBBF24; --c-rose: #FB7185; --c-violet: #A78BFA; --c-slate: #94A3B8;
+    --ring: 0 0 0 4px rgba(96, 165, 250, 0.28);
+  }
+}
+body {
+  background:
+    radial-gradient(900px 420px at 0% -8%, color-mix(in srgb, #2563EB 10%, transparent), transparent 70%),
+    radial-gradient(800px 420px at 100% 0%, color-mix(in srgb, #10B981 9%, transparent), transparent 70%),
+    radial-gradient(700px 380px at 50% 110%, color-mix(in srgb, #F59E0B 7%, transparent), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+}
+.btn-primary { background: linear-gradient(135deg, #2563EB, #0891B2); color: #fff; box-shadow: 0 8px 18px -10px #2563EB; }
+.btn-success { background: linear-gradient(135deg, #059669, #10B981); }
+.brand-mark { background: linear-gradient(135deg, #2563EB, #0D9488); }
+
+/* Council hero: navy → ocean → teal, gold accents, coloured paper chips */
+.switcher2 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.council-hero {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 20px; width: 100%; text-align: left;
+  padding: 24px 26px; min-height: 140px; border-radius: 22px; border: 2px solid transparent; color: #fff;
+  background:
+    radial-gradient(420px 220px at 92% 10%, rgba(251, 191, 36, 0.28), transparent 70%),
+    radial-gradient(500px 260px at 0% 120%, rgba(16, 185, 129, 0.35), transparent 70%),
+    linear-gradient(120deg, #0B1E3F 0%, #0E4D8C 45%, #0E7490 75%, #0F766E 100%);
+  box-shadow: 0 18px 40px -18px rgba(14, 77, 140, 0.75); transition: transform .15s, box-shadow .15s;
+}
+.council-hero:hover { transform: translateY(-2px); }
+.council-hero.on { border-color: #FBBF24; box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3), 0 18px 40px -18px rgba(14, 77, 140, 0.8); }
+.hero-icon { flex: none; display: grid; place-items: center; width: 66px; height: 66px; border-radius: 20px; background: linear-gradient(135deg, #FBBF24, #F59E0B); color: #3B2300; box-shadow: 0 10px 22px -10px #F59E0B; }
+.council-hero .council-title { font-size: clamp(26px, 4.4vw, 36px); }
+.paper-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.pc { font-size: 12.5px; font-weight: 800; padding: 4px 12px; border-radius: 999px; color: #fff; }
+.pc1 { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+.pc2 { background: linear-gradient(135deg, #F59E0B, #FBBF24); color: #3B2300; }
+.pc3 { background: linear-gradient(135deg, #E11D48, #FB7185); }
+.council-hero .council-arrow { opacity: .8; }
+
+/* Mock exam sections: a quiet line under the hero */
+.mock-links { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 13px; padding: 0 4px; }
+.mock-label { color: var(--faint); font-weight: 700; margin-right: 4px; }
+.mock-link { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; color: var(--muted); font-weight: 600; font-size: 13px; padding: 5px 9px; border-radius: 999px; }
+.mock-link:hover { background: var(--surface-alt); color: var(--text); }
+.mock-link.on { background: var(--surface); color: var(--text); box-shadow: 0 0 0 1px var(--border); }
+
+/* Tabs: each tab has its own colour */
+.admin-tabs .tab { color: var(--muted); }
+.admin-tabs .tab svg { color: var(--tab-c); }
+.admin-tabs .tab:hover { color: var(--text); background: color-mix(in srgb, var(--tab-c) 8%, transparent); }
+.admin-tabs .tab[aria-selected="true"] { background: var(--tab-c); color: #fff; box-shadow: 0 8px 16px -10px var(--tab-c); }
+.admin-tabs .tab[aria-selected="true"] svg { color: #fff; }
+.tab-monitor { --tab-c: var(--c-rose); }
+.tab-exams { --tab-c: var(--c-blue); }
+.tab-students { --tab-c: var(--c-green); }
+.tab-results { --tab-c: var(--c-amber); }
+.tab-study { --tab-c: var(--c-violet); }
+@media (prefers-color-scheme: dark) { .admin-tabs .tab[aria-selected="true"] { color: #0A1120; } .admin-tabs .tab[aria-selected="true"] svg { color: #0A1120; } }
+
+/* Number cards: each its own colour */
+.stat-grid > .stat { --st: var(--c-blue); background: linear-gradient(180deg, color-mix(in srgb, var(--st) 9%, var(--surface)), var(--surface) 70%); border-color: color-mix(in srgb, var(--st) 22%, var(--border)); }
+.stat-grid > .stat::before { background: var(--st); height: 4px; }
+.stat-grid > .stat .num { color: var(--st); }
+.stat-grid > .stat:nth-child(2) { --st: var(--c-amber); }
+.stat-grid > .stat:nth-child(3) { --st: var(--c-rose); }
+.stat-grid > .stat:nth-child(4) { --st: var(--c-green); }
+.stat-grid > .stat:nth-child(5) { --st: var(--c-slate); }
+
+/* Selected filter / segmented buttons use the primary blue gradient */
+.seg5 button.on, .chips button.on { background: linear-gradient(135deg, #2563EB, #0891B2); }
+.student-panel .sp-head { background:
+    radial-gradient(360px 180px at 95% 0%, rgba(251, 191, 36, 0.25), transparent 70%),
+    linear-gradient(120deg, #0B1E3F 0%, #0E4D8C 50%, #0E7490 85%, #0F766E 100%); }
+.sp-avatar { background: linear-gradient(135deg, #FBBF24, #F59E0B); color: #3B2300; }
+.preset-row.on { border-color: var(--c-blue); }
+.p-plain { background: color-mix(in srgb, var(--c-blue) 14%, transparent); color: var(--c-blue); }
+.p-sky { background: color-mix(in srgb, var(--c-teal) 16%, transparent); color: var(--c-teal); }
+.p-firm { background: color-mix(in srgb, var(--c-amber) 16%, transparent); color: var(--c-amber); }
+.p-hard { background: color-mix(in srgb, var(--c-rose) 15%, transparent); color: var(--c-rose); }
+.p-calm { background: color-mix(in srgb, var(--c-green) 15%, transparent); color: var(--c-green); }
+.section-title { color: var(--text); font-size: 16px; }
