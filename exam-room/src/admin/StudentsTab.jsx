@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck, Hash } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner, MoreMenu } from "../ui.jsx";
@@ -20,7 +20,7 @@ const FIELDS_BASE = "id, full_name, access_code, face_status, active, enrolled_a
 const FIELDS = FIELDS_BASE + ", security_level, max_warnings_override, app_only, exempt_checks, watch";
 const FIELDS_MID = FIELDS_BASE + ", security_level, max_warnings_override, app_only";
 // Council claim link (supabase/updates/2026-11-12_council_claim_by_name.sql).
-const FIELDS_CLAIM = FIELDS + ", claimable, claimed_at, claim_count";
+const FIELDS_CLAIM = FIELDS + ", claimable, claimed_at, claim_count, exam_number";
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -50,8 +50,8 @@ async function insertCandidates(rows) {
 function csvCell(v) { const t = String(v ?? ""); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; }
 
 function downloadCsv(list, site, filename) {
-  const lines = [["Name", "Access code", "Batch", "Face", "Exam site"],
-    ...list.map(r => [r.name_pending ? "" : r.full_name, r.access_code, r.batch, r.face_status, site])];
+  const lines = [["Name", "Access code", "Exam number", "Batch", "Face", "Exam site"],
+    ...list.map(r => [r.name_pending ? "" : r.full_name, r.access_code, r.exam_number || "", r.batch, r.face_status, site])];
   const blob = new Blob(["\ufeff" + lines.map(l => l.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = filename;
@@ -224,28 +224,34 @@ function ClaimLinkCard({ rows, onCopy, copied }) {
     );
   }
   const paid = list.filter(r => r.claimable);
-  const collected = paid.filter(r => r.claim_count > 0);
+  const collected = paid.filter(r => r.claimed_at);
   const repeat = paid.filter(r => r.claim_count > 1);
-  const groupText = `Council Exams access codes (paid students only):\n1. Open ${link}\n2. Type your full name\n3. Your personal code appears straight away. Write it down and don't share it.\nIf it says you're not on the list, message the administrator.`;
+  const numbered = list.filter(r => r.exam_number);
+  const numbersText = list.filter(r => r.claimable || r.exam_number).slice().sort((a, b) => a.full_name.localeCompare(b.full_name))
+    .map((r, i) => `${i + 1}. ${r.full_name} — ${r.exam_number || "(no exam number yet)"}`).join("\n");
+  const groupText = `Council Exams access codes (paid students only):\n1. Open ${link}\n2. Type your full name\n3. Your personal code appears straight away. It is shown ONLY ONCE, so write it down and don't share it.\n4. Type your exam number and send it.\nIf it says you're not on the list, or you lose your code, message the administrator.`;
   return (
     <section className="card">
       <h2 style={{ fontSize: 16, marginTop: 0 }}><Link2 size={17} /> Claim link for paid students</h2>
       <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
-        Post this link in the class group. A student who has paid types their name and sees their code at once. Anyone not marked <strong>Paid</strong> gets nothing.
+        Post this link in the class group. A student who has paid types their name and sees their code at once — <strong>only once</strong>: typing the same name again says the code was already collected. Anyone not marked <strong>Paid</strong> gets nothing.
+        After getting their code, students type their <strong>exam number</strong>; it appears under their name in the list below.
       </p>
       <div className="claim-link">
         <code>{link}</code>
         <button className="btn btn-primary btn-sm" onClick={() => onCopy(link, "claim-link")}>{copied === "claim-link" ? <Check size={14} /> : <Copy size={14} />} Copy link</button>
         <button className="btn btn-ghost btn-sm" onClick={() => onCopy(groupText, "claim-text")}>{copied === "claim-text" ? <Check size={14} /> : <Copy size={14} />} Copy message for the group</button>
+        {"exam_number" in (list[0] || {}) && <button className="btn btn-ghost btn-sm" onClick={() => onCopy(numbersText, "claim-numbers")}>{copied === "claim-numbers" ? <Check size={14} /> : <Hash size={14} />} Copy names and exam numbers</button>}
       </div>
       <div className="chip-row" style={{ marginTop: 10 }}>
         <span className="pill pill-ok"><BadgeCheck size={12} /> {paid.length} paid</span>
         <span className="pill">{collected.length} collected their code</span>
         <span className="pill pill-warn">{paid.length - collected.length} not yet</span>
-        {repeat.length > 0 && <span className="pill pill-bad" title="The code was shown more than once. Check the face photo is the right student.">{repeat.length} opened more than once</span>}
+        <span className="pill pill-ok"><Hash size={12} /> {numbered.length} sent their exam number</span>
+        {repeat.length > 0 && <span className="pill pill-bad" title="You let them collect the code again. Check the face photo is the right student.">{repeat.length} collected more than once</span>}
       </div>
       <p className="faint" style={{ fontSize: 12.5, margin: "10px 0 0" }}>
-        To add or remove a student, open <MoreHorizontal size={12} /> on their row → <em>Paid</em>. The face photo they register is the check that the right person took the code.
+        To add or remove a student, open <MoreHorizontal size={12} /> on their row → <em>Paid</em>. If a student lost their code, send it to them yourself, or use <em>Let them collect the code again</em> in the same menu. The face photo they register is the check that the right person took the code.
       </p>
     </section>
   );
@@ -366,7 +372,7 @@ export default function StudentsTab() {
   const batches = useMemo(() => [...new Set((rows || []).map(r => r.batch).filter(Boolean))].sort(), [rows]);
   const filtered = useMemo(() => (rows || []).filter(r =>
     (!batchFilter || r.batch === batchFilter) &&
-    (!query || r.full_name.toLowerCase().includes(query.toLowerCase()) || r.access_code.includes(query.toUpperCase()))), [rows, query, batchFilter]);
+    (!query || r.full_name.toLowerCase().includes(query.toLowerCase()) || r.access_code.includes(query.toUpperCase()) || (r.exam_number || "").includes(query.toUpperCase()))), [rows, query, batchFilter]);
   const listText = list => list.map(r => `${r.name_pending ? "(blank)" : r.full_name} — ${r.access_code}`).join("\n") + `\n\nExam site: ${site}`;
   const stamp = () => new Date().toISOString().slice(0, 10);
   const pending = (rows || []).filter(r => r.face_status === "pending").length;
@@ -460,7 +466,7 @@ export default function StudentsTab() {
           <span className="spacer" />
           <div className="field" style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <Search size={14} />
-            <input placeholder="Search name or code" value={query} onChange={e => setQuery(e.target.value)} style={{ maxWidth: 200 }} />
+            <input placeholder="Search name, code or exam no." value={query} onChange={e => setQuery(e.target.value)} style={{ maxWidth: 200 }} />
           </div>
           {batches.length > 0 && (
             <select aria-label="Filter by group" value={batchFilter} onChange={e => setBatchFilter(e.target.value)} style={{ maxWidth: 180 }}>
@@ -503,6 +509,7 @@ export default function StudentsTab() {
                             {(r.exempt_checks || []).map(k => <span key={k} className="pill pill-ok"><Moon size={11} /> {exemptLabel(k)} OK</span>)}
                           </div>
                         )}
+                        {r.exam_number && <div className="exam-no"><Hash size={11} /> Exam no. <strong className="num">{r.exam_number}</strong></div>}
                         {r.batch && <div className="faint" style={{ fontSize: 12 }}>{r.batch}</div>}
                       </td>
                       <td data-label="Access code">
@@ -515,7 +522,7 @@ export default function StudentsTab() {
                       <td data-label="Status">
                         <div className="chip-row" style={{ marginTop: 0 }}>
                         {r.active ? <span className="pill pill-ok">Active</span> : <span className="pill pill-bad">Disabled</span>}
-                        {r.claimable && <div><span className="pill pill-ok" style={{ marginTop: 4 }} title={r.claimed_at ? `Last opened ${new Date(r.claimed_at).toLocaleString()}` : "Not collected yet"}><BadgeCheck size={12} /> Paid{r.claim_count > 0 ? ` · code collected${r.claim_count > 1 ? ` ${r.claim_count}×` : ""}` : ""}</span></div>}
+                        {r.claimable && <div><span className="pill pill-ok" style={{ marginTop: 4 }} title={r.claimed_at ? `Collected ${new Date(r.claimed_at).toLocaleString()}` : "Not collected yet"}><BadgeCheck size={12} /> Paid{r.claimed_at ? ` · code collected${r.claim_count > 1 ? ` (${r.claim_count}×)` : ""}` : r.claim_count > 0 ? " · can collect again" : ""}</span></div>}
                         {r.anytime && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Clock size={12} /> Anytime</span></div>}
                         {r.full_access === false && <div><span className="pill pill-warn" style={{ marginTop: 4 }}>Test Run only</span></div>}
                         {r.no_face && <div><span className="pill" style={{ marginTop: 4 }}><ScanFace size={12} /> No face check</span></div>}
@@ -549,6 +556,9 @@ export default function StudentsTab() {
                               </button>}
                               {"claimable" in r && !r.name_pending && <button onClick={() => update(r.id, { claimable: !r.claimable }, r.claimable ? `${r.full_name} removed from the paid list — the claim link no longer shows their code.` : `${r.full_name} marked as paid — they can get their code on the claim link.`)}>
                                 <BadgeCheck size={15} /> {r.claimable ? "Remove from paid list" : "Paid — can get code by name"}
+                              </button>}
+                              {r.claimable && r.claimed_at && <button onClick={() => confirm(`Let ${r.full_name} collect their code on the claim link one more time?`) && update(r.id, { claimed_at: null }, `${r.full_name} can collect their code on the claim link once more.`)}>
+                                <RotateCcw size={15} /> Let them collect the code again
                               </button>}
                               <hr />
                               <button onClick={() => update(r.id, { active: !r.active }, r.active ? "Code disabled — any exam in progress will end." : "Code enabled.")}>

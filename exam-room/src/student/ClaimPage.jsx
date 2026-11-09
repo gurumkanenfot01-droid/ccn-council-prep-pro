@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { GraduationCap, ArrowRight, Copy, Check, UserRound, MessageCircle, PlayCircle, Lock } from "lucide-react";
 import { api } from "../lib/api.js";
+import ExamNumberCard from "./ExamNumberCard.jsx";
 import { ADMIN_WHATSAPP, ADMIN_WHATSAPP_DISPLAY, CODE_KEY } from "./StudentApp.jsx";
 
 // The link the administrator posts in the class group (/#/claim): a student
@@ -8,6 +9,7 @@ import { ADMIN_WHATSAPP, ADMIN_WHATSAPP_DISPLAY, CODE_KEY } from "./StudentApp.j
 // Anyone not on the paid list gets nothing and is pointed to the administrator.
 const PROBLEMS = {
   need_full_name: "Type at least two of your names, e.g. your first name and surname.",
+  already_claimed: "This code has already been collected. Each code is shown only once. If you lost it, message the administrator.",
   ambiguous: "More than one student has that name. Type your full name, as on the class list.",
   too_many_attempts: "Too many tries from this network. Wait 10 minutes and try again.",
   network: "Connection problem. Check your internet and try again.",
@@ -20,15 +22,17 @@ export default function ClaimPage() {
   const [notPaid, setNotPaid] = useState(false);
   const [got, setGot] = useState(null); // { code, name }
   const [copied, setCopied] = useState(false);
+  const [lost, setLost] = useState(false);
 
   async function submit(e) {
     e.preventDefault();
-    setBusy(true); setProblem(""); setNotPaid(false);
+    setBusy(true); setProblem(""); setNotPaid(false); setLost(false);
     try {
       const r = await api.claimCode(name.trim());
       setGot(r);
     } catch (err) {
       if (err.code === "not_found") setNotPaid(true);
+      else if (err.code === "already_claimed") { setNotPaid(false); setProblem(PROBLEMS.already_claimed); setLost(true); }
       else setProblem(PROBLEMS[err.code] || "The claim page isn’t ready yet. Please message the administrator.");
     }
     setBusy(false);
@@ -55,20 +59,22 @@ export default function ClaimPage() {
           <p className="muted" style={{ margin: 0, fontSize: 14 }}>Paid students: type your name to see your personal code for Paper 1, Paper 2 and the OSCE.</p>
         </div>
 
-        {got ? (
+        {got ? (<>
           <div className="card claim-result" style={{ display: "flex", flexDirection: "column", gap: 14, textAlign: "center" }}>
             <div className="muted" style={{ fontSize: 14 }}>Hello <strong>{got.name}</strong>, your access code is</div>
             <div className="claim-code" aria-label={`Access code ${got.code.split("").join(" ")}`}>{got.code}</div>
+            <div className="banner banner-warn" role="note" style={{ margin: 0, textAlign: "left" }}><span><strong>Write it down or take a screenshot now.</strong> This code is shown only once — this page won’t show it again.</span></div>
             <div className="row" style={{ justifyContent: "center" }}>
               <button className="btn btn-ghost" onClick={copy}>{copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "Copied" : "Copy code"}</button>
               <button className="btn btn-primary" onClick={startNow}><PlayCircle size={16} /> Open my exams</button>
             </div>
             <p className="faint" style={{ fontSize: 12.5, margin: 0, display: "flex", gap: 6, textAlign: "left" }}>
               <Lock size={14} style={{ flex: "none", marginTop: 2 }} />
-              Write it down. The code is only for you: your face is registered with it and checked at every exam, so nobody else can use it.
+              The code is only for you: your face is registered with it and checked at every exam, so nobody else can use it.
             </p>
           </div>
-        ) : (
+          <div style={{ marginTop: 14 }}><ExamNumberCard code={got.code} /></div>
+        </>) : (
           <form className="card" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="field">
               <label htmlFor="claim-name"><UserRound size={11} /> Your full name</label>
@@ -76,6 +82,7 @@ export default function ClaimPage() {
                 autoComplete="name" autoCapitalize="words" required />
             </div>
             {problem && <div className="error" role="alert">{problem}</div>}
+            {lost && <a className="btn btn-sm btn-success" style={{ alignSelf: "flex-start" }} href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(`Hello, I lost my Council Exams access code. My name is ${name.trim()}.`)}`} target="_blank" rel="noreferrer"><MessageCircle size={14} /> Message the administrator</a>}
             {notPaid && (
               <div className="banner banner-bad" role="alert" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <span>That name is not on the list of students who have paid for the Council Exams. Check the spelling, or message the administrator ({ADMIN_WHATSAPP_DISPLAY}).</span>
