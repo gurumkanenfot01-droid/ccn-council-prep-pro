@@ -295,16 +295,16 @@ export default function ExamScreen({ cam, session, onFinished }) {
     if (ended.current || isReloading()) return; // refreshing for an update isn't leaving the exam
     if (noFaceChecks.current && CAMERA_TYPES.includes(type)) return;
     if (type === "phone" && micOnlyRef.current) return; // no camera in microphone-only mode
-    setToast({ text: VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
+    setToast({ text: (type === "window_blur" && detail) || VIOLATION_LABELS[type] || "Rule broken", n: Date.now(), warn: true });
     try {
       const data = absorb(await api.report(token, type, detail, photo));
       if (data && !data.finished && !data.ignored) {
         setToast(null);
-        setWarning({ count: data.warnings, max: maxWarnings, label: VIOLATION_LABELS[type], type });
+        setWarning({ count: data.warnings, max: maxWarnings, label: type === "window_blur" && detail ? detail : VIOLATION_LABELS[type], type });
         alertStudent();
       }
     } catch (e) { onError(e); }
-  }, [token, absorb, onError]);
+  }, [token, absorb, onError, maxWarnings]);
 
   const identity = useCallback(async (descriptor, photo) => {
     if (ended.current || noFaceChecks.current) return;
@@ -440,6 +440,46 @@ export default function ExamScreen({ cam, session, onFinished }) {
       document.removeEventListener("webkitfullscreenchange", check);
     };
   }, [maximum, canFull]);
+
+  // Maximum security on laptops: a second screen connected, or the mouse
+  // parked off the exam screen (on another monitor), hides the question and
+  // counts as a warning. Phones and tablets are not affected.
+  const [secondScreen, setSecondScreen] = useState(false);
+  const [pointerOut, setPointerOut] = useState(false);
+  useEffect(() => {
+    if (!maximum) return undefined;
+    const last = {};
+    const warn = (key, detail) => {
+      if (last[key] && Date.now() - last[key] < 30000) return; // once per 30 s per kind
+      last[key] = Date.now();
+      report("window_blur", detail, null);
+    };
+    let wasExtended = false;
+    const checkScreens = () => {
+      const ext = !!(window.screen && window.screen.isExtended);
+      setSecondScreen(ext);
+      if (ext && !wasExtended) warn("screen", "Second screen connected");
+      wasExtended = ext;
+    };
+    checkScreens();
+    const iv = setInterval(checkScreens, 3000);
+    let timer = null;
+    const root = document.documentElement;
+    const leave = e => {
+      if (e.relatedTarget) return;
+      if (!IN_APP && !(document.fullscreenElement || document.webkitFullscreenElement)) return; // the browser bar is above the page
+      clearTimeout(timer);
+      timer = setTimeout(() => { setPointerOut(true); warn("pointer", "Mouse moved off the exam screen (another monitor?)"); }, 2000);
+    };
+    const enter = () => { clearTimeout(timer); setPointerOut(false); };
+    root.addEventListener("mouseleave", leave);
+    root.addEventListener("mouseenter", enter);
+    return () => {
+      clearInterval(iv); clearTimeout(timer);
+      root.removeEventListener("mouseleave", leave);
+      root.removeEventListener("mouseenter", enter);
+    };
+  }, [maximum]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -679,6 +719,11 @@ export default function ExamScreen({ cam, session, onFinished }) {
         </div>
       )}
 
+      {maximum && (secondScreen || pointerOut) && (
+        <div className="banner banner-bad">
+          <AlertTriangle size={16} /> <span><strong>Maximum security:</strong> {secondScreen ? "a second screen is connected. Unplug it (or set the display to this screen only) to see the question." : "keep the mouse on the exam screen. The question is hidden while it is off the screen."}</span>
+        </div>
+      )}
       {maximum && notFull && (
         <div className="banner banner-bad" style={{ flexWrap: "wrap" }}>
           <AlertTriangle size={16} /> <span style={{ flex: 1, minWidth: 180 }}><strong>Maximum security:</strong> the exam must stay in full screen. The question is hidden until you go back.</span>
@@ -687,7 +732,7 @@ export default function ExamScreen({ cam, session, onFinished }) {
       )}
 
       <div className="session" style={maximum ? { userSelect: "none", WebkitUserSelect: "none" } : undefined}>
-        <section className={`card ${hidden || locked || (maximum && notFull) ? "shield" : ""}`} aria-live="polite">
+        <section className={`card ${hidden || locked || (maximum && (notFull || secondScreen || pointerOut)) ? "shield" : ""}`} aria-live="polite">
           {paused ? (
             <div style={{ textAlign: "center", padding: "30px 0" }}>
               <PauseCircle size={36} color="var(--amber)" />
