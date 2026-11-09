@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
 import { APP_DOWNLOAD_URL, DESKTOP_DOWNLOAD_URL } from "../lib/app.js";
 import { getSpecialty, specialtyLabel } from "../lib/specialty.js";
+import StudentSettings, { securityLabel } from "./StudentSettings.jsx";
 
 // No look-alike characters (0/O, 1/I/L), so codes are easy to read out.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -14,7 +15,9 @@ export function newCode(length = 8) {
   return Array.from(bytes, b => ALPHABET[b % ALPHABET.length]).join("");
 }
 
-const FIELDS = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime, specialty, full_access, no_face";
+const FIELDS_BASE = "id, full_name, access_code, face_status, active, enrolled_at, created_at, name_pending, batch, anytime, specialty, full_access, no_face";
+// Per-student security (added by supabase/updates/2026-11-09_council_and_student_security.sql).
+const FIELDS = FIELDS_BASE + ", security_level, max_warnings_override, app_only";
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -32,7 +35,7 @@ async function insertCandidates(rows) {
   for (let i = 0; i < rows.length; i += 100) {
     let chunk = rows.slice(i, i + 100);
     for (let tries = 0; ; tries++) {
-      const { data, error } = await supabase.from("exam_candidates").insert(chunk.map(r => ({ ...r, specialty: getSpecialty() }))).select(FIELDS);
+      const { data, error } = await supabase.from("exam_candidates").insert(chunk.map(r => ({ ...r, specialty: r.specialty || getSpecialty() }))).select(FIELDS_BASE);
       if (!error) { created.push(...data); break; }
       if (error.code !== "23505" || tries >= 4) throw new Error(error.message);
       chunk = chunk.map(r => ({ ...r, access_code: newCode() }));
@@ -162,6 +165,48 @@ function AppRequiredCard() {
   );
 }
 
+// Council Exams: one code per student covers Paper 1, Paper 2 and the OSCE.
+// One tap makes council codes for every Critical Care student (same names).
+function CouncilCard({ rows, onCreated }) {
+  const [ccn, setCcn] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    supabase.from("exam_candidates").select("full_name, no_face, batch").eq("specialty", "ccn").eq("active", true).eq("name_pending", false)
+      .then(({ data }) => setCcn(data || []));
+  }, []);
+  const have = new Set((rows || []).map(r => r.full_name.trim().toLowerCase()));
+  const todo = (ccn || []).filter(c => !have.has(c.full_name.trim().toLowerCase()));
+  async function createAll() {
+    if (!todo.length) return;
+    if (!confirm(`Create council exam codes for ${todo.length} Critical Care student${todo.length === 1 ? "" : "s"}? Each gets a new code for Paper 1, Paper 2 and the OSCE.`)) return;
+    setBusy(true); setMsg("");
+    try {
+      const batch = `Council ${new Date().toLocaleDateString()}`;
+      const made = await insertCandidates(todo.map(c => ({ full_name: c.full_name, access_code: newCode(), batch, full_access: true, no_face: !!c.no_face, specialty: "council" })));
+      setMsg(`Created ${made.length} council code${made.length === 1 ? "" : "s"}. Print or share them below.`);
+      onCreated(made);
+    } catch (e) { setMsg(adminDbMessage(e)); }
+    setBusy(false);
+  }
+  return (
+    <section className="card" style={{ borderColor: "var(--navy)" }}>
+      <h2 style={{ fontSize: 16, marginTop: 0 }}><GraduationCap size={17} /> Council Exams — Paper 1, Paper 2 and OSCE</h2>
+      <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
+        One code works for all three papers. After creating codes, tap <strong>Settings</strong> on a student (or <strong>Settings for all shown</strong>)
+        to choose how many questions they get in each paper and how strict their security is.
+      </p>
+      <div className="row">
+        <button className="btn btn-primary" onClick={createAll} disabled={busy || ccn === null || !todo.length}>
+          {busy ? <Spinner size={16} /> : <UserPlus size={16} />} {ccn === null ? "Checking Critical Care students…" : todo.length ? `Create council codes for all ${todo.length} Critical Care students` : "Every Critical Care student already has a council code"}
+        </button>
+        {msg && <span className="notice">{msg}</span>}
+      </div>
+      <p className="faint" style={{ fontSize: 12.5, margin: "10px 0 0" }}>New students who are not in Critical Care: use “Create access codes” below (from a list of names, or blank codes).</p>
+    </section>
+  );
+}
+
 export default function StudentsTab() {
   const [rows, setRows] = useState(null);
   const [names, setNames] = useState("");
@@ -176,14 +221,13 @@ export default function StudentsTab() {
   const [batchLabel, setBatchLabel] = useState("");
   const [created, setCreated] = useState(null); // rows made by the last bulk action
   const [batchFilter, setBatchFilter] = useState("");
-  const [testOnly, setTestOnly] = useState(true); // new codes can take only Test Run exams until approved
+  const [testOnly, setTestOnly] = useState(getSpecialty() !== "council"); // new codes can take only Test Run exams until approved
+  const [settingsFor, setSettingsFor] = useState(null); // students whose Settings panel is open
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("exam_candidates")
-      .select(FIELDS)
-      .eq("specialty", getSpecialty())
-      .order("created_at", { ascending: false });
+    const q = fields => supabase.from("exam_candidates").select(fields).eq("specialty", getSpecialty()).order("created_at", { ascending: false });
+    let { data, error } = await q(FIELDS);
+    if (error && /security_level|max_warnings_override|app_only/.test(error.message || "")) ({ data, error } = await q(FIELDS_BASE)); // database not updated yet
     if (error) { setLoadError(adminDbMessage(error)); setRows([]); } else { setLoadError(""); setRows(data); }
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -285,6 +329,7 @@ export default function StudentsTab() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <FaceModeCard />
       <AppRequiredCard />
+      {getSpecialty() === "council" && <CouncilCard rows={rows} onCreated={made => { setCreated(made); load(); }} />}
       <section className="card">
         <h2 style={{ fontSize: 16, marginTop: 0 }}><UserPlus size={17} /> Create access codes — {specialtyLabel(getSpecialty())}</h2>
         <div className="row" style={{ gap: 6, marginBottom: 12 }} role="tablist">
@@ -368,6 +413,9 @@ export default function StudentsTab() {
               {batches.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
           )}
+          <button className="btn btn-primary btn-sm" disabled={!filtered.length} onClick={() => setSettingsFor(filtered)}>
+            <SlidersHorizontal size={14} /> Settings for all shown ({filtered.length})
+          </button>
           <button className="btn btn-ghost btn-sm" disabled={!filtered.length} onClick={() => copy(listText(filtered), "all")}>
             {copied === "all" ? <Check size={14} /> : <Copy size={14} />} Copy list
           </button>
@@ -406,9 +454,13 @@ export default function StudentsTab() {
                         {r.anytime && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Clock size={12} /> Anytime</span></div>}
                         {r.full_access === false && <div><span className="pill pill-warn" style={{ marginTop: 4 }}>Test Run only</span></div>}
                         {r.no_face && <div><span className="pill" style={{ marginTop: 4 }}><ScanFace size={12} /> No face check</span></div>}
+                        {r.security_level && <div><span className={`pill ${r.security_level === "maximum" ? "pill-bad" : "pill-warn"}`} style={{ marginTop: 4 }}>{r.security_level === "maximum" ? <ShieldAlert size={12} /> : <Shield size={12} />} {securityLabel(r.security_level)}</span></div>}
+                        {r.max_warnings_override != null && <div><span className="pill pill-warn" style={{ marginTop: 4 }}>{r.max_warnings_override} warning{r.max_warnings_override === 1 ? "" : "s"} max</span></div>}
+                        {r.app_only && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Smartphone size={12} /> App only</span></div>}
                       </td>
                       <td>
                         <div className="row" style={{ gap: 6 }}>
+                          <button className="btn btn-sm btn-primary" title="Security level, warning limit, app only and questions per exam" onClick={() => setSettingsFor([r])}><SlidersHorizontal size={13} /> Settings</button>
                           {r.face_status !== "none" && <button className="btn btn-sm btn-ghost" onClick={() => viewPhoto(r)}><Image size={13} /> Photo</button>}
                           {r.face_status === "pending" && <>
                             <button className="btn btn-sm btn-success" onClick={() => update(r.id, { face_status: "approved" }, `Approved ${r.full_name}.`)}><Check size={13} /> Approve</button>
@@ -445,6 +497,9 @@ export default function StudentsTab() {
           </div>
         )}
       </section>
+
+      {settingsFor && <StudentSettings students={settingsFor} onClose={() => setSettingsFor(null)}
+        onSaved={msg => { setSettingsFor(null); flash(msg); load(); }} />}
 
       {photo && (
         <div className="overlay" role="dialog" aria-modal="true" onClick={() => setPhoto(null)}>

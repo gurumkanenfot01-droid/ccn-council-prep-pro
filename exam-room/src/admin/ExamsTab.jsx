@@ -159,6 +159,7 @@ function ExamForm({ initial, bank, candidates, onSaved, onCancel }) {
             <option value="relaxed">Relaxed — murmuring and head turns allowed</option>
             <option value="normal">Normal — quiet room, short glances allowed</option>
             <option value="strict">Strict — silence, eyes on the screen</option>
+            <option value="maximum">Maximum — council style: silence, face always in view, warnings come fast</option>
           </select></div>
         <div className="field"><label htmlFor="att">Attempts each student may take</label>
           <input id="att" type="number" min={1} max={50} value={f.attempts_allowed ?? 1} onChange={e => set("attempts_allowed", e.target.value)} /></div>

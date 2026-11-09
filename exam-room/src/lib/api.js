@@ -115,6 +115,9 @@ export const api = {
   // database that hasn't been updated with the blank-code version yet.
   enroll: (code, descriptor, photo, name = null) =>
     rpc("exam_enroll", { p_code: code, p_descriptor: descriptor, p_photo: photo, ...(name ? { p_name: name } : {}) }),
+  // The student's own security settings (strictness, warning limit, app only).
+  // Missing on a database without the update: then the exams' own settings apply.
+  mySecurity: code => rpc("exam_my_security", { p_code: code }).catch(() => ({})),
   start: (code, examId, descriptor, photo) =>
     rpc("exam_start", { p_code: code, p_exam_id: examId, p_descriptor: descriptor, p_photo: photo, p_user_agent: navigator.userAgent }),
   question: token => retry("exam_question", { p_token: token }),
