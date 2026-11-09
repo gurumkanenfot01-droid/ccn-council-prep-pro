@@ -305,8 +305,10 @@ export function useProctor({ cam, active, report, identity, level: strictness = 
       try {
         ctx.drawImage(v, 0, 0, 32, 24);
         const px = ctx.getImageData(0, 0, 32, 24).data;
+        // Brightest colour channel, not eye brightness: a room lit by a red or
+        // blue bulb is not "dark". Only a covered or truly unlit camera is.
         let sum = 0;
-        for (let i = 0; i < px.length; i += 4) sum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        for (let i = 0; i < px.length; i += 4) sum += Math.max(px[i], px[i + 1], px[i + 2]);
         dark = sum / (px.length / 4) < DARK_LUMA;
       } catch (e) { dark = false; }
       track("dark", dark);

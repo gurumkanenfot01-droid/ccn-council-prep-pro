@@ -571,7 +571,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "" }) {
             ctx.drawImage(v, 0, 0, 16, 12);
             const px = ctx.getImageData(0, 0, 16, 12).data;
             let sum = 0; let max = 0;
-            for (let i = 0; i < px.length; i += 4) { const l = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]; sum += l; if (l > max) max = l; }
+            for (let i = 0; i < px.length; i += 4) { const l = Math.max(px[i], px[i + 1], px[i + 2]); sum += l; if (l > max) max = l; } // any colour of light counts as light
             blackSecs = sum / (px.length / 4) < 3 && max < 10 ? blackSecs + 1 : 0;
           } catch (e) { blackSecs = 0; }
         }

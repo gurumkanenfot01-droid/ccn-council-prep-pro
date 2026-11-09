@@ -41,10 +41,51 @@ export function yawOf(landmarks) {
   return (nose.x - (left.x + right.x) / 2) / width;
 }
 
+// Poor or coloured light (a red bulb, a dim room): a brightened, high-contrast
+// black-and-white copy of the frame. Each pixel uses its brightest colour
+// channel, so red or blue light still shows the face, then the picture is
+// stretched so its bright parts become bright.
+let boostCanvas = null;
+function boostedFrame(video) {
+  const w = 320;
+  const h = Math.round((video.videoHeight / video.videoWidth) * w) || 240;
+  boostCanvas = boostCanvas || document.createElement("canvas");
+  boostCanvas.width = w; boostCanvas.height = h;
+  const ctx = boostCanvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0, w, h);
+  const img = ctx.getImageData(0, 0, w, h);
+  const px = img.data;
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < px.length; i += 4) {
+    const v = Math.max(px[i], px[i + 1], px[i + 2]);
+    px[i] = v; hist[v]++;
+  }
+  // Brightness at the 2nd and 98th percentiles → stretch to 0–255.
+  const n = px.length / 4;
+  let lo = 0, hi = 255, acc = 0;
+  for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= n * 0.02) { lo = v; break; } }
+  acc = 0;
+  for (let v = 255; v >= 0; v--) { acc += hist[v]; if (acc >= n * 0.02) { hi = v; break; } }
+  const span = Math.max(24, hi - lo);
+  for (let i = 0; i < px.length; i += 4) {
+    const v = Math.max(0, Math.min(255, ((px[i] - lo) * 255) / span));
+    px[i] = px[i + 1] = px[i + 2] = v;
+  }
+  ctx.putImageData(img, 0, 0);
+  return boostCanvas;
+}
+
 // Every face in view with its head direction. [] if none.
+// If the normal picture shows no face (poor or coloured light), the boosted
+// copy is checked too, so students in a dim or red-lit room are still seen.
 export async function scanFaces(video) {
   if (!faceapi || !videoReady(video)) return null;
-  const found = await faceapi.detectAllFaces(video, detectorOptions()).withFaceLandmarks();
+  let found = await faceapi.detectAllFaces(video, detectorOptions()).withFaceLandmarks();
+  if (found.length === 0) {
+    try {
+      found = await faceapi.detectAllFaces(boostedFrame(video), new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.4 })).withFaceLandmarks();
+    } catch (e) { found = []; }
+  }
   return found.map(f => ({ score: f.detection.score, box: f.detection.box, yaw: yawOf(f.landmarks) }));
 }
 

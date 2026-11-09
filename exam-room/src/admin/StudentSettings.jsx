@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Shield, ShieldAlert, ListOrdered, Smartphone, X, Moon, Baby, CheckCircle2, Lock, Eye, Minus, Plus, SlidersHorizontal } from "lucide-react";
+import { Shield, ShieldAlert, ListOrdered, Smartphone, X, Moon, Baby, CheckCircle2, Lock, Eye, Minus, Plus, SlidersHorizontal, Lightbulb } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner } from "../ui.jsx";
@@ -23,7 +23,7 @@ export const SECURITY_LEVELS = [
 export const securityLabel = l => (SECURITY_LEVELS.find(x => x[0] === (l || "")) || SECURITY_LEVELS[0])[1];
 
 export const EXEMPTIONS = [
-  ["dark", "Dark room / no light", "A dark or black camera picture never counts or locks the exam."],
+  ["dark", "Dark room / any light", "A dark, red-lit or black camera picture never counts or locks the exam."],
   ["no_face", "Face not showing", "Face out of view or looking away never counts."],
   ["people", "Other people in view", "Children or family in the picture never count and never end the exam."],
   ["noise", "Noise or talking", "Children's noise, talking or TV never counts."],
@@ -33,6 +33,7 @@ export const exemptLabel = k => (EXEMPTIONS.find(x => x[0] === k) || [k, k])[1];
 const PRESETS = [
   { id: "night", icon: Moon, title: "Night / low light", text: "No light at night or the face doesn't show. Relaxed; darkness and face checks off.", level: "relaxed", exempt: ["dark", "no_face"], watch: false, tone: "calm" },
   { id: "parent", icon: Baby, title: "Parent at home", text: "Children around. Relaxed; other people and noise never count.", level: "relaxed", exempt: ["people", "noise"], watch: false, tone: "calm" },
+  { id: "anylight", icon: Lightbulb, title: "Any light — watched", text: "Red, dim or any light and a busy background are fine. Strict on everything else, shown first on the Live monitor.", level: "strict", exempt: ["dark"], watch: true, tone: "firm" },
   { id: "standard", icon: CheckCircle2, title: "Standard", text: "Follows each exam's own rules. Nothing switched off.", level: "", exempt: [], watch: false, tone: "plain" },
   { id: "strict", icon: Lock, title: "Strict", text: "Silence and face in view. Every check counts.", level: "strict", exempt: [], watch: false, tone: "firm" },
   { id: "maximum", icon: ShieldAlert, title: "Maximum + watch", text: "Council style, ear check and room scan, shown first on the Live monitor.", level: "maximum", exempt: [], watch: true, tone: "hard" },
