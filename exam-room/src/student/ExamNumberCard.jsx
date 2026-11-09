@@ -42,7 +42,7 @@ export default function ExamNumberCard({ code, initial }) {
       ) : (
         <form onSubmit={save} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div className="field">
-            <label htmlFor="exam-number"><Hash size={11} /> Your Council exam number</label>
+            <label htmlFor="exam-number"><Hash size={11} /> Your exam number</label>
             <input id="exam-number" value={value} onChange={e => setValue(e.target.value.slice(0, 30))} placeholder="Type your exam number"
               autoCapitalize="characters" autoCorrect="off" spellCheck={false} required />
           </div>

@@ -230,7 +230,7 @@ function ClaimLinkCard({ rows, onCopy, copied }) {
   const numbered = list.filter(r => r.exam_number);
   const numbersText = list.filter(r => r.claimable || r.exam_number).slice().sort((a, b) => a.full_name.localeCompare(b.full_name))
     .map((r, i) => `${i + 1}. ${r.full_name} — ${r.exam_number || "(no exam number yet)"}`).join("\n");
-  const groupText = `Council Exams access codes (paid students only):\n1. Open ${link}\n2. Type your full name\n3. Your personal code appears straight away. It is shown ONLY ONCE, so write it down and don't share it.\n4. Tap Open my exams, register your face, then type your exam number on your exams page.\nIf it says you're not on the list, or you lose your code, message the administrator.`;
+  const groupText = `Exam access codes (paid students only):\n1. Open ${link}\n2. Type your full name\n3. Your personal code appears straight away. It is shown ONLY ONCE, so write it down and don't share it.\n4. Tap Open my exams, register your face, then type your exam number on your exams page.\nIf it says you're not on the list, or you lose your code, message the administrator.`;
   return (
     <section className="card">
       <h2 style={{ fontSize: 16, marginTop: 0 }}><Link2 size={17} /> Claim link for paid students</h2>
