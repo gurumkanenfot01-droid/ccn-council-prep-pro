@@ -113,7 +113,7 @@ function NameScreen({ code, onDone, onLogout }) {
   );
 }
 
-function EnrollScreen({ name, nameNeeded, code, cam, faceMode, onEnrolled, onLogout }) {
+function EnrollScreen({ name, nameNeeded, code, cam, faceMode, night = false, onEnrolled, onLogout }) {
   const [started, setStarted] = useState(false);
   const [error, setError] = useState("");
   const [fullName, setFullName] = useState("");
@@ -146,7 +146,9 @@ function EnrollScreen({ name, nameNeeded, code, cam, faceMode, onEnrolled, onLog
           </p>
         )}
         <ul className="muted" style={{ fontSize: 14, paddingLeft: 18 }}>
-          <li>Face the camera with nothing covering your face. At night or in a dark room, tap <strong>Use screen light</strong>: your screen turns white and lights up your face.</li>
+          {night
+            ? <li>Face the camera with nothing covering your face. At night or in a dark room, tap <strong>Use screen light</strong>: your screen turns white and lights up your face.</li>
+            : <li>Sit in good light, facing the camera, with nothing covering your face.</li>}
           <li>Make sure you are alone in view.</li>
         </ul>
         {error && <div className="banner banner-bad">{error}</div>}
@@ -166,7 +168,7 @@ function EnrollScreen({ name, nameNeeded, code, cam, faceMode, onEnrolled, onLog
             </button>
           </>
         ) : (
-          <div className="card"><Liveness cam={cam} onDone={finish} actionLabel="Saving your registration" /></div>
+          <div className="card"><Liveness cam={cam} night={night} onDone={finish} actionLabel="Saving your registration" /></div>
         )}
       </div>
     </main>
@@ -318,7 +320,7 @@ function AppRequired({ kind }) {
 
 const RESUME_KEY = "ccn-exam-resume";
 
-function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
+function PrepScreen({ exam, name, code, cam, faceMode, night = false, onStarted, onBack }) {
   const [agreed, setAgreed] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
@@ -402,7 +404,7 @@ function PrepScreen({ exam, name, code, cam, faceMode, onStarted, onBack }) {
             </button>
           </>
         ) : faceMode === "full" || faceMode === "start" ? (
-          <div className="card"><Liveness cam={cam} onDone={verified} actionLabel="Matching your face and opening the exam" /></div>
+          <div className="card"><Liveness cam={cam} night={night} onDone={verified} actionLabel="Matching your face and opening the exam" /></div>
         ) : (
           <div className="card" style={{ textAlign: "center" }}><Spinner size={24} /><p className="muted">Opening the exam…</p></div>
         )}
@@ -591,20 +593,20 @@ export default function StudentApp({ updateReady = false }) {
     return (
       <>
         {profile.face_status === "rejected" && <div className="wrap" style={{ paddingBottom: 0 }}><div className="banner banner-bad">Your last face registration wasn’t approved. Please register again in good light.</div></div>}
-        <EnrollScreen name={profile.name} nameNeeded={!!profile.name_needed} code={code} cam={cam} faceMode={faceMode} onEnrolled={() => refresh()} onLogout={logout} />
+        <EnrollScreen name={profile.name} nameNeeded={!!profile.name_needed} code={code} cam={cam} faceMode={faceMode} night={profile.specialty === "council"} onEnrolled={() => refresh()} onLogout={logout} />
       </>
     );
   }
 
   if (view === "exam" && session) {
     return (
-      <ExamScreen cam={cam} session={session} code={code}
+      <ExamScreen cam={cam} session={session} code={code} council={profile.specialty === "council"}
         onFinished={r => { cam.stop(); exitFullscreen(); setResult(r); setView("done"); refresh().catch(() => {}); }} />
     );
   }
   if (view === "done" && result) return <DoneScreen result={result} name={profile.name} onBack={() => setView("exams")} />;
   if (view === "prep" && exam) {
-    return <PrepScreen exam={exam} name={profile.name} code={code} cam={cam} faceMode={faceMode}
+    return <PrepScreen exam={exam} name={profile.name} code={code} cam={cam} faceMode={faceMode} night={profile.specialty === "council"}
       onStarted={s => { setSession(sessionWithSecurity(s, profile.security)); setView("exam"); }} onBack={() => { setView("exams"); refresh().catch(() => {}); }} />;
   }
 

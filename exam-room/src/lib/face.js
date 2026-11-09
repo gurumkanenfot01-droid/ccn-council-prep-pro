@@ -136,11 +136,16 @@ function brightFrame(video) {
 
 // The face descriptor of the single face in view.
 // Returns { descriptor } or { error: "no_face" | "multiple_faces" }.
-// At night: if the normal picture shows no face, a gentler detector and then
-// a brightened copy of the picture are tried.
-export async function readDescriptor(video) {
+// night (Council Exams only): if the normal picture shows no face, a gentler
+// detector and then a brightened copy of the picture are tried.
+export async function readDescriptor(video, { night = false } = {}) {
   if (!faceapi || !videoReady(video)) return { error: "no_face" };
   let found = await faceapi.detectAllFaces(video, detectorOptions()).withFaceLandmarks().withFaceDescriptors();
+  if (!night) {
+    if (found.length === 0) return { error: "no_face" };
+    if (found.length > 1) return { error: "multiple_faces" };
+    return { descriptor: Array.from(found[0].descriptor), yaw: yawOf(found[0].landmarks) };
+  }
   const gentle = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 });
   if (found.length === 0) found = await faceapi.detectAllFaces(video, gentle).withFaceLandmarks().withFaceDescriptors();
   if (found.length === 0) {
@@ -166,7 +171,7 @@ export function descriptorDistance(a, b) {
 
 // Small JPEG for evidence (about 10 KB).
 let snapCanvas = null;
-export function snapshot(video, width = 240) {
+export function snapshot(video, width = 240, { night = false } = {}) {
   if (!videoReady(video)) return null;
   snapCanvas = snapCanvas || document.createElement("canvas");
   const height = Math.round((video.videoHeight / video.videoWidth) * width);
@@ -174,7 +179,7 @@ export function snapshot(video, width = 240) {
   snapCanvas.height = height;
   const ctx = snapCanvas.getContext("2d", { willReadFrequently: true });
   ctx.drawImage(video, 0, 0, width, height);
-  // A dark room: brighten the photo so the administrator can see the face.
-  try { brighten(ctx, width, height); } catch (e) { /* keep the plain photo */ }
+  // Council Exams at night: brighten the photo so the administrator can see the face.
+  if (night) { try { brighten(ctx, width, height); } catch (e) { /* keep the plain photo */ } }
   try { return snapCanvas.toDataURL("image/jpeg", 0.6); } catch (e) { return null; }
 }

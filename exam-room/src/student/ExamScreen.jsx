@@ -85,7 +85,7 @@ function alertStudent() {
 // Checks the administrator switched off for one student (Students → Settings).
 const EXEMPT_TYPES = { dark: ["dark"], no_face: ["no_face", "looking_away"], people: ["multiple_faces"], noise: ["noise"] };
 
-export default function ExamScreen({ cam, session, onFinished, code = "" }) {
+export default function ExamScreen({ cam, session, onFinished, code = "", council = false }) {
   const token = session.token;
   // The student's exemptions; re-read every 30 s so the administrator's changes
   // apply during the exam (e.g. "no light" or "children around").
@@ -341,7 +341,7 @@ export default function ExamScreen({ cam, session, onFinished, code = "" }) {
   noFaceChecks.current = !watchFace;
   const micOnlyRef = useRef(micOnly);
   micOnlyRef.current = micOnly;
-  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: watchFace, phoneCheck: !micOnly });
+  const proctor = useProctor({ cam, active: true, report, identity, level: session.proctor_level, video: watchFace, phoneCheck: !micOnly, night: council });
 
   // The administrator can watch (and listen) live; nothing is recorded.
   const watchers = useLiveShare({ token, getTracks: cam.getTracks, getVideo: cam.getVideo });

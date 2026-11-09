@@ -2,13 +2,10 @@
 --    new code: the old one stops working, the test face / exam number / test
 --    attempts are cleared, and he can collect the new code once on the claim
 --    page by typing his name. Done only once (marked in his note).
--- 2. Face matching a little more forgiving (0.5 → 0.55), for dim rooms at night.
---    face-api.js itself uses 0.6, so this is still strict about a different person.
+-- 2. (Night-friendly face matching moved to 2026-11-15_night_faces_council_only.sql,
+--    for Council Exams students only.)
 -- Safe to run again.
 set lock_timeout = '10s';
-
-create or replace function public.exam__face_threshold() returns float8
-language sql immutable as $$ select 0.55::float8 $$;
 
 do $$
 declare
