@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Calculator as CalcIcon, Eye, VideoOff, ArrowRight, CheckCircle2, XCircle, Clock, PauseCircle, MessageSquare, WifiOff, Send, VolumeX, RefreshCw } from "lucide-react";
 import { api, serverNow, fmtClock } from "../lib/api.js";
-import { useProctor, VIOLATION_LABELS, pauseSoundChecks } from "../lib/proctor.js";
+import { useProctor, VIOLATION_LABELS, pauseSoundChecks, enterFullscreen } from "../lib/proctor.js";
 import { useLiveShare } from "../lib/live.js";
 import Calculator from "./Calculator.jsx";
 import { isReloading, reloadNow } from "../lib/update.js";
@@ -421,6 +421,26 @@ export default function ExamScreen({ cam, session, onFinished }) {
     };
   }, []);
 
+  // Maximum security on the website (no app needed): the question is hidden
+  // whenever the page leaves full screen, until the student taps to go back.
+  // (Leaving full screen also counts as a warning, as at every level.) Text
+  // can't be selected. Skipped where full screen isn't possible (iPhone Safari)
+  // and inside the apps, which are always full screen.
+  const maximum = session.proctor_level === "maximum";
+  const canFull = !IN_APP && !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+  const [notFull, setNotFull] = useState(false);
+  useEffect(() => {
+    if (!maximum || !canFull) return undefined;
+    const check = () => setNotFull(!(document.fullscreenElement || document.webkitFullscreenElement));
+    check();
+    document.addEventListener("fullscreenchange", check);
+    document.addEventListener("webkitfullscreenchange", check);
+    return () => {
+      document.removeEventListener("fullscreenchange", check);
+      document.removeEventListener("webkitfullscreenchange", check);
+    };
+  }, [maximum, canFull]);
+
   useEffect(() => {
     if (!toast) return undefined;
     const t = setTimeout(() => setToast(null), 5000);
@@ -659,8 +679,15 @@ export default function ExamScreen({ cam, session, onFinished }) {
         </div>
       )}
 
-      <div className="session">
-        <section className={`card ${hidden || locked ? "shield" : ""}`} aria-live="polite">
+      {maximum && notFull && (
+        <div className="banner banner-bad" style={{ flexWrap: "wrap" }}>
+          <AlertTriangle size={16} /> <span style={{ flex: 1, minWidth: 180 }}><strong>Maximum security:</strong> the exam must stay in full screen. The question is hidden until you go back.</span>
+          <button className="btn btn-sm btn-primary" onClick={enterFullscreen}>Back to full screen</button>
+        </div>
+      )}
+
+      <div className="session" style={maximum ? { userSelect: "none", WebkitUserSelect: "none" } : undefined}>
+        <section className={`card ${hidden || locked || (maximum && notFull) ? "shield" : ""}`} aria-live="polite">
           {paused ? (
             <div style={{ textAlign: "center", padding: "30px 0" }}>
               <PauseCircle size={36} color="var(--amber)" />
