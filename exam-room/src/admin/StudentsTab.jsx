@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck, Hash, KeyRound, Percent } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck, Hash, KeyRound, Percent, Lock } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner, MoreMenu } from "../ui.jsx";
@@ -100,6 +100,42 @@ const FACE_MODES = [
 ];
 
 // Exam Room-wide face registration setting (exam_settings.face_mode).
+// Close / reopen the whole student site for a while (all sections).
+function SiteSwitchCard() {
+  const [st, setSt] = useState(null); // { site_closed, site_closed_message } | false (not available)
+  const [msg, setMsg] = useState("");
+  const [note, setNote] = useState("");
+  useEffect(() => {
+    supabase.from("exam_settings").select("site_closed, site_closed_message").eq("id", 1).maybeSingle()
+      .then(({ data, error }) => { if (error || !data) setSt(false); else { setSt(data); setMsg(data.site_closed_message || ""); } });
+  }, []);
+  if (!st) return null;
+  async function save(closed) {
+    if (closed && !confirm("Close the student site now? Students will only see your message until you reopen it. (Anyone writing an exam is stopped.)")) return;
+    const { error } = await supabase.from("exam_settings").upsert({ id: 1, site_closed: closed, site_closed_message: msg.trim() || st.site_closed_message, updated_at: new Date().toISOString() });
+    if (error) { setNote(adminDbMessage(error)); return; }
+    setSt(s => ({ ...s, site_closed: closed })); setNote(closed ? "Closed — students see your message within 30 seconds." : "Open again — students can sign in within 30 seconds.");
+  }
+  return (
+    <section className={`card site-switch${st.site_closed ? " closed" : ""}`}>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+        <h2 style={{ fontSize: 16, margin: 0 }}><Lock size={17} /> Student site: {st.site_closed ? "CLOSED" : "open"}</h2>
+        {st.site_closed
+          ? <button className="btn btn-success" onClick={() => save(false)}><CheckCircle2 size={16} /> Open the site</button>
+          : <button className="btn btn-danger" onClick={() => save(true)}><Lock size={16} /> Close the site for now</button>}
+      </div>
+      <div className="field" style={{ marginTop: 10 }}>
+        <label htmlFor="site-msg">Message students see while it is closed</label>
+        <div className="row" style={{ gap: 8 }}>
+          <input id="site-msg" value={msg} maxLength={300} onChange={e => setMsg(e.target.value)} style={{ flex: 1, minWidth: 220 }} />
+          {st.site_closed && <button className="btn btn-ghost btn-sm" onClick={() => save(true)}>Save message</button>}
+        </div>
+      </div>
+      {note && <span className="notice">{note}</span>}
+    </section>
+  );
+}
+
 function FaceModeCard() {
   const [faceMode, setFaceMode] = useState(null);
   const [error, setError] = useState("");
@@ -408,6 +444,7 @@ export default function StudentsTab() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {getSpecialty() === "council" && <ClaimLinkCard rows={rows} onCopy={copy} copied={copied} />}
+      <SiteSwitchCard />
       <FaceModeCard />
       <AppRequiredCard />
       {getSpecialty() === "council" && <CouncilCard rows={rows} onCreated={made => { setCreated(made); load(); }} />}
