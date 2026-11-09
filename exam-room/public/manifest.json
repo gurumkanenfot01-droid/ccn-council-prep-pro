@@ -1,7 +1,7 @@
 {
   "name": "Nursing Exam Room",
   "short_name": "Exam Room",
-  "description": "Proctored mock exams for Critical Care, Perioperative, Anaesthesia and Nephrology Nursing.",
+  "description": "Secure online exams. Sign in with your personal access code.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F4F6F8",

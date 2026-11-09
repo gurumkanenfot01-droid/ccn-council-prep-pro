@@ -50,7 +50,6 @@ function CodeScreen({ onLogin }) {
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div className="brand-mark" style={{ margin: "0 auto 10px", width: 52, height: 52, borderRadius: 16 }}><ShieldCheck size={26} /></div>
           <h1 className="serif" style={{ fontSize: 24, margin: "0 0 4px" }}>Nursing Exam Room</h1>
-          <p className="faint" style={{ margin: "0 0 6px", fontSize: 12.5 }}>Critical Care · Perioperative · Anaesthesia · Nephrology Nursing</p>
           <p className="muted" style={{ margin: 0, fontSize: 14 }}>Enter the personal access code your administrator gave you.</p>
         </div>
         <form className="card" onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -68,6 +67,9 @@ function CodeScreen({ onLogin }) {
             Your code is personal. Don’t share it with anyone.
           </p>
         </form>
+        <p className="muted" style={{ textAlign: "center", fontSize: 14, marginTop: 14 }}>
+          Paid but don’t have your code yet? <a href="#/claim"><strong>Get your code</strong></a>
+        </p>
         {isWindowsBrowser() && (
           <p className="muted" style={{ textAlign: "center", fontSize: 13.5, marginTop: 14 }}>
             On a Windows laptop? <a href={DESKTOP_DOWNLOAD_URL}><Download size={13} /> Download the Nursing Exam Room app</a>
