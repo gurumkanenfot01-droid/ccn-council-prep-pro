@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal } from "lucide-react";
+import { UserPlus, Copy, Check, X, RotateCcw, Ban, CheckCircle2, Trash2, Search, Image, Download, Printer, Layers, ScanFace, Smartphone, Clock, SlidersHorizontal, Shield, ShieldAlert, GraduationCap, Eye, Moon, MoreHorizontal, Link2, BadgeCheck } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { adminDbMessage } from "../lib/api.js";
 import { Spinner, MoreMenu } from "../ui.jsx";
@@ -19,6 +19,8 @@ const FIELDS_BASE = "id, full_name, access_code, face_status, active, enrolled_a
 // Per-student security (added by supabase/updates/2026-11-09_council_and_student_security.sql).
 const FIELDS = FIELDS_BASE + ", security_level, max_warnings_override, app_only, exempt_checks, watch";
 const FIELDS_MID = FIELDS_BASE + ", security_level, max_warnings_override, app_only";
+// Council claim link (supabase/updates/2026-11-12_council_claim_by_name.sql).
+const FIELDS_CLAIM = FIELDS + ", claimable, claimed_at, claim_count";
 const MAX_BLANK = 500;
 
 // One name per line, as typed or pasted from Excel/Word/WhatsApp: numbering
@@ -208,6 +210,47 @@ function CouncilCard({ rows, onCreated }) {
   );
 }
 
+// The link to post in the class group: paid students type their name there and
+// get their council code straight away. Students not marked as paid get nothing.
+function ClaimLinkCard({ rows, onCopy, copied }) {
+  const link = `${window.location.origin}/#/claim`;
+  const list = (rows || []).filter(r => !r.name_pending && r.active);
+  if (rows && list.length && !list.some(r => "claimable" in r)) {
+    return (
+      <section className="card">
+        <h2 style={{ fontSize: 16, marginTop: 0 }}><Link2 size={17} /> Claim link for paid students</h2>
+        <p className="muted" style={{ margin: 0, fontSize: 14 }}>The database update for the claim link hasn’t run yet. It runs by itself a minute after this change is merged; then refresh this page.</p>
+      </section>
+    );
+  }
+  const paid = list.filter(r => r.claimable);
+  const collected = paid.filter(r => r.claim_count > 0);
+  const repeat = paid.filter(r => r.claim_count > 1);
+  const groupText = `Council Exams access codes (paid students only):\n1. Open ${link}\n2. Type your full name\n3. Your personal code appears straight away. Write it down and don't share it.\nIf it says you're not on the list, message the administrator.`;
+  return (
+    <section className="card">
+      <h2 style={{ fontSize: 16, marginTop: 0 }}><Link2 size={17} /> Claim link for paid students</h2>
+      <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
+        Post this link in the class group. A student who has paid types their name and sees their code at once. Anyone not marked <strong>Paid</strong> gets nothing.
+      </p>
+      <div className="claim-link">
+        <code>{link}</code>
+        <button className="btn btn-primary btn-sm" onClick={() => onCopy(link, "claim-link")}>{copied === "claim-link" ? <Check size={14} /> : <Copy size={14} />} Copy link</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => onCopy(groupText, "claim-text")}>{copied === "claim-text" ? <Check size={14} /> : <Copy size={14} />} Copy message for the group</button>
+      </div>
+      <div className="chip-row" style={{ marginTop: 10 }}>
+        <span className="pill pill-ok"><BadgeCheck size={12} /> {paid.length} paid</span>
+        <span className="pill">{collected.length} collected their code</span>
+        <span className="pill pill-warn">{paid.length - collected.length} not yet</span>
+        {repeat.length > 0 && <span className="pill pill-bad" title="The code was shown more than once. Check the face photo is the right student.">{repeat.length} opened more than once</span>}
+      </div>
+      <p className="faint" style={{ fontSize: 12.5, margin: "10px 0 0" }}>
+        To add or remove a student, open <MoreHorizontal size={12} /> on their row → <em>Paid</em>. The face photo they register is the check that the right person took the code.
+      </p>
+    </section>
+  );
+}
+
 export default function StudentsTab() {
   const [rows, setRows] = useState(null);
   const [names, setNames] = useState("");
@@ -224,10 +267,12 @@ export default function StudentsTab() {
   const [batchFilter, setBatchFilter] = useState("");
   const [testOnly, setTestOnly] = useState(getSpecialty() !== "council"); // new codes can take only Test Run exams until approved
   const [settingsFor, setSettingsFor] = useState(null); // students whose Settings panel is open
+  const [paidNew, setPaidNew] = useState(true); // council: new names can get their code on the claim link
 
   const load = useCallback(async () => {
     const q = fields => supabase.from("exam_candidates").select(fields).eq("specialty", getSpecialty()).order("created_at", { ascending: false });
-    let { data, error } = await q(FIELDS);
+    let { data, error } = await q(FIELDS_CLAIM);
+    if (error && /claim/.test(error.message || "")) ({ data, error } = await q(FIELDS)); // database not updated yet
     if (error && /exempt_checks|watch/.test(error.message || "")) ({ data, error } = await q(FIELDS_MID)); // database not updated yet
     if (error && /security_level|max_warnings_override|app_only/.test(error.message || "")) ({ data, error } = await q(FIELDS_BASE));
     if (error) { setLoadError(adminDbMessage(error)); setRows([]); } else { setLoadError(""); setRows(data); }
@@ -243,9 +288,10 @@ export default function StudentsTab() {
     setBusy(true);
     try {
       const batch = batchLabel.trim();
-      const rows = await insertCandidates(parsed.map(full_name => ({ full_name, access_code: newCode(), batch, full_access: !testOnly })));
-      setNames(""); setCreated(rows);
-      flash(`Created ${rows.length} access code${rows.length === 1 ? "" : "s"}.`);
+      const claim = getSpecialty() === "council" && paidNew && rows && rows.some(r => "claimable" in r) ? { claimable: true } : {};
+      const made = await insertCandidates(parsed.map(full_name => ({ full_name, access_code: newCode(), batch, full_access: !testOnly, ...claim })));
+      setNames(""); setCreated(made);
+      flash(`Created ${made.length} access code${made.length === 1 ? "" : "s"}.`);
     } catch (e) { flash(adminDbMessage(e)); }
     setBusy(false); load();
   }
@@ -329,6 +375,7 @@ export default function StudentsTab() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {getSpecialty() === "council" && <ClaimLinkCard rows={rows} onCopy={copy} copied={copied} />}
       <FaceModeCard />
       <AppRequiredCard />
       {getSpecialty() === "council" && <CouncilCard rows={rows} onCreated={made => { setCreated(made); load(); }} />}
@@ -361,6 +408,12 @@ export default function StudentsTab() {
           <input type="checkbox" checked={testOnly} onChange={e => setTestOnly(e.target.checked)} style={{ marginTop: 3 }} />
           <span><strong>Test Run only</strong> — these students can take only the Test Run until you tap <em>Give full access</em> in the list below.</span>
         </label>
+        {getSpecialty() === "council" && mode === "names" && (
+          <label className="row" style={{ gap: 8, marginTop: 8, fontSize: 14, alignItems: "flex-start", cursor: "pointer" }}>
+            <input type="checkbox" checked={paidNew} onChange={e => setPaidNew(e.target.checked)} style={{ marginTop: 3 }} />
+            <span><strong>Paid</strong> — these students can get their code by typing their name on the claim link.</span>
+          </label>
+        )}
         <div className="row" style={{ marginTop: 12 }}>
           {mode === "names" ? (
             <button className="btn btn-primary" onClick={addStudents} disabled={busy || !parsed.length}>
@@ -462,6 +515,7 @@ export default function StudentsTab() {
                       <td data-label="Status">
                         <div className="chip-row" style={{ marginTop: 0 }}>
                         {r.active ? <span className="pill pill-ok">Active</span> : <span className="pill pill-bad">Disabled</span>}
+                        {r.claimable && <div><span className="pill pill-ok" style={{ marginTop: 4 }} title={r.claimed_at ? `Last opened ${new Date(r.claimed_at).toLocaleString()}` : "Not collected yet"}><BadgeCheck size={12} /> Paid{r.claim_count > 0 ? ` · code collected${r.claim_count > 1 ? ` ${r.claim_count}×` : ""}` : ""}</span></div>}
                         {r.anytime && <div><span className="pill pill-warn" style={{ marginTop: 4 }}><Clock size={12} /> Anytime</span></div>}
                         {r.full_access === false && <div><span className="pill pill-warn" style={{ marginTop: 4 }}>Test Run only</span></div>}
                         {r.no_face && <div><span className="pill" style={{ marginTop: 4 }}><ScanFace size={12} /> No face check</span></div>}
@@ -492,6 +546,9 @@ export default function StudentsTab() {
                               </button>
                               {r.full_access !== false && <button onClick={() => confirm(`Limit ${r.full_name || "this student"} to the Test Run only?`) && update(r.id, { full_access: false }, `${r.full_name || "This student"} can now take only the Test Run.`)}>
                                 <Layers size={15} /> Test Run only
+                              </button>}
+                              {"claimable" in r && !r.name_pending && <button onClick={() => update(r.id, { claimable: !r.claimable }, r.claimable ? `${r.full_name} removed from the paid list — the claim link no longer shows their code.` : `${r.full_name} marked as paid — they can get their code on the claim link.`)}>
+                                <BadgeCheck size={15} /> {r.claimable ? "Remove from paid list" : "Paid — can get code by name"}
                               </button>}
                               <hr />
                               <button onClick={() => update(r.id, { active: !r.active }, r.active ? "Code disabled — any exam in progress will end." : "Code enabled.")}>

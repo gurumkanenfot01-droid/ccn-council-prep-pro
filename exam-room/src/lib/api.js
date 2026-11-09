@@ -122,6 +122,8 @@ export const api = {
   deviceOk: (token, device) => rpc("exam_device_ok", { p_token: token, p_device: device }).catch(() => ({ current: true })),
   // Ear check / room scan photos taken before a Maximum-security exam.
   recordCheck: (token, kind, photo) => rpc("exam_record_check", { p_token: token, p_kind: kind, p_photo: photo }).catch(() => ({})),
+  // Council claim page: a paid student types their name and gets their code.
+  claimCode: name => rpc("exam_claim_code", { p_name: name }),
   mySecurity: code => rpc("exam_my_security", { p_code: code }).catch(() => ({})),
   start: (code, examId, descriptor, photo) =>
     rpc("exam_start", { p_code: code, p_exam_id: examId, p_descriptor: descriptor, p_photo: photo, p_user_agent: navigator.userAgent }),

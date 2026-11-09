@@ -11,10 +11,10 @@ import Liveness from "./Liveness.jsx";
 import ExamScreen from "./ExamScreen.jsx";
 import RoomCheck from "./RoomCheck.jsx";
 
-const ADMIN_WHATSAPP = "2349031853995";
-const ADMIN_WHATSAPP_DISPLAY = "+234 903 185 3995";
+export const ADMIN_WHATSAPP = "2349031853995";
+export const ADMIN_WHATSAPP_DISPLAY = "+234 903 185 3995";
 
-const CODE_KEY = "exam-room-code";
+export const CODE_KEY = "exam-room-code";
 
 function Header({ name, onLogout }) {
   return (
