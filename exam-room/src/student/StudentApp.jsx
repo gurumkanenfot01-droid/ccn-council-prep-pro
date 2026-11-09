@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { reloadNow } from "../lib/update.js";
 import { newVersionReady } from "../lib/net.js";
 import { KeyRound, ArrowRight, ShieldCheck, Clock, PlayCircle, Hourglass, CheckCircle2, XCircle, LogOut, RefreshCw, Video, Lock, RotateCcw, Smartphone, Download } from "lucide-react";
-import { api, serverNow, fmtClock } from "../lib/api.js";
+import { api, serverNow, fmtClock, ExamError } from "../lib/api.js";
+import { loginDeviceId } from "../lib/device.js";
 import { useCamera, enterFullscreen, exitFullscreen, virtualCameraLabel } from "../lib/proctor.js";
 import { snapshot, loadFaceModels } from "../lib/face.js";
 import { specialtyLabel, studentTitle } from "../lib/specialty.js";
@@ -523,7 +524,11 @@ export default function StudentApp({ updateReady = false }) {
   const [refreshError, setRefreshError] = useState("");
   const cam = useCamera();
 
+  const [blocked, setBlocked] = useState(false); // code in use on another device
   const refresh = useCallback(async (c = code) => {
+    // One device at a time: this device must hold the code (or be allowed to take it).
+    const dev = await api.loginDevice(c, loginDeviceId());
+    if (dev && dev.blocked) throw new ExamError("second_device");
     const [raw, sec] = await Promise.all([api.login(c), api.mySecurity(c)]);
     const data = withSecurity(raw, sec);
     setProfile(data);
@@ -540,6 +545,8 @@ export default function StudentApp({ updateReady = false }) {
   }
 
   function logout() {
+    if (code) api.logoutDevice(code, loginDeviceId());
+    setBlocked(false);
     cam.stop(); exitFullscreen();
     try { localStorage.removeItem(CODE_KEY); sessionStorage.removeItem(CODE_KEY); } catch (e) { /* ignore */ }
     setCode(""); setProfile(null); setView("exams"); setSession(null);
@@ -550,13 +557,27 @@ export default function StudentApp({ updateReady = false }) {
   function restore() {
     setLoading(true); setRestoreError("");
     refresh(code)
-      .catch(e => { if (e && e.code === "network") setRestoreError(e.message); else logout(); })
+      .catch(e => {
+        if (e && e.code === "network") setRestoreError(e.message);
+        else if (e && e.code === "second_device") setBlocked(true);
+        else logout();
+      })
       .finally(() => setLoading(false));
   }
   useEffect(() => {
     if (!code || profile) return;
     restore();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep this device signed in (every 30 s, also during an exam). If another
+  // device took the code while this one was away, stop here.
+  useEffect(() => {
+    if (!profile || !code) return undefined;
+    const t = setInterval(() => {
+      api.loginDevice(code, loginDeviceId()).then(r => { if (r && r.blocked) { cam.stop(); exitFullscreen(); setBlocked(true); } });
+    }, 30000);
+    return () => clearInterval(t);
+  }, [profile, code]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the exam list current (start times, pauses, results).
   useEffect(() => {
@@ -566,6 +587,25 @@ export default function StudentApp({ updateReady = false }) {
   }, [profile, view, refresh]);
 
   if (loading) return <main className="wrap" style={{ textAlign: "center", paddingTop: 80 }}><Spinner size={28} /></main>;
+  if (blocked) {
+    return (
+      <main className="wrap" style={{ minHeight: "100vh", display: "flex", alignItems: "center" }}>
+        <div className="narrow card" style={{ width: "100%", textAlign: "center" }}>
+          <div className="brand-mark" style={{ margin: "0 auto 10px", width: 48, height: 48, borderRadius: 14 }}><Smartphone size={24} /></div>
+          <h1 className="serif" style={{ fontSize: 20, margin: "0 0 8px" }}>Code in use on another device</h1>
+          <p className="muted" style={{ marginTop: 0 }}>
+            This code is signed in on another phone or computer. Only one device can use a code at a time.
+            Log out on the other device, or close it and wait 2 minutes, then tap <strong>Try again</strong>.
+          </p>
+          <p className="faint" style={{ fontSize: 13 }}>Lost that device? Message the administrator ({ADMIN_WHATSAPP_DISPLAY}).</p>
+          <div className="row" style={{ justifyContent: "center" }}>
+            <button className="btn btn-ghost" onClick={logout}>Use a different code</button>
+            <button className="btn btn-primary" onClick={() => { setBlocked(false); setProfile(null); restore(); }}><RefreshCw size={16} /> Try again</button>
+          </div>
+        </div>
+      </main>
+    );
+  }
   if (restoreError && !profile) {
     return (
       <main className="wrap" style={{ minHeight: "100vh", display: "flex", alignItems: "center" }}>

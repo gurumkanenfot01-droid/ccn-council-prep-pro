@@ -598,6 +598,9 @@ export default function StudentsTab() {
                               {r.claimable && r.claimed_at && <button onClick={() => confirm(`Let ${r.full_name} collect their code on the claim link one more time?`) && update(r.id, { claimed_at: null }, `${r.full_name} can collect their code on the claim link once more.`)}>
                                 <RotateCcw size={15} /> Let them collect the code again
                               </button>}
+                              {getSpecialty() === "council" && !r.name_pending && <button onClick={() => update(r.id, { login_device: null, login_seen_at: null }, `${r.full_name} is signed out everywhere — they can sign in on a new device now.`)}>
+                                <Smartphone size={15} /> Sign out from all devices (lost phone)
+                              </button>}
                               {!r.name_pending && <button onClick={() => confirm(`Give ${r.full_name} a new access code? The old code (${r.access_code}) stops working at once.${"claimable" in r && r.claimable ? " They can collect the new code once on the claim link." : ""}`) && update(r.id, { access_code: newCode(), ...("claimable" in r && r.claimable ? { claimed_at: null } : {}) }, `${r.full_name} has a new code. The old one no longer works.`)}>
                                 <KeyRound size={15} /> New code (old one stops working)
                               </button>}
