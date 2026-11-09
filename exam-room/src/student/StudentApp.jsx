@@ -257,7 +257,7 @@ function rulesFor(level, faceMode = "full") {
       faceMode === "mic" ? "Your microphone stays on for the whole exam. The camera is not used." : "Your microphone stays on for the whole exam.",
       "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
       level === "maximum"
-        ? "MAXIMUM SECURITY: keep completely silent. Even a whisper or a short sound counts as a warning straight away. The exam stays in full screen: if you leave it, the question is hidden and it counts as a warning."
+        ? "MAXIMUM SECURITY: keep completely silent. Even a whisper or a short sound counts as a warning straight away. The exam stays in full screen: if you leave it, the question is hidden and it counts as a warning. On a laptop, use one screen only (no second monitor) and keep the mouse on the exam."
         : level === "strict"
         ? "Keep completely quiet. Any talking or noise counts as a warning."
         : level === "normal"
@@ -274,7 +274,7 @@ function rulesFor(level, faceMode = "full") {
     "Keep this page open. Switching apps, opening notifications or another tab counts as a warning.",
     "No phones in view of the camera — a phone seen by the camera ENDS your exam immediately.",
     level === "maximum"
-      ? "MAXIMUM SECURITY: stay silent and keep your whole face in the camera at all times. A whisper, a short sound, or your face leaving the camera for a few seconds counts as a warning straight away. The exam stays in full screen: if you leave it, the question is hidden and it counts as a warning."
+      ? "MAXIMUM SECURITY: stay silent and keep your whole face in the camera at all times. A whisper, a short sound, or your face leaving the camera for a few seconds counts as a warning straight away. The exam stays in full screen: if you leave it, the question is hidden and it counts as a warning. On a laptop, use one screen only (no second monitor) and keep the mouse on the exam."
       : level === "strict"
       ? "Keep completely quiet and face the screen. Any talking, noise or looking away counts as a warning."
       : level === "normal"
