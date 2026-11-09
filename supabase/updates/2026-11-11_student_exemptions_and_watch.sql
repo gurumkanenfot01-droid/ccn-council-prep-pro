@@ -11,7 +11,7 @@ alter table public.exam_candidates add column if not exists exempt_checks text[]
 alter table public.exam_candidates add column if not exists watch boolean not null default false;
 alter table public.exam_candidates drop constraint if exists exam_candidates_exempt_checks_check;
 alter table public.exam_candidates add constraint exam_candidates_exempt_checks_check
-  check (exempt_checks <@ array['dark', 'no_face', 'people', 'noise']::text[]);
+  check (exempt_checks <@ array['dark', 'no_face', 'people', 'noise', 'turning', 'phone', 'fullscreen']::text[]);  -- full list: see 2026-11-26
 
 create or replace function public.exam_my_security(p_code text) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
